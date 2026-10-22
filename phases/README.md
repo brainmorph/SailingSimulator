@@ -6,7 +6,7 @@ This folder turns [PLAN.md](../PLAN.md) into independently actionable work for f
 
 | Phase | File | Outcome | Depends on |
 | --- | --- | --- | --- |
-| 1 | [Reference data and model contracts](01-reference-data-and-model-contracts.md) | Auditable calibration data and concrete simulation contracts | None |
+| 1 | ~~[Reference data and model contracts](01-reference-data-and-model-contracts.md)~~ | Auditable calibration data and concrete simulation contracts | None |
 | 2 | [Simulation core foundation](02-simulation-core-foundation.md) | Standalone deterministic C# simulation library and stepping foundation | 1 |
 | 3 | [Initial boat physics](03-initial-boat-physics.md) | A controllable six-degree-of-freedom ILCA 7 model in steady conditions | 1, 2 |
 | 4 | [Wind and wave environment](04-wind-and-wave-environment.md) | Configurable, repeatable wind and handling-affecting waves | 2, 3 |
@@ -19,8 +19,14 @@ This folder turns [PLAN.md](../PLAN.md) into independently actionable work for f
 
 - Treat `PLAN.md` as the source of truth. Preserve its confirmed decisions; flag conflicts instead of silently changing them.
 - Keep each change within the active phase. Update `PLAN.md` when a confirmed decision, assumption, source, or open question changes.
+- Strike through a phase's name in the phase list only after its completion criteria are met, including appropriate regression tests and a concise completion record.
+- Before completing each phase, add appropriate regression tests for the behavior, contracts, or artifacts introduced by that phase. Later phases should keep those tests and extend them as needed. Choose test scope based on the phase; do not add third-party libraries.
 - Prefer measured values and cite their source, units, conditions, and assumptions. Mark estimates as estimates.
 - Keep the simulation library independent of Godot, use SI units and the documented nautical body axes internally, and convert at the adapter boundary.
-- For each phase, leave a concise record of implementation, verification performed, remaining limitations, and any follow-up work. Do not claim a criterion is met without evidence.
+- For each phase, leave a concise record of implementation, regression tests added and verification performed, remaining limitations, and any follow-up work. Do not claim a criterion is met without evidence.
 - Phase completion criteria describe work to implement and verify; they do not authorize skipping verification appropriate to the change.
+
+## Commit messages
+
+Use Google-style commit messages: write a concise subject of at most 50 characters in imperative mood, capitalize it, and omit the final period. Separate an optional body with a blank line and wrap it at about 72 characters. Explain context or rationale in the body when the subject is not enough.
 

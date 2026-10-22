@@ -10,6 +10,8 @@ Build a sailing simulator in C# with Godot, aiming for physics fidelity comparab
 
 | Area | Decision |
 | --- | --- |
+| Dependencies | Do not add third-party libraries. |
+| Data acquisition and workarounds | Do not undertake operations that download large amounts of data or require complex workarounds without warning the user first and getting their direction. |
 | Engine and language | Godot and C# |
 | World representation | Full 3D simulation and presentation |
 | Initial input | Keyboard and mouse |
@@ -201,11 +203,13 @@ ILCA Australia gives an ideal ILCA 7 sailor weight range of 75–85 kg and a typ
 - [Magnander and Larsson, Chalmers/RISE, 2023](https://research.chalmers.se/en/publication/546299) publish wind-tunnel sail-force and moment coefficients for the ILCA 7 MkII sail. The study covers full-scale apparent wind speeds of 4 m/s and 7 m/s and a range of sheet, kicker, apparent-wind-angle, and heel conditions. The associated dataset is public; the measurements focus on downwind sailing, so they are a partial calibration source rather than a complete sailing polar.
 - [Magnander, Chalmers Master's thesis, 2022](https://odr.chalmers.se/items/edcb1ca9-d053-486d-b3e9-a9dafd7d6d6b) combines those sail coefficients with hydrodynamic coefficients from 2014 full-scale towing-tank tests to produce a velocity-prediction model. Its stated focus is downwind sailing in flat water, so it is not a complete upwind/reaching target set. Numeric polar coordinates and crew-mass assumptions have not yet been extracted and verified; do not use assumed values as calibration data.
 - [Levin, Chalmers licentiate thesis, 2016](https://research.chalmers.se/en/publication/245846) reports predicted velocity and attitude for a Laser dinghy across wind speeds and directions, with emphasis on maximum upwind and downwind VMG. Include it as a candidate complementary source alongside the 2022 study; numeric results, conditions, rig/crew assumptions, and compatibility with the selected ILCA 7 baseline still need review.
+- The separate [Pennanen et al. 2016 Laser heel-and-trim study](https://research.chalmers.se/publication/234579) reports flat-water upwind optimum heel/trim at selected boat speeds (2–5 knots). Its narrow points are useful for heel/trim trend checks, not as a speed polar; the Laser rig/model and crew-mass assumptions still need compatibility review.
+- The [2017 Laser dinghy VPP study](https://www.sciencedirect.com/science/article/pii/S0029801817300938) compares crew weights against an 80 kg baseline and evaluates upwind performance against measured data. Treat this as a supplementary crew-weight and validation reference, not a target set to merge with the ILCA 7 sources.
 
 ## Data points still to establish
 
 - Extract numeric VPP polar targets from the 2022 downwind study and/or 2016 Laser-dinghy study; record their exact conditions and model assumptions before calibration.
-- Verify whether the 80 kg reference sailor mass is compatible with the crew assumptions in the selected velocity-prediction data.
+- Verify whether the 80 kg reference sailor mass is compatible with the crew assumptions in the selected velocity-prediction data. A separate 2017 Laser VPP uses 80 kg as its baseline crew, but that does not establish compatibility with the 2022 ILCA 7 model.
 - Verify the working interpretation of the handbook's 58 kg nominal weight (with fittings) against class measurement rules and the selected VPP assumptions; avoid double-counting the rig or removable gear.
 - Wind speed range and direction controls for open practice (default: steady 10 knots).
 - Expected boat-speed and pointing targets at representative upwind, reaching, and downwind angles, with source conditions recorded. The identified 2022 VPP source is downwind-focused; locate or extract suitable upwind/reaching data.

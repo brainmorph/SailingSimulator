@@ -1,0 +1,29 @@
+{
+  "id": "steady-10kt-gentle-seed-1",
+  "wind": {
+    "speed_mps": 5.14444,
+    "from_degrees": 0
+  },
+  "waves": {
+    "preset": "Gentle",
+    "direction_mode": "AlignedWithWind",
+    "from_degrees": null,
+    "seed": 1
+  },
+  "initial_controls": {
+    "tiller": 0,
+    "mainsheet": 0.5,
+    "traveler": 0.5,
+    "vang": 0.5,
+    "outhaul": 0.5,
+    "cunningham": 0,
+    "centerboard": 1,
+    "hiking": 0
+  },
+  "assumptions": {
+    "sailor_mass_kg": 80,
+    "water_current": "still",
+    "notes": "Initial repeatability example only; control values are setup values, not calibrated trim targets."
+  },
+  "results": null
+}
