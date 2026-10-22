@@ -19,6 +19,7 @@ Build a sailing simulator in C# with Godot, aiming for physics fidelity comparab
 | Input handoff | Godot publishes a thread-safe snapshot of current sailing control states for the simulation thread to sample each step |
 | Input response | Hold keys for smooth, gradual adjustments |
 | Key binding settings | Fixed defaults in the first playable version; no rebinding UI initially |
+| Fixed sailing keys | A/D tiller; W/S sheet; Q/E traveler; R/F vang; T/G outhaul; U/J cunningham; I/K centerboard; Z/X hiking. See [rates and directions](godot/README.md). |
 | Initial boat | Single-handed ILCA/Laser dinghy |
 | Initial rig reference | ILCA 7 |
 | Initial training focus | Boat handling and sail trim |
@@ -144,6 +145,7 @@ Build a sailing simulator in C# with Godot, aiming for physics fidelity comparab
 - Phase 4 adds an immutable seeded directional linear-wave spectrum, sampled at each RK4 stage for hull/foil immersion and local water-relative flow. Calm is flat/stationary; gentle and moderate use provisional spectral significant heights of 0.12 m and 0.30 m, with 3–12 m wavelengths and ±25° directional spread. See [wind and waves](docs/wind-and-waves.md) for equations, assumptions and rendering access. These values are design estimates pending calibration.
 - Environment creation chooses a random wave seed when omitted; an explicit integer reproduces a realization. Preserve that seed when editing settings so slider changes do not reshuffle the wave phases. Physics and rendering sampling consume no randomness.
 - Godot will render the state produced by the C# simulation.
+- Phase 5 implements the [Godot host and thread boundary](docs/godot-integration.md): immutable held-key/environment publication, fixed-step control ramps, completed state/timing snapshots, absolute 60 Hz deadlines, visible misses/faults, and joined shutdown. The root solution stays engine-independent; build the Godot 4.7 .NET project separately. Render meshes use the hull datum, offset from the published combined centre of mass.
 - The simulation will calculate all six degrees of boat motion.
 - Centerboard and rudder forces will be modeled separately from hull drag.
 - Sample buoyancy and drag along the hull so waves can affect all six degrees of motion.
@@ -229,7 +231,7 @@ Record values with units and source or rationale. Keep experimental conditions a
 - The initial sectional sail, centerboard, rudder and hull equations and provisional coefficients are recorded in [the Phase 3 model](docs/boat-physics.md), extended with [Phase 4 waves](docs/wind-and-waves.md). Which measured coefficients should replace or calibrate them?
 - Extract and verify numeric ILCA 7/Laser VPP polar values, conditions, and crew/rig assumptions before calibration; current sources do not yet provide a verified numeric target table.
 - Wind and wave settings use the confirmed knots/compass angles and calm/gentle/moderate presets. F1 presentation remains Phase 7 work.
-- What fixed key layout should control steering, trim, hiking, and centerboard position?
+- The initial fixed keys and adjustment rates are documented in [the host controls](godot/README.md). Assess their usability during visual review and calibration.
 - How should the low-fidelity renderer show sail shape, telltales, heel, wake, and wave motion clearly?
 
 ## Deferred scope

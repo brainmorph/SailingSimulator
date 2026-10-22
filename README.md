@@ -5,8 +5,10 @@ and [phases/README.md](phases/README.md) tracks implementation. The current
 model advances a six-degree-of-freedom ILCA 7 with sail trim, separate foils,
 sampled hull forces, and hiking in steady wind over seeded irregular waves.
 Calm, gentle (default), and moderate water presets are available. Its physics
-coefficients, component masses and wave presets are provisional; the
-playable Godot scene and performance calibration follow in later phases.
+coefficients, component masses and wave presets are provisional. A Godot
+test scene now connects keyboard controls and a mouse orbit camera to the
+simulation on a dedicated 60 Hz thread. Final visual feedback and performance
+calibration follow in later phases.
 
 Use a .NET 8 SDK. No third-party packages or Godot installation are needed to
 build the foundation. `global.json` selects the latest installed .NET 8 SDK
@@ -18,6 +20,7 @@ dotnet run --project tests/CalibrationConditionCheck
 dotnet run --project tests/SimulationCoreCheck
 dotnet run --project tests/BoatPhysicsCheck
 dotnet run --project tests/EnvironmentCheck
+dotnet run --project tests/GodotIntegrationCheck
 dotnet run --project tools/SimulationHarness -- --steps 600
 dotnet run --project tools/SimulationHarness -- --boat --steps 600
 dotnet run --project tools/SimulationHarness -- --waves --wave-seed 123 --steps 600
@@ -37,13 +40,15 @@ Its step count defaults to 600 and accepts 1 through 1,000,000.
 | Path | Purpose |
 | --- | --- |
 | `src/SailingSimulator.Core` | Godot-independent RK4, mass, hull/foil/sail forces and diagnostics |
-| `src/SailingSimulator.Adapters` | UI units, compass settings, and explicit Godot frame conversion |
+| `src/SailingSimulator.Adapters` | Units/frame conversion, held-key ramps and threaded 60 Hz runner |
 | `tools/SimulationHarness` | Deterministic offline stepping example |
 | `tests` | Dependency-free executable regression checks |
-| `godot` | Host integration handoff for Phase 5 |
+| `godot` | Playable Godot 4.7 .NET test scene; [launch and controls](godot/README.md) |
 
 See [the core API and numerical conventions](docs/simulation-core.md) before
 implementing a force source or connecting rendering.
 See [the initial boat physics](docs/boat-physics.md) for equations, controls,
 mass estimates and limitations, and [wind and waves](docs/wind-and-waves.md)
 for physical presets, seeded sampling and the Godot handoff.
+See [Godot integration](docs/godot-integration.md) for thread ownership,
+input publication, rendering transforms, deadlines and lifecycle behavior.

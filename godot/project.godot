@@ -1,0 +1,20 @@
+; Open with the .NET build of Godot 4.7.
+config_version=5
+
+[application]
+config/name="Sailing Simulator"
+run/main_scene="res://Main.tscn"
+config/features=PackedStringArray("4.7", "C#", "GL Compatibility")
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+
+[dotnet]
+project/assembly_name="SailingSimulator.Godot"
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.55, 0.72, 0.82, 1)

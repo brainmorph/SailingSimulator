@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoatPhysicsCheck", "tests\B
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnvironmentCheck", "tests\EnvironmentCheck\EnvironmentCheck.csproj", "{9069A9D9-ECEF-4877-823C-E22824374C8E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotIntegrationCheck", "tests\GodotIntegrationCheck\GodotIntegrationCheck.csproj", "{B91E5756-4A2E-41DE-912F-BB33AAD13204}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -117,6 +119,18 @@ Global
 		{9069A9D9-ECEF-4877-823C-E22824374C8E}.Release|x64.Build.0 = Release|Any CPU
 		{9069A9D9-ECEF-4877-823C-E22824374C8E}.Release|x86.ActiveCfg = Release|Any CPU
 		{9069A9D9-ECEF-4877-823C-E22824374C8E}.Release|x86.Build.0 = Release|Any CPU
+		{B91E5756-4A2E-41DE-912F-BB33AAD13204}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B91E5756-4A2E-41DE-912F-BB33AAD13204}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B91E5756-4A2E-41DE-912F-BB33AAD13204}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B91E5756-4A2E-41DE-912F-BB33AAD13204}.Debug|x64.Build.0 = Debug|Any CPU
+		{B91E5756-4A2E-41DE-912F-BB33AAD13204}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B91E5756-4A2E-41DE-912F-BB33AAD13204}.Debug|x86.Build.0 = Debug|Any CPU
+		{B91E5756-4A2E-41DE-912F-BB33AAD13204}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B91E5756-4A2E-41DE-912F-BB33AAD13204}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B91E5756-4A2E-41DE-912F-BB33AAD13204}.Release|x64.ActiveCfg = Release|Any CPU
+		{B91E5756-4A2E-41DE-912F-BB33AAD13204}.Release|x64.Build.0 = Release|Any CPU
+		{B91E5756-4A2E-41DE-912F-BB33AAD13204}.Release|x86.ActiveCfg = Release|Any CPU
+		{B91E5756-4A2E-41DE-912F-BB33AAD13204}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -129,5 +143,6 @@ Global
 		{64A0DC0E-7665-403F-B827-1E272BC2C090} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{26541665-1E95-41F0-9D01-F1425AB27E2C} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{9069A9D9-ECEF-4877-823C-E22824374C8E} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{B91E5756-4A2E-41DE-912F-BB33AAD13204} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

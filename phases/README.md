@@ -10,15 +10,15 @@ This folder turns [PLAN.md](../PLAN.md) into independently actionable work for f
 | 2 | ~~[Simulation core foundation](02-simulation-core-foundation.md)~~ | Standalone deterministic C# simulation library and stepping foundation | 1 |
 | 3 | ~~[Initial boat physics](03-initial-boat-physics.md)~~ | A controllable six-degree-of-freedom ILCA 7 model in steady conditions | 1, 2 |
 | 4 | ~~[Wind and wave environment](04-wind-and-wave-environment.md)~~ | Configurable, repeatable wind and handling-affecting waves | 2, 3 |
-| 5 | [Godot integration and controls](05-godot-integration-and-controls.md) | Playable Godot scene with threaded simulation and sailing controls | 2, 3, 4 |
+| 5 | ~~[Godot integration and controls](05-godot-integration-and-controls.md)~~ | Playable Godot scene with threaded simulation and sailing controls | 2, 3, 4 |
 | 6 | [Visual sailing feedback and cameras](06-visual-sailing-feedback-and-cameras.md) | Readable boat, sail, water, telltales, and camera views | 5 |
 | 7 | [Debug tools and performance](07-debug-tools-and-performance.md) | F1 environment controls, telemetry, and 60 Hz diagnostics | 5; may overlap 6 after scene integration |
 | 8 | [Calibration and first playable](08-calibration-and-first-playable.md) | Calibrated open-practice milestone meeting `PLAN.md` scope | 1–7 |
 
 ## Handoff rules
 
-Phase 4 evidence and host handoff: [completion record](04-completion.md).
-The next active phase is [Godot integration and controls](05-godot-integration-and-controls.md).
+Phase 5 evidence and visual handoff: [completion record](05-completion.md).
+The next active phase is [Visual sailing feedback and cameras](06-visual-sailing-feedback-and-cameras.md).
 
 - Treat `PLAN.md` as the source of truth. Preserve its confirmed decisions; flag conflicts instead of silently changing them.
 - Keep each change within the active phase. Update `PLAN.md` when a confirmed decision, assumption, source, or open question changes.

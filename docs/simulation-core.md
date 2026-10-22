@@ -19,7 +19,8 @@ Godot `(y,-z,-x)`: north is -Z, east +X, and down -Y. Author local boat meshes
 with forward -Z, starboard +X, and up +Y. Re-expressing both local and world
 bases gives quaternion `(Y,-Z,-X,W)`, equivalent to `C q C^-1`. The explicit
 `GodotVector3d` and `GodotQuaterniond` boundary types are independent of Godot;
-the future host will construct actual Godot values from them.
+the [Godot host](godot-integration.md) constructs actual Godot values from them
+and offsets the combined centre of mass to the mesh's hull datum.
 
 `GetAttitude` derives ZYX Euler display angles in radians: positive heel is
 starboard down, pitch is bow up, and heading increases clockwise from north
@@ -58,6 +59,9 @@ See [wind and waves](wind-and-waves.md) for preset estimates and equations.
 `SnapshotMailbox<SimulationInput>` atomically exchanges the whole reference;
 one `Read()` supplies one step. All RK4 stages receive that same reference.
 The mailbox itself does not advance the simulation.
+The Phase 5 host publishes held-key directions and environment together in a
+`HostInput` mailbox; its dedicated `SimulationRunner` converts these to bounded
+`SailingControls` at each fixed step before constructing the core input.
 
 ## Stepping and forces
 
