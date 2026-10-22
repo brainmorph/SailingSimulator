@@ -12,6 +12,19 @@ waves and a fading wake provide visual feedback, with switchable onboard and
 third-person cameras. Debug tools and performance calibration follow in later
 phases.
 
+Launch the game directly without opening the Godot editor:
+
+```sh
+./scripts/run-game.sh
+```
+
+The executable launcher builds the C# game incrementally, prepares imported
+resources on first launch, then opens the game. It works from any working
+directory and uses the local Godot 4.7 .NET installation or a Godot executable
+on `PATH`. To use another installation, set
+`GODOT_BIN=/path/to/Godot_v4.7-stable_mono_linux.x86_64 ./scripts/run-game.sh`.
+The .NET 8 SDK and Godot 4.7 .NET must already be installed.
+
 Press **F2** in-game to show the controls window with all sailing and camera
 bindings; press **F2** again to hide it. Sailing and camera controls remain
 active while the window is open. Hold sailing keys to adjust gradually;

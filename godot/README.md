@@ -1,5 +1,10 @@
 # Godot host
 
+Run `./scripts/run-game.sh` from the repository root to build and launch the game
+directly. The script also prepares imported resources on first launch, so
+you do not need to open the editor. Set `GODOT_BIN` to override the detected
+Godot 4.7 .NET executable.
+
 Open `project.godot` with **Godot 4.7 .NET (Mono)** and build the C# project,
 then run the main scene (F6) or project (F5). The local executable is recorded
 in [LOCAL_ENVIRONMENT.md](../LOCAL_ENVIRONMENT.md). From the repository root:
