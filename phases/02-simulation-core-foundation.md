@@ -1,5 +1,7 @@
 # Phase 2: Simulation Core Foundation
 
+Completed 2026-10-22. See [the completion record](02-completion.md) for implementation, verification, and Phase 3 handoff limitations.
+
 ## Objective
 
 Create the standalone C# foundation for deterministic, fixed-step sailing simulation, with no Godot dependency.

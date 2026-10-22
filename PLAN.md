@@ -138,6 +138,7 @@ Build a sailing simulator in C# with Godot, aiming for physics fidelity comparab
 - Use SI units internally in the simulation library; convert to knots and degrees for user-facing settings and displays.
 - Use a right-handed nautical body frame for the simulation core (+X forward, +Y starboard, +Z down); convert coordinates at the Godot adapter boundary.
 - Represent 3D orientation internally with quaternions; derive human-readable heel, pitch, and heading angles for telemetry and presentation.
+- Phase 2 world frame is north/east/down (+X north, +Y east, +Z down). Position and linear velocity are world-relative; angular velocity is body-relative. Double-precision Hamilton quaternions map body axes into world axes; see [the core API](docs/simulation-core.md).
 - Godot will render the state produced by the C# simulation.
 - The simulation will calculate all six degrees of boat motion.
 - Centerboard and rudder forces will be modeled separately from hull drag.

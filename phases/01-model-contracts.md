@@ -40,6 +40,8 @@ The Godot side owns physical keyboard/mouse input. The C# simulation owns sailin
 
 The F1 debug UI will eventually edit environment settings, but that UI is outside Phase 1. The core receives a complete configuration snapshot, not UI controls.
 
+Phase 2 implements this boundary with `PresentationConversions.EnvironmentFromSettings`. The concrete core `EnvironmentConfig` stores SI wind velocity and a unit wave propagation vector instead of compass degrees; it preserves preset, direction mode, and seed. See [the core API](../docs/simulation-core.md) for zero-wind alignment and explicit frame conventions.
+
 ## Simulation state and ownership
 
 ### `SimulationState`
@@ -65,6 +67,6 @@ The `speed_mps` value is the exact SI conversion of the plan's 10-knot default r
 
 - Decide and document the tiller sign convention when rudder behavior is implemented (Phase 3).
 - Define whether `Hiking` is modeled as sailor position, righting effort, or an input mapped to both (Phase 3); keep it continuous and centered at zero.
-- Define the exact frames for linear and angular velocity in concrete C# type names before implementing the state type (Phase 2).
+- Resolved in Phase 2: `LinearVelocityWorldMps` uses north/east/down world axes; `AngularVelocityBodyRadPerSec` uses nautical body axes. See [the concrete core API](../docs/simulation-core.md).
 - Select numeric wave ranges only when the physical wave model is scoped (Phase 4).
 - Add model-output fields when their owning subsystem exists; avoid speculative fields for future boats or systems.
