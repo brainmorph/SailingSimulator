@@ -150,6 +150,10 @@ public sealed class FoilModel(FoilKind kind) : IForceModel
 public sealed class SectionalSailModel : IForceModel
 {
     public const int SectionCount = 6;
+    public const double HeightM = 5.2;
+    public const double AreaM2 = 7.06;
+    public const double MastXM = 0.65;
+    public const double FootHeightM = 0.5;
     public double SheetLimit(SailingControls c) => 0.08 + 1.35 * (1 - c.Mainsheet) + 0.20 * (1 - c.Traveler);
 
     public ForceMoment Evaluate(in ForceEvaluation e) => EvaluateSail(in e, null).Force;
@@ -161,17 +165,16 @@ public sealed class SectionalSailModel : IForceModel
         var c = e.Input.Controls;
         var camber = 0.045 + 0.085 * (1 - c.Outhaul) * (1 - 0.45 * c.Cunningham);
         var twist = (0.06 + 0.42 * (1 - c.Vang) + 0.10 * (1 - c.Cunningham)) * Math.Tanh(e.Rig.BoomAngleRad / 0.12);
-        const double height = 5.2, area = 7.06, mastX = 0.65;
         for (var i = 0; i < SectionCount; i++)
         {
             var fraction = (i + 0.5) / SectionCount;
             // Linear taper integrates exactly to 7.06 m² over the six equal-height strips.
-            var chordLength = 2 * area / height * (1 - fraction);
+            var chordLength = 2 * AreaM2 / HeightM * (1 - fraction);
             var angle = e.Rig.BoomAngleRad + twist * fraction;
             var chord = new Vector3d(-Math.Cos(angle), Math.Sin(angle), 0);
             var normal = new Vector3d(Math.Sin(angle), Math.Cos(angle), 0);
             var chordOffset = chord * (0.4 * chordLength);
-            var center = new Vector3d(mastX, 0, -0.5 - height * fraction) + chordOffset;
+            var center = new Vector3d(MastXM, 0, -FootHeightM - HeightM * fraction) + chordOffset;
             var boomPointVelocity = new Vector3d(-chordOffset.Y, chordOffset.X, 0) * -e.Rig.BoomRateRadPerSec;
             var wind = e.Boat.OrientationBodyToWorld.Conjugate().Rotate(e.Input.Environment.TrueWindVelocityWorldMps)
                 - BoatGeometry.PointVelocityBody(in e, center) - boomPointVelocity;
@@ -179,7 +182,7 @@ public sealed class SectionalSailModel : IForceModel
             var alpha = Math.Atan2(Vector3d.Dot(wind, normal), Vector3d.Dot(wind, chord));
             var luff = Math.Exp(-Math.Pow(Math.Sin(alpha) / 0.12, 2));
             var force = Vector3d.Zero;
-            var sectionArea = chordLength * height / SectionCount;
+            var sectionArea = chordLength * HeightM / SectionCount;
             if (speed > 1e-10)
             {
                 var attached = 1 - luff;
@@ -191,7 +194,7 @@ public sealed class SectionalSailModel : IForceModel
             var contribution = BoatGeometry.AtPoint(in e, force, center);
             total += contribution;
             boomTorque -= Vector3d.Cross(chordOffset, force).Z;
-            if (sections is not null) sections[i] = new(height * fraction, sectionArea, chordLength, angle, camber,
+            if (sections is not null) sections[i] = new(HeightM * fraction, sectionArea, chordLength, angle, camber,
                 twist * fraction, luff, center, wind, contribution);
         }
         return (total, boomTorque);

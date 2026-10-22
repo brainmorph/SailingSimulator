@@ -129,6 +129,110 @@ var tests = new (string Name, Action Run)[]
         Require(snapshot.Timing.ElapsedSeconds - snapshot.State.TimeSeconds > 0.06, "Clock dropped simulation time");
         Require(snapshot.Timing.DeadlineLatenessMilliseconds > 60, "Deadlines reset after overload");
     }),
+    ("Visual sail uses aerodynamic section geometry, trim and luffing", () =>
+    {
+        var model = new SectionalSailModel();
+        var mass = new IlcaMassModel().Evaluate(new());
+        ForceEvaluation Evaluation(SailingControls controls, Vector3d wind, double boom = 0.5) =>
+            new(0, RigidBodyState.AtRest, mass,
+                new(controls, new(wind, WavePreset.Calm, WaveDirectionMode.Independent, Vector3d.UnitX, 1)), new(boom, 0));
+        var shape = model.Shape(Evaluation(new(), new(0, 5, 0)));
+        var flat = model.Shape(Evaluation(new(outhaul: 1, cunningham: 1, vang: 1), new(0, 5, 0)));
+        foreach (var section in shape.Sections)
+        {
+            var chord = new Vector3d(-Math.Cos(section.AngleRad), Math.Sin(section.AngleRad), 0);
+            var mast = section.CenterBodyM - chord * (0.4 * section.ChordM);
+            Require((SailingVisuals.SailPoint(section, 0, 0) - mast).Length < 1e-12, "Luff must stay on mast");
+            Require((SailingVisuals.SailPoint(section, 1, 0) - mast - chord * section.ChordM).Length < 1e-12, "Leech must follow aerodynamic angle/chord");
+        }
+        Require((SailingVisuals.SailPoint(shape.Sections[0], 0.5, 0) - SailingVisuals.SailPoint(flat.Sections[0], 0.5, 0)).Length > 0.01,
+            "Outhaul/cunningham camber must visibly change");
+        Require((SailingVisuals.SailPoint(shape.Sections[^1], 1, 0) - SailingVisuals.SailPoint(flat.Sections[^1], 1, 0)).Length > 0.01,
+            "Vang twist must visibly change");
+        var foot = SailingVisuals.EdgeSection(shape, false);
+        var head = SailingVisuals.EdgeSection(shape, true);
+        Near(foot.HeightM, 0); Near(head.HeightM, SectionalSailModel.HeightM);
+        Near(foot.ChordM, 2 * SectionalSailModel.AreaM2 / SectionalSailModel.HeightM); Near(head.ChordM, 0);
+        var luff = model.Shape(Evaluation(new(), new(-5, 0, 0), 0));
+        Require(luff.Sections[0].Luffing > 0.99, "Luff fixture");
+        Require((SailingVisuals.SailPoint(luff.Sections[0], 0.4, 0) - SailingVisuals.SailPoint(luff.Sections[0], 0.4, 0.07)).Length > 0.03,
+            "Luff must visibly flutter");
+        Require(luff.Sections.Sum(x => x.Force.ForceWorldN.Length) < shape.Sections.Sum(x => x.Force.ForceWorldN.Length) * 0.01,
+            "Visible luff must share reduced aerodynamic force");
+        var noWind = luff.Sections[0] with { ApparentWindBodyMps = default };
+        Require(SailingVisuals.SailPoint(noWind, 0.4, 0) == SailingVisuals.SailPoint(noWind, 0.4, 1), "No wind cannot animate sail");
+    }),
+    ("Telltales stream, reverse, droop and break up with local flow", () =>
+    {
+        var section = new SailSectionState(2, 1, 1.5, 0, 0.08, 0, 0,
+            new(0.05, 0, -2.5), new(-5, 0, 0), default);
+        foreach (var side in new[] { -1, 1 })
+        {
+            var root = SailingVisuals.TelltalePoint(section, side, 0, 0);
+            var tip = SailingVisuals.TelltalePoint(section, side, 1, 0);
+            Require(tip.X < root.X - 0.25, "Attached local flow must stream aft");
+            var reversed = section with { ApparentWindBodyMps = new(5, 0, 0) };
+            Require(SailingVisuals.TelltalePoint(reversed, side, 1, 0).X > SailingVisuals.TelltalePoint(reversed, side, 0, 0).X + 0.25,
+                "Reverse flow must reverse the ribbon");
+            var stopped = section with { ApparentWindBodyMps = default };
+            var hanging = SailingVisuals.TelltalePoint(stopped, side, 1, 0);
+            Require(hanging.Z > SailingVisuals.TelltalePoint(stopped, side, 0, 0).Z + 0.25, "Still-air ribbon must droop");
+            Require(hanging == SailingVisuals.TelltalePoint(stopped, side, 1, 3), "Still air cannot flutter");
+        }
+        var separated = section with { ApparentWindBodyMps = new(0, 5, 0) };
+        Require(SailingVisuals.Separation(section) == 0 && SailingVisuals.Separation(separated) == 1, "Local incidence separation cue");
+        Require((SailingVisuals.TelltalePoint(separated, 1, 1, 0) - SailingVisuals.TelltalePoint(separated, 1, 1, 0.07)).Length > 0.02,
+            "Separated telltale must visibly break up");
+    }),
+    ("Rendered spectral inputs match physical wave elevation and normals", () =>
+    {
+        foreach (var preset in Enum.GetValues<WavePreset>())
+        foreach (var direction in new[] { 0.0, 75, 210 })
+        {
+            var environment = PresentationConversions.EnvironmentFromSettings(wavePreset: preset,
+                waveDirectionMode: WaveDirectionMode.Independent, waveFromDegrees: direction, waveSeed: 123);
+            foreach (var time in new[] { 0.0, 1.7, 19.0 })
+            foreach (var position in new[] { new Vector3d(0, 0, 0), new Vector3d(7, -13, 0), new Vector3d(-83, 142, 0) })
+            {
+                var godot = PresentationConversions.WorldToGodot(position);
+                double height = 0, slopeX = 0, slopeZ = 0;
+                foreach (var component in environment.Water.Components)
+                {
+                    var m = SailingVisuals.WaterMode(component);
+                    var phase = m.Wavenumber * (m.DirectionX * godot.X + m.DirectionZ * godot.Z) - m.Frequency * time + m.Phase;
+                    height += m.AmplitudeM * Math.Cos(phase);
+                    slopeX += m.DirectionX * m.AmplitudeM * m.Wavenumber * Math.Sin(phase);
+                    slopeZ += m.DirectionZ * m.AmplitudeM * m.Wavenumber * Math.Sin(phase);
+                }
+                var water = environment.Water.SampleSurface(position, time);
+                Near(height, water.ElevationM);
+                var normal = PresentationConversions.WorldToGodot(water.NormalWorld);
+                var length = Math.Sqrt(1 + slopeX * slopeX + slopeZ * slopeZ);
+                Near(normal.X, slopeX / length); Near(normal.Y, 1 / length); Near(normal.Z, slopeZ / length);
+            }
+        }
+    }),
+    ("Wake follows water-relative motion with bounded simulation-time history", () =>
+    {
+        var trail = new WakeTrail();
+        var input = new SimulationInput(new(), PresentationConversions.EnvironmentFromSettings(wavePreset: WavePreset.Calm, waveSeed: 123));
+        var state = new SimulationState(0, 0, RigidBodyState.AtRest, input) { Mass = new IlcaMassModel().Evaluate(input.Controls) };
+        trail.Update(state);
+        Require(trail.Samples.Count == 0, "Stopped boat cannot create wake");
+        for (var i = 1; i <= 600; i++)
+        {
+            var time = i / 60.0;
+            trail.Update(state with { StepIndex = i, TimeSeconds = time, Boat = state.Boat with
+            { PositionWorldM = new(time * 2, 0, 0), LinearVelocityWorldMps = new(2, 0, 0) } });
+        }
+        Require(trail.Samples.Count > 50 && trail.Samples.Count <= WakeTrail.Capacity, "Wake history bound");
+        var count = trail.Samples.Count;
+        trail.Update(state with { TimeSeconds = 10 });
+        Require(trail.Samples.Count == count, "Repeated rendering cannot create extra wake");
+        Require(trail.Samples.All(x => x.TimeSeconds >= 3 && x.SideWorld == Vector3d.UnitY), "Wake age or transverse direction");
+        trail.Update(state with { TimeSeconds = 18 });
+        Require(trail.Samples.Count == 0, "Stopped wake must decay completely");
+    }),
     ("Ten-second ILCA wall-clock cadence without render reads", () =>
     {
         var input = new SimulationInput(new SailingControls(mainsheet: 0.6, traveler: 0.8, vang: 0.6,

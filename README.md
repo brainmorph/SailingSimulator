@@ -6,9 +6,11 @@ model advances a six-degree-of-freedom ILCA 7 with sail trim, separate foils,
 sampled hull forces, and hiking in steady wind over seeded irregular waves.
 Calm, gentle (default), and moderate water presets are available. Its physics
 coefficients, component masses and wave presets are provisional. A Godot
-test scene now connects keyboard controls and a mouse orbit camera to the
-simulation on a dedicated 60 Hz thread. Final visual feedback and performance
-calibration follow in later phases.
+scene connects keyboard controls to the simulation on a dedicated 60 Hz
+thread. Sectional sail shape, luffing, airflow telltales, sailor/foil positions,
+waves and a fading wake provide visual feedback, with switchable onboard and
+third-person cameras. Debug tools and performance calibration follow in later
+phases.
 
 Use a .NET 8 SDK. No third-party packages or Godot installation are needed to
 build the foundation. `global.json` selects the latest installed .NET 8 SDK
@@ -52,3 +54,5 @@ mass estimates and limitations, and [wind and waves](docs/wind-and-waves.md)
 for physical presets, seeded sampling and the Godot handoff.
 See [Godot integration](docs/godot-integration.md) for thread ownership,
 input publication, rendering transforms, deadlines and lifecycle behavior.
+See [visual feedback](docs/visual-feedback.md) for the shared sail/water
+representation, camera behavior and repeatable visual review checklist.

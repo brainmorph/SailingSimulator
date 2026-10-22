@@ -7,17 +7,21 @@ using System.Diagnostics;
 public partial class SailingScene : Node3D
 {
     private SimulationRunner? runner;
-    private Node3D boat = null!;
-    private Node3D boom = null!;
-    private MeshInstance3D water = null!;
+    private BoatPresentation boat = null!;
+    private WaterPresentation water = null!;
     private Camera3D camera = null!;
     private Label status = null!;
     private EnvironmentConfig environment = null!;
     private bool focused = true;
     private bool orbiting;
-    private float cameraYaw = 0.6f;
-    private float cameraPitch = 0.35f;
-    private float cameraDistance = 10;
+    private float cameraYaw = -0.75f;
+    private float cameraPitch = 0.28f;
+    private float cameraDistance = 10.5f;
+    private bool onboard;
+    private float onboardYaw;
+    private float onboardPitch = 0.08f;
+    private float onboardFov = 80;
+    private long visualStep = -1;
     private bool smokeTest;
     private bool stalled;
     private bool released;
@@ -39,6 +43,11 @@ public partial class SailingScene : Node3D
             }
         }
         BuildScene();
+        if (OS.GetCmdlineUserArgs().Contains("--visual-review"))
+        {
+            StartVisualReview();
+            return;
+        }
         environment = PresentationConversions.EnvironmentFromSettings(waveSeed: smokeTest ? 123 : null);
         var controls = new SailingControls(mainsheet: 0.6, traveler: 0.8, vang: 0.6,
             outhaul: 0.5, cunningham: 0.3, hiking: -0.3);
@@ -59,6 +68,7 @@ public partial class SailingScene : Node3D
 
     public override void _Process(double delta)
     {
+        if (visualReview) { ProcessVisualReview(); return; }
         if (runner is null) return;
         runner.PublishInput(new(focused ? SailingKeyMap.Read() : HeldSailingInput.Released, environment));
         var snapshot = runner.Latest; // One completed snapshot drives the whole render frame.
@@ -70,29 +80,67 @@ public partial class SailingScene : Node3D
 
     private void Render(SimulationState state)
     {
-        // Simulation position is combined COM; meshes are authored around the hull datum.
-        var hullDatum = state.Boat.PositionWorldM - state.Boat.OrientationBodyToWorld.Rotate(state.Mass!.CenterOfMassBodyM);
-        boat.Transform = new(new Basis(ToGodot(state.Boat.OrientationBodyToWorld)), ToGodot(hullDatum));
-        boom.Rotation = new(0, -(float)state.Rig.BoomAngleRad, 0);
-        water.Position = new(boat.Position.X, 0, boat.Position.Z);
-        var target = boat.Position + Vector3.Up * 0.8f;
-        camera.Position = target + new Vector3(Mathf.Sin(cameraYaw) * Mathf.Cos(cameraPitch),
-            Mathf.Sin(cameraPitch), Mathf.Cos(cameraYaw) * Mathf.Cos(cameraPitch)) * cameraDistance;
-        camera.LookAt(target);
+        if (state.StepIndex != visualStep)
+        {
+            boat.Render(state);
+            water.Render(state, boat.Position);
+            visualStep = state.StepIndex;
+        }
+        UpdateCamera();
+    }
+
+    private void UpdateCamera()
+    {
+        boat.Sailor.Visible = !onboard;
+        if (onboard)
+        {
+            camera.Fov = onboardFov;
+            camera.Near = 0.04f;
+            camera.Position = boat.ToGlobal(boat.Sailor.Position + new Vector3(0, 0.72f, 0.35f));
+            var direction = new Vector3(Mathf.Sin(onboardYaw) * Mathf.Cos(onboardPitch),
+                Mathf.Sin(onboardPitch), -Mathf.Cos(onboardYaw) * Mathf.Cos(onboardPitch));
+            camera.LookAt(camera.Position + boat.Basis * direction, boat.Basis * Vector3.Up);
+        }
+        else
+        {
+            camera.Fov = 65;
+            camera.Near = 0.1f;
+            var target = boat.Position + Vector3.Up * 2.1f;
+            var forward = -boat.Basis.Z;
+            var heading = Mathf.Atan2(-forward.X, -forward.Z);
+            var yaw = cameraYaw + heading;
+            camera.Position = target + new Vector3(Mathf.Sin(yaw) * Mathf.Cos(cameraPitch),
+                Mathf.Sin(cameraPitch), Mathf.Cos(yaw) * Mathf.Cos(cameraPitch)) * cameraDistance;
+            camera.LookAt(target);
+        }
     }
 
     public override void _UnhandledInput(InputEvent @event)
     {
+        if (@event is InputEventKey key && key.PhysicalKeycode == Key.C && key.Pressed && !key.Echo && focused)
+            onboard = !onboard;
         if (@event is InputEventMouseButton button)
         {
             if (button.ButtonIndex == MouseButton.Right) orbiting = button.Pressed && focused;
-            if (button.Pressed && button.ButtonIndex == MouseButton.WheelUp) cameraDistance = Mathf.Max(4, cameraDistance - 1);
-            if (button.Pressed && button.ButtonIndex == MouseButton.WheelDown) cameraDistance = Mathf.Min(30, cameraDistance + 1);
+            if (button.Pressed && focused)
+            {
+                var zoom = button.ButtonIndex == MouseButton.WheelUp ? -1 : button.ButtonIndex == MouseButton.WheelDown ? 1 : 0;
+                if (onboard) onboardFov = Mathf.Clamp(onboardFov + zoom * 3, 55, 95);
+                else cameraDistance = Mathf.Clamp(cameraDistance + zoom, 4, 30);
+            }
         }
         if (@event is InputEventMouseMotion motion && orbiting)
         {
-            cameraYaw -= motion.Relative.X * 0.005f;
-            cameraPitch = Mathf.Clamp(cameraPitch + motion.Relative.Y * 0.005f, 0.08f, 1.35f);
+            if (onboard)
+            {
+                onboardYaw = Mathf.Clamp(onboardYaw - motion.Relative.X * 0.005f, -2.6f, 2.6f);
+                onboardPitch = Mathf.Clamp(onboardPitch + motion.Relative.Y * 0.005f, -0.5f, 1.3f);
+            }
+            else
+            {
+                cameraYaw -= motion.Relative.X * 0.005f;
+                cameraPitch = Mathf.Clamp(cameraPitch + motion.Relative.Y * 0.005f, 0.08f, 1.35f);
+            }
         }
     }
 
@@ -118,52 +166,34 @@ public partial class SailingScene : Node3D
     {
         var light = new DirectionalLight3D { RotationDegrees = new(-45, -35, 0), LightEnergy = 1.2f };
         AddChild(light);
-        boat = new Node3D { Name = "Boat" };
+        var world = new WorldEnvironment
+        {
+            Environment = new Godot.Environment
+            {
+                BackgroundMode = Godot.Environment.BGMode.ClearColor,
+                AmbientLightSource = Godot.Environment.AmbientSource.Color,
+                AmbientLightColor = new(0.65f, 0.76f, 0.85f), AmbientLightEnergy = 0.65f,
+                TonemapMode = Godot.Environment.ToneMapper.Filmic
+            }
+        };
+        AddChild(world);
+        boat = new BoatPresentation { Name = "Boat" };
         AddChild(boat);
-        AddMesh(boat, new BoxMesh { Size = new(1.37f, 0.25f, 4.23f) }, new(0, 0, 0), new(0.88f, 0.9f, 0.86f));
-        AddMesh(boat, new CylinderMesh { TopRadius = 0.035f, BottomRadius = 0.045f, Height = 5.7f },
-            new(0, 2.85f, -0.55f), new(0.24f, 0.27f, 0.29f));
-        boom = new Node3D { Name = "Boom", Position = new(0, 0.65f, -0.55f) };
-        boat.AddChild(boom);
-        AddMesh(boom, new BoxMesh { Size = new(0.06f, 0.06f, 2.5f) }, new(0, 0, 1.25f), new(0.24f, 0.27f, 0.29f));
-        // A simple rig proxy for integration; sectional sail feedback belongs to Phase 6.
-        var sail = new ImmediateMesh();
-        sail.SurfaceBegin(Mesh.PrimitiveType.Triangles);
-        sail.SurfaceAddVertex(new(0, 0, 0));
-        sail.SurfaceAddVertex(new(0, 4.9f, 0));
-        sail.SurfaceAddVertex(new(0, 0, 2.5f));
-        sail.SurfaceEnd();
-        AddMesh(boom, sail, Vector3.Zero, new(0.96f, 0.95f, 0.85f));
-        water = AddMesh(this, new PlaneMesh { Size = new(2000, 2000) }, Vector3.Zero, new(0.08f, 0.3f, 0.41f));
-        camera = new Camera3D { Current = true, Far = 1500 };
+        boat.Build();
+        water = new WaterPresentation { Name = "Water" };
+        AddChild(water);
+        water.Build();
+        camera = new Camera3D { Current = true, Far = 1800 };
         AddChild(camera);
         var canvas = new CanvasLayer();
         AddChild(canvas);
         status = new Label { Position = new(16, 16) };
         canvas.AddChild(status);
-    }
-
-    private static MeshInstance3D AddMesh(Node parent, Mesh mesh, Vector3 position, Color color)
-    {
-        var node = new MeshInstance3D
+        canvas.AddChild(new Label
         {
-            Mesh = mesh, Position = position,
-            MaterialOverride = new StandardMaterial3D { AlbedoColor = color, CullMode = BaseMaterial3D.CullModeEnum.Disabled }
-        };
-        parent.AddChild(node);
-        return node;
-    }
-
-    private static Vector3 ToGodot(Vector3d value)
-    {
-        var v = PresentationConversions.WorldToGodot(value);
-        return new((float)v.X, (float)v.Y, (float)v.Z);
-    }
-
-    private static Quaternion ToGodot(Quaterniond value)
-    {
-        var q = PresentationConversions.BodyToWorldToGodot(value);
-        return new((float)q.X, (float)q.Y, (float)q.Z, (float)q.W);
+            Text = "C  Camera    ·    Right drag  Look    ·    Wheel  Zoom",
+            Position = new(16, 680), Modulate = new(0.9f, 0.94f, 0.96f, 0.8f)
+        });
     }
 
     private void SmokeCheck(RunnerSnapshot snapshot)
@@ -174,8 +204,8 @@ public partial class SailingScene : Node3D
             Require(snapshot.State.StepIndex >= previousRenderedStep, "snapshot order");
             previousRenderedStep = snapshot.State.StepIndex;
             var datum = snapshot.State.Boat.PositionWorldM - snapshot.State.Boat.OrientationBodyToWorld.Rotate(snapshot.State.Mass!.CenterOfMassBodyM);
-            Require(boat.Position.DistanceTo(ToGodot(datum)) < 0.0001, "rendered hull datum");
-            Require(Math.Abs(boat.Quaternion.Dot(ToGodot(snapshot.State.Boat.OrientationBodyToWorld))) > 0.9999, "rendered orientation");
+            Require(boat.Position.DistanceTo(SceneFrames.ToGodot(datum)) < 0.0001, "rendered hull datum");
+            Require(Math.Abs(boat.Quaternion.Dot(SceneFrames.ToGodot(snapshot.State.Boat.OrientationBodyToWorld))) > 0.9999, "rendered orientation");
             var elapsed = Stopwatch.GetElapsedTime(smokeStart).TotalSeconds;
             if (!stalled && elapsed > 0.4)
             {
@@ -197,9 +227,10 @@ public partial class SailingScene : Node3D
                 _UnhandledInput(new InputEventMouseMotion { Relative = new(20, 10) });
                 Require(cameraYaw != beforeYaw, "mouse actually moves the camera");
                 Require(SailingKeyMap.Read() == beforeMouse, "camera leaves sailing keys unchanged");
+                VerifyPresentation(snapshot.State);
                 runner!.Stop();
                 Require(!runner.Latest.Running, "shutdown joins worker");
-                GD.Print($"PASS Godot scene: keys, transforms, focus, render stall, camera isolation, shutdown; steps={runner.Latest.State.StepIndex}");
+                GD.Print($"PASS Godot scene: keys, transforms, focus, render stall, both cameras, sectional sail, foils/body, waves, camera isolation, shutdown; steps={runner.Latest.State.StepIndex}");
                 GetTree().Quit();
             }
         }
@@ -208,6 +239,61 @@ public partial class SailingScene : Node3D
             GD.PushError($"FAIL Godot smoke: {exception.Message}");
             GetTree().Quit(1);
         }
+    }
+
+    private void VerifyPresentation(SimulationState state)
+    {
+        Require(boat.SailMesh.GetSurfaceCount() == 1, "sectional sail mesh");
+        var sailVertices = boat.SailMesh.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array();
+        var first = SailingVisuals.SailPoint(SailingVisuals.EdgeSection(state.Diagnostics!.SailShape, false), 0, state.TimeSeconds);
+        Require(sailVertices[0].DistanceTo(SceneFrames.ToGodot(first)) < 1e-5, "sail uses published geometry");
+        for (var row = 0; row < state.Diagnostics.SailShape.Sections.Count; row++)
+        for (var column = 0; column < 10; column++)
+        {
+            var expected = SailingVisuals.SailPoint(state.Diagnostics.SailShape.Sections[row], column / 10.0, state.TimeSeconds);
+            Require(sailVertices[(row + 1) * 60 + column * 6].DistanceTo(SceneFrames.ToGodot(expected)) < 1e-5,
+                "all sail strips use published geometry");
+        }
+        var chordEnd = boat.Boom.ToGlobal(new(0, 0, 1));
+        var expectedChord = boat.ToGlobal(new((float)Math.Sin(state.Rig.BoomAngleRad), 0.5f,
+            -(float)SectionalSailModel.MastXM + (float)Math.Cos(state.Rig.BoomAngleRad)));
+        Require(chordEnd.DistanceTo(expectedChord) < 1e-5, "boom side matches aerodynamic chord");
+        var mass = new IlcaMassModel().Contributors(state.Input.Controls);
+        Require(boat.Sailor.Position.DistanceTo(SceneFrames.ToGodot(mass.Single(c => c.Name == "Sailor").CenterBodyM)) < 1e-5, "sailor mass location");
+        Require(boat.Board.Position.DistanceTo(SceneFrames.ToGodot(mass.Single(c => c.Name == "Centerboard").CenterBodyM)) < 1e-5, "board mass location");
+        Require((int)water.Material.GetShaderParameter("mode_count") == state.Input.Environment.Water.Components.Count, "shared wave spectrum");
+        Require(Math.Abs((float)water.Material.GetShaderParameter("simulation_time") - state.TimeSeconds) < 1e-4, "shared wave time");
+        var keys = SailingKeyMap.Read();
+        UpdateCamera();
+        var thirdPosition = camera.Position;
+        _UnhandledInput(new InputEventKey { PhysicalKeycode = Key.C, Pressed = true });
+        UpdateCamera();
+        Require(onboard && camera.Position.DistanceTo(thirdPosition) > 1, "C switches camera");
+        Require(camera.Position.DistanceTo(boat.ToGlobal(boat.Sailor.Position + new Vector3(0, 0.72f, 0.35f))) < 1e-5, "onboard attachment");
+        var before = camera.Transform;
+        _UnhandledInput(new InputEventMouseMotion { Relative = new(15, 10) });
+        _UnhandledInput(new InputEventMouseButton { ButtonIndex = MouseButton.WheelUp, Pressed = true });
+        UpdateCamera();
+        Require(camera.Transform != before && camera.Fov < 80, "onboard look and zoom");
+        Require(SailingKeyMap.Read() == keys, "both camera modes isolate sailing input");
+        _Notification((int)NotificationApplicationFocusOut);
+        var savedYaw = onboardYaw;
+        _UnhandledInput(new InputEventMouseMotion { Relative = new(50, 50) });
+        Require(onboardYaw == savedYaw, "focus loss stops onboard look");
+        _Notification((int)NotificationApplicationFocusIn);
+        _UnhandledInput(new InputEventKey { PhysicalKeycode = Key.C, Pressed = true });
+        UpdateCamera();
+        Require(!onboard && camera.Position.DistanceTo(thirdPosition) < 1e-5, "third-person orbit retained");
+        var stillShape = state.Diagnostics.SailShape with
+        {
+            Sections = state.Diagnostics.SailShape.Sections.Select(s => s with { ApparentWindBodyMps = default }).ToArray()
+        };
+        boat.RenderSail(stillShape, state.TimeSeconds);
+        var drooping = boat.TelltaleMesh.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array();
+        for (var i = 0; i < drooping.Length; i += 3)
+            Require((drooping[i + 1] - drooping[i]).Cross(drooping[i + 2] - drooping[i]).LengthSquared() > 1e-10,
+                "still-air telltales have visible area");
+        boat.RenderSail(state.Diagnostics.SailShape, state.TimeSeconds);
     }
 
     private static void VerifyKeyBindings()

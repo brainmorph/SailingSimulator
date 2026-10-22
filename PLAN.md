@@ -15,7 +15,7 @@ Build a sailing simulator in C# with Godot, aiming for physics fidelity comparab
 | Engine and language | Godot and C# |
 | World representation | Full 3D simulation and presentation |
 | Initial input | Keyboard and mouse |
-| Input roles | Keyboard controls sailing; mouse controls the camera |
+| Input roles | Keyboard controls sailing; C switches camera view; mouse controls look and zoom |
 | Input handoff | Godot publishes a thread-safe snapshot of current sailing control states for the simulation thread to sample each step |
 | Input response | Hold keys for smooth, gradual adjustments |
 | Key binding settings | Fixed defaults in the first playable version; no rebinding UI initially |
@@ -52,7 +52,7 @@ Build a sailing simulator in C# with Godot, aiming for physics fidelity comparab
 | Sail feedback | Control inputs affect visible sail shape, twist, and luffing as well as force |
 | Poor-trim feedback | Clear sail luffing accompanies reduced sail force |
 | Visual quality priority | Physics fidelity and smooth simulation take priority; modest graphics are acceptable |
-| Camera | Switchable onboard and third-person views |
+| Camera | Switchable onboard and third-person views with C; independent look/zoom settings |
 | Debugging | F1 toggles a detailed display of simulation numbers |
 | Debug display | Numeric values and live graphs |
 | Controls | Tiller, mainsheet, traveler, vang, outhaul, cunningham, and adjustable centerboard position |
@@ -146,6 +146,7 @@ Build a sailing simulator in C# with Godot, aiming for physics fidelity comparab
 - Environment creation chooses a random wave seed when omitted; an explicit integer reproduces a realization. Preserve that seed when editing settings so slider changes do not reshuffle the wave phases. Physics and rendering sampling consume no randomness.
 - Godot will render the state produced by the C# simulation.
 - Phase 5 implements the [Godot host and thread boundary](docs/godot-integration.md): immutable held-key/environment publication, fixed-step control ramps, completed state/timing snapshots, absolute 60 Hz deadlines, visible misses/faults, and joined shutdown. The root solution stays engine-independent; build the Godot 4.7 .NET project separately. Render meshes use the hull datum, offset from the published combined centre of mass.
+- Phase 6 implements [visual feedback and cameras](docs/visual-feedback.md): sectional sail camber/twist and wind-gated luffing from aerodynamic diagnostics; paired airflow telltales; mass-following sailor/board and rudder meshes; shared-spectrum wave rendering and a bounded, fading wake. C switches a heading-following third-person orbit and a body-following onboard view; mouse look/zoom never changes sailing input. Ribbon separation thresholds and wake/cloth animation are presentation estimates pending sailor review. Water geometry approximates the continuous field between vertices.
 - The simulation will calculate all six degrees of boat motion.
 - Centerboard and rudder forces will be modeled separately from hull drag.
 - Sample buoyancy and drag along the hull so waves can affect all six degrees of motion.
@@ -164,7 +165,6 @@ Build a sailing simulator in C# with Godot, aiming for physics fidelity comparab
 ### Working proposal (to review)
 
 - Give the standalone simulation library an explicit interface for control inputs, configuration, and output state for rendering.
-- Expose sail-shape state from C# so Godot can render control-dependent sail shape and luffing.
 - Represent the boat, wind, and water as explicit simulation state so additional boat classes and environment models can be added later.
 - Make the F1 debug display read the same simulation state that drives the boat, so it can expose forces, angles, control inputs, and resulting motion as those values are defined.
 
@@ -232,7 +232,7 @@ Record values with units and source or rationale. Keep experimental conditions a
 - Extract and verify numeric ILCA 7/Laser VPP polar values, conditions, and crew/rig assumptions before calibration; current sources do not yet provide a verified numeric target table.
 - Wind and wave settings use the confirmed knots/compass angles and calm/gentle/moderate presets. F1 presentation remains Phase 7 work.
 - The initial fixed keys and adjustment rates are documented in [the host controls](godot/README.md). Assess their usability during visual review and calibration.
-- How should the low-fidelity renderer show sail shape, telltales, heel, wake, and wave motion clearly?
+- Phase 6's low-fidelity renderer now shows shared sail shape, telltales, heel, wake and waves; assess cue readability and camera usability with sailor feedback during calibration. Presentation heuristics and the reproducible review checklist are recorded in [visual feedback](docs/visual-feedback.md).
 
 ## Deferred scope
 

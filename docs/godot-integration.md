@@ -44,8 +44,10 @@ datum, so the rendered origin is:
 
 Convert that position and the orientation at the boundary. Without this
 offset, hiking and board changes would visually move the hull incorrectly.
-The temporary boom proxy reads `state.Rig.BoomAngleRad`. Phase 6 must use
-the same snapshot's sail sections and water/time for the final visual cues.
+The boom reads `state.Rig.BoomAngleRad`; its Godot Y rotation is positive for
+positive core boom angle, matching the aft/starboard aerodynamic chord.
+Phase 6 uses the same snapshot's sail sections and water/time for the
+[visual cues and cameras](visual-feedback.md).
 
 ## Wall-clock cadence
 
@@ -95,6 +97,7 @@ and concurrent shutdown, overload warnings and a ten-second ILCA cadence
 with no render callbacks. The real Godot scene also has `--smoke-test`:
 see [launch and controls](../godot/README.md).
 
-Headless checks verify scene execution and transforms, not visual usability
-or desktop render FPS. Phase 6 owns visual review and two camera views;
-Phase 7 owns full performance diagnostics; Phase 8 owns physics calibration.
+Headless checks verify scene execution and transforms. Phase 6 also provides
+rendered fixtures and a visual review checklist; these do not establish
+desktop render FPS or sailor validation. Phase 7 owns full performance
+diagnostics; Phase 8 owns physics calibration.
