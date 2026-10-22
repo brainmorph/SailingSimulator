@@ -276,7 +276,7 @@ foreach (var (name, run) in selected) { run(); Console.WriteLine($"PASS {name}")
 Console.WriteLine($"Phase 3 boat physics: {selected.Length} regression groups passed.");
 
 SimulationInput Input(SailingControls c, double knots, double from = 270) => new(c,
-    PresentationConversions.EnvironmentFromSettings(windSpeedKnots: knots, windFromDegrees: from, wavePreset: WavePreset.Calm));
+    PresentationConversions.EnvironmentFromSettings(windSpeedKnots: knots, windFromDegrees: from, wavePreset: WavePreset.Calm, waveSeed: 1));
 ForceEvaluation Evaluation(RigidBodyState state, SimulationInput input) => new(0, state, masses.Evaluate(input.Controls), input);
 Simulation Make(SimulationInput input, double heading = 0) => new(boatModel.CreateInitialState(input, heading), masses, boatModel, input);
 

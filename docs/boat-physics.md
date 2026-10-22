@@ -1,8 +1,9 @@
 # Initial ILCA 7 physics
 
-Phase 3 is an **uncalibrated reduced-order model**, in flat fresh water with
-uniform steady wind. It is a starting point for wave integration and later
-calibration, not a prediction of measured ILCA speed or handling. No published
+Phase 3 introduced an **uncalibrated reduced-order model**, in flat fresh water with
+uniform steady wind. Phase 4 extends it with [seeded waves](wind-and-waves.md).
+The calm preset preserves the original flat-water baseline for later
+calibration. The model does not predict measured ILCA speed or handling. No published
 coefficient table or VPP polar has been substituted with invented targets.
 
 ## Run and inspect
@@ -100,7 +101,8 @@ wet centroid, using 1000 kg/m³ fresh water and gravity 9.80665 m/s². Rotated
 endpoints determine the submerged fraction; transverse quadrature approximates
 the continuous hull. There is no flooded-hull or capsize recovery model.
 
-At each wet centroid, local velocity includes `ω × offset`. Drag is
+At each wet centroid, local velocity includes `ω × offset`, minus local wave
+orbital velocity in Phase 4. Calm water has zero orbital velocity. Drag is
 `−Awet (0.5 ρ Cd vi |vi| + bi vi)` per body axis. Estimated `(CdX,CdY,CdZ)`
 are `(0.012,0.08,0.80)`; linear coefficients `(bX,bY,bZ)` are `(0.4,5,30)`
 N s/m³. `Awet` is column area times `min(1, submergedLength/0.05 m)`.
@@ -181,8 +183,10 @@ and fixed-step bounded motion at 0, 10 and 30 knots. These are physical-contract
 and numerical tests, not sailor validation or a polar calibration. Strong wind
 or poor hiking can overturn the boat; capsize recovery is deferred.
 
-Phase 4 should replace the flat-water elevation/velocity assumption at hull
-and foil samples with a seeded surface evaluated at each RK4 stage's time.
-Retain the still-water regression baseline. Godot controls/threading remain
+Phase 4 replaces the flat-water elevation/velocity assumption at hull
+and foil samples with a seeded surface evaluated at each RK4 stage's time;
+the calm preset retains the still-water regression baseline. See
+[the environment model](wind-and-waves.md) for equations and limitations.
+Godot controls/threading remain
 Phase 5, rendering Phase 6, instrumentation Phase 7 and performance calibration
 Phase 8. The unresolved mass and source-compatibility questions still apply.

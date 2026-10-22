@@ -141,6 +141,8 @@ Build a sailing simulator in C# with Godot, aiming for physics fidelity comparab
 - Phase 2 world frame is north/east/down (+X north, +Y east, +Z down). Position and linear velocity are world-relative; angular velocity is body-relative. Double-precision Hamilton quaternions map body axes into world axes; see [the core API](docs/simulation-core.md).
 - Phase 3 implements a provisional flat-water ILCA 7 model with sampled buoyancy/drag, separate foil forces, six sail sections and a dynamic boom. All estimated mass allocations, geometry and coefficients are documented in [the boat physics model](docs/boat-physics.md); they are not measured calibration data. Positive tiller turns to starboard in forward flow; positive hiking places the sailor to starboard.
 - Phase 3 combines the provisional 58 kg equipped budget and separate 80 kg sailor through full mass-weighted centres and inertia tensors. Internal repositioning preserves the combined centre of mass and angular momentum at the step boundary, using a documented quasi-static approximation. The class-rule review did not resolve the 58 kg removable-equipment interpretation; it remains an open calibration issue.
+- Phase 4 adds an immutable seeded directional linear-wave spectrum, sampled at each RK4 stage for hull/foil immersion and local water-relative flow. Calm is flat/stationary; gentle and moderate use provisional spectral significant heights of 0.12 m and 0.30 m, with 3–12 m wavelengths and ±25° directional spread. See [wind and waves](docs/wind-and-waves.md) for equations, assumptions and rendering access. These values are design estimates pending calibration.
+- Environment creation chooses a random wave seed when omitted; an explicit integer reproduces a realization. Preserve that seed when editing settings so slider changes do not reshuffle the wave phases. Physics and rendering sampling consume no randomness.
 - Godot will render the state produced by the C# simulation.
 - The simulation will calculate all six degrees of boat motion.
 - Centerboard and rudder forces will be modeled separately from hull drag.
@@ -214,9 +216,9 @@ ILCA Australia gives an ideal ILCA 7 sailor weight range of 75–85 kg and a typ
 - Extract numeric VPP polar targets from the 2022 downwind study and/or 2016 Laser-dinghy study; record their exact conditions and model assumptions before calibration.
 - Verify whether the 80 kg reference sailor mass is compatible with the crew assumptions in the selected velocity-prediction data. A separate 2017 Laser VPP uses 80 kg as its baseline crew, but that does not establish compatibility with the 2022 ILCA 7 model.
 - Verify the working interpretation of the handbook's 58 kg nominal weight (with fittings) against class measurement rules and the selected VPP assumptions; avoid double-counting the rig or removable gear.
-- Wind speed range and direction controls for open practice (default: steady 10 knots).
+- Wind speed/direction ranges are resolved: 0–30 knots (10 default), 0–360° from-bearing. Phase 4 verifies their existing adapter conversion; Phase 7 supplies F1 controls.
 - Expected boat-speed and pointing targets at representative upwind, reaching, and downwind angles, with source conditions recorded. The identified 2022 VPP source is downwind-focused; locate or extract suitable upwind/reaching data.
-- Wave height, wavelength, and direction ranges for the adjustable physical wave model.
+- Phase 4 selects provisional wave height, wavelength and spread ranges in [the environment model](docs/wind-and-waves.md). Calibrate these estimates against desired practice conditions and sailor feedback; they are not measured sea states.
 - Water current model and settings (deferred from the initial environment).
 - Any reliable upwind or broad-reach ILCA 7 performance data beyond the identified studies.
 
@@ -224,9 +226,9 @@ Record values with units and source or rationale. Keep experimental conditions a
 
 ## Open questions
 
-- The initial sectional sail, centerboard, rudder and flat-water hull equations and provisional coefficients are recorded in [the Phase 3 model](docs/boat-physics.md). Which measured coefficients should replace or calibrate them, and which wave equations should extend them?
+- The initial sectional sail, centerboard, rudder and hull equations and provisional coefficients are recorded in [the Phase 3 model](docs/boat-physics.md), extended with [Phase 4 waves](docs/wind-and-waves.md). Which measured coefficients should replace or calibrate them?
 - Extract and verify numeric ILCA 7/Laser VPP polar values, conditions, and crew/rig assumptions before calibration; current sources do not yet provide a verified numeric target table.
-- What ranges and units should the player-facing wind and wave settings use?
+- Wind and wave settings use the confirmed knots/compass angles and calm/gentle/moderate presets. F1 presentation remains Phase 7 work.
 - What fixed key layout should control steering, trim, hiking, and centerboard position?
 - How should the low-fidelity renderer show sail shape, telltales, heel, wake, and wave motion clearly?
 

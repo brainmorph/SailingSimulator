@@ -44,10 +44,15 @@ direction mode, horizontal unit wave propagation vector, and integer seed.
 Directions are propagation vectors rather than compass degrees. Aligned waves
 retain the wind's requested direction even at zero wind speed. Independent
 waves require their own from-angle; aligned mode rejects an independent angle.
-The default settings are 10 knots from north, gentle waves aligned with wind,
-and seed 1. Callers can choose a different seed for varied sessions. The
-Phase 3 sail model uses true wind explicitly. No wave surface, wave physical
-ranges, current, or implicit wind force exists yet.
+The default settings are 10 knots from north and gentle waves aligned with wind.
+Omitting the adapter's nullable seed chooses a new seed at configuration creation;
+pass an integer for replay and preserve it during settings edits. The core
+requires an explicit seed. `EnvironmentConfig.Water` owns an immutable, thread-safe
+directional wave realization. Sample it at world positions and simulation time
+for elevation, outward NED normal and orbital velocity. Hull and separate foils
+use local elevation and water-relative velocity at every RK4 stage. The sail
+model uses true wind minus local boat/boom motion. There is no imposed current.
+See [wind and waves](wind-and-waves.md) for preset estimates and equations.
 
 `SimulationInput` packages immutable controls and configuration together.
 `SnapshotMailbox<SimulationInput>` atomically exchanges the whole reference;

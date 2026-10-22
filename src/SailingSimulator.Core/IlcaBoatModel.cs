@@ -32,11 +32,18 @@ internal static class BoatGeometry
     public static ForceMoment AtPoint(in ForceEvaluation e, Vector3d forceBody, Vector3d hullPoint) =>
         ForceMoment.AtBodyPoint(forceBody, hullPoint - e.Mass.CenterOfMassBodyM, e.Boat.OrientationBodyToWorld);
 
-    // Fraction of a straight column below the flat z=0 surface and its wet centroid.
+    public static Vector3d WaterRelativeVelocityBody(in ForceEvaluation e, Vector3d hullPoint) =>
+        PointVelocityBody(in e, hullPoint) - e.Boat.OrientationBodyToWorld.Conjugate().Rotate(
+            e.Input.Environment.Water.VelocityAt(WorldPoint(in e, hullPoint), e.TimeSeconds));
+
+    // Linearly interpolate signed endpoint depths to approximate one wet segment.
     public static (double Fraction, Vector3d Center) Submerged(in ForceEvaluation e, Vector3d top, Vector3d bottom)
     {
-        var a = WorldPoint(in e, top).Z;
-        var b = WorldPoint(in e, bottom).Z;
+        var topWorld = WorldPoint(in e, top);
+        var bottomWorld = WorldPoint(in e, bottom);
+        var water = e.Input.Environment.Water;
+        var a = topWorld.Z - water.SampleSurface(topWorld, e.TimeSeconds).PositionWorldZM;
+        var b = bottomWorld.Z - water.SampleSurface(bottomWorld, e.TimeSeconds).PositionWorldZM;
         if (a <= 0 && b <= 0) return (0, (top + bottom) / 2);
         if (a >= 0 && b >= 0) return (1, (top + bottom) / 2);
         var fraction = Math.Max(a, b) / Math.Abs(b - a);
@@ -93,7 +100,7 @@ public sealed class SampledHullModel : IForceModel
             var upwardWorld = new Vector3d(0, 0, -BoatGeometry.WaterDensityKgM3 * BoatGeometry.GravityMps2 *
                 sample.WaterplaneAreaM2 * sample.HeightM * fraction);
             buoyancy += BoatGeometry.AtPoint(in e, e.Boat.OrientationBodyToWorld.Conjugate().Rotate(upwardWorld), center);
-            var v = BoatGeometry.PointVelocityBody(in e, center);
+            var v = BoatGeometry.WaterRelativeVelocityBody(in e, center);
             var wetArea = sample.WaterplaneAreaM2 * Math.Min(1, fraction * sample.HeightM / 0.05);
             var force = new Vector3d(
                 -wetArea * (0.5 * BoatGeometry.WaterDensityKgM3 * 0.012 * v.X * Math.Abs(v.X) + 0.4 * v.X),
@@ -123,7 +130,7 @@ public sealed class FoilModel(FoilKind kind) : IForceModel
         var delta = kind == FoilKind.Rudder ? -0.45 * e.Input.Controls.Tiller : 0;
         var chord = new Vector3d(Math.Cos(delta), Math.Sin(delta), 0);
         var normal = new Vector3d(-Math.Sin(delta), Math.Cos(delta), 0);
-        var velocity = BoatGeometry.PointVelocityBody(in e, center);
+        var velocity = BoatGeometry.WaterRelativeVelocityBody(in e, center);
         var u = Vector3d.Dot(velocity, chord);
         var v = Vector3d.Dot(velocity, normal);
         var speed = Math.Sqrt(u * u + v * v);
@@ -198,7 +205,7 @@ public sealed class SectionalSailModel : IForceModel
     }
 }
 
-/// <summary>Uncalibrated ILCA 7 still-water model; ignores wave configuration until Phase 4.</summary>
+/// <summary>Uncalibrated ILCA 7 model with sampled local wave elevation and water-relative flow.</summary>
 public sealed class IlcaBoatModel : IRigDynamicsModel, IBoatDiagnosticsModel
 {
     public GravityModel Gravity { get; } = new();
@@ -235,7 +242,7 @@ public sealed class IlcaBoatModel : IRigDynamicsModel, IBoatDiagnosticsModel
         return result;
     }
 
-    /// <summary>Upright hydrostatic heave balance with neutral hiking; pitch/roll settle dynamically.</summary>
+    /// <summary>Upright instantaneous heave balance at t=0; wave motion and pitch/roll settle dynamically.</summary>
     public RigidBodyState CreateInitialState(SimulationInput input, double headingRad = 0)
     {
         var mass = new IlcaMassModel().Evaluate(input.Controls);

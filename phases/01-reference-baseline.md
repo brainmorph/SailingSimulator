@@ -52,9 +52,34 @@ do not change the source-backed baseline or resolve VPP compatibility.
 | 2016 crew-mass and rig compatibility | Verify the modeled Laser displacement, rig, and crew assumptions against the ILCA 7 baseline before transferring any result. | Phase 1 |
 | Equipped-boat mass interpretation | Check the handbook statement against current class measurement rules and the exact VPP model's included items. | Phase 1 |
 | Component masses and centers of mass | Find measured values in suitable sources or keep documented estimates; no large-scale data retrieval is justified yet. | Phase 1 / Phase 3 |
-| Wave height, wavelength, and physical ranges | Select defensible initial estimates with explicit rationale when Phase 4 models are scoped. | Phase 4 |
+| Wave height, wavelength, and physical ranges | Phase 4 selects documented design estimates below; validate practice conditions during calibration. | Phase 4 / Phase 8 |
 | Upwind/reaching speed and pointing targets | Locate a compatible measured or published source; avoid filling gaps from generic dinghy performance figures. | Phase 1 / Phase 8 |
 
 ## Source review boundary
 
 This pass used source landing pages, abstracts, handbook text, indexed article text, and the browser-extracted text of the six-page 2016 open-access paper. It did not download the 29.98 MB thesis, the 2023 coefficient dataset, or other bulk data. No complex retrieval workaround was attempted. Reviewed 2026-10-22.
+
+## Phase 4 environment estimates (2026-10-22)
+
+These are implementation choices, separate from the source-backed boat data.
+
+| Quantity | Initial value | Rationale / limitation |
+| --- | ---: | --- |
+| Calm spectral significant height | 0 m | Exact flat/stationary comparison baseline. |
+| Gentle spectral significant height | 0.12 m | Small practice waves; provisional default. |
+| Moderate spectral significant height | 0.30 m | 2.5 times gentle amplitude/flow for controlled comparisons, not a named weather category. |
+| Wavelength support / spectral peak | 3–12 m / 6 m | Brackets hull length for spatial immersion and motion response; avoids very short stiff ripples. |
+| Directional spread | Mean ±25° | Three directional bins retain a dominant bearing and allow transverse response. |
+
+The spectrum is normalized with `Hs = 4 sqrt(Σa²/2)`; Hs is not a maximum
+wave height. The Gaussian energy shape in log wavelength, numeric ranges and
+spreading weights are **unmeasured estimates**. Wave strength is independent
+of wind speed, and initial current remains zero.
+
+The implementation uses the deep-water linear dispersion/orbital-flow basis
+from Krogstad & Arntsen, NTNU,
+[Linear Wave Theory, Part A](https://oivarn.folk.ntnu.no/hercules_ntnu/LWTcourse/lwt_new_2000_Part_A.pdf),
+sections 5–8 (2000), reviewed through browser-extracted text. That source
+supports the mathematical basis, not the chosen preset values. No bulk dataset
+or VPP thesis was retrieved. See [the environment model](../docs/wind-and-waves.md)
+for equations, seeded realization, force coupling and omitted physics.

@@ -43,7 +43,7 @@ public static class PresentationConversions
     /// <summary>UI boundary only. Compass angles describe where wind/waves come FROM.</summary>
     public static EnvironmentConfig EnvironmentFromSettings(double windSpeedKnots = 10, double windFromDegrees = 0,
         WavePreset wavePreset = WavePreset.Gentle, WaveDirectionMode waveDirectionMode = WaveDirectionMode.AlignedWithWind,
-        double? waveFromDegrees = null, int waveSeed = 1)
+        double? waveFromDegrees = null, int? waveSeed = null)
     {
         if (!double.IsFinite(windSpeedKnots) || windSpeedKnots < 0 || windSpeedKnots > 30)
             throw new ArgumentOutOfRangeException(nameof(windSpeedKnots));
@@ -62,7 +62,8 @@ public static class PresentationConversions
             default:
                 throw new ArgumentOutOfRangeException(nameof(waveDirectionMode));
         }
-        return new(windTravel * KnotsToMetersPerSecond(windSpeedKnots), wavePreset, waveDirectionMode, waveTravel, waveSeed);
+        return new(windTravel * KnotsToMetersPerSecond(windSpeedKnots), wavePreset, waveDirectionMode, waveTravel,
+            waveSeed ?? Random.Shared.Next());
     }
 
     private static Vector3d TravelDirection(double fromDegrees)

@@ -32,7 +32,7 @@ public sealed record SailingControls
 public enum WavePreset { Calm, Gentle, Moderate }
 public enum WaveDirectionMode { AlignedWithWind, Independent }
 
-/// <summary>SI configuration only; wave realization and physics arrive in Phase 4.</summary>
+/// <summary>Immutable SI wind settings and seeded water realization.</summary>
 public sealed record EnvironmentConfig
 {
     public Vector3d TrueWindVelocityWorldMps { get; }
@@ -41,6 +41,7 @@ public sealed record EnvironmentConfig
     /// <summary>Horizontal unit propagation direction, including when wind speed is zero.</summary>
     public Vector3d WaveTravelDirectionWorld { get; }
     public int WaveSeed { get; }
+    public DirectionalWaveField Water { get; }
 
     public EnvironmentConfig(Vector3d trueWindVelocityWorldMps, WavePreset wavePreset,
         WaveDirectionMode waveDirectionMode, Vector3d waveTravelDirectionWorld, int waveSeed)
@@ -60,6 +61,7 @@ public sealed record EnvironmentConfig
         WaveDirectionMode = waveDirectionMode;
         WaveTravelDirectionWorld = waveTravelDirectionWorld;
         WaveSeed = waveSeed;
+        Water = new(wavePreset, waveTravelDirectionWorld, waveSeed);
     }
 }
 

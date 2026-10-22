@@ -135,7 +135,7 @@ var tests = new (string Name, Action Check)[]
         Near(PresentationConversions.EnvironmentFromSettings(windFromDegrees: 90).WaveTravelDirectionWorld, -Vector3d.UnitY, 1e-14);
         Near(PresentationConversions.EnvironmentFromSettings(windFromDegrees: 180).WaveTravelDirectionWorld, Vector3d.UnitX, 1e-14);
         Near(PresentationConversions.EnvironmentFromSettings(windFromDegrees: 270).WaveTravelDirectionWorld, Vector3d.UnitY, 1e-14);
-        Require(PresentationConversions.EnvironmentFromSettings(windFromDegrees: 360) == defaults, "360 and 0 degrees differ.");
+        Require(PresentationConversions.EnvironmentFromSettings(windFromDegrees: 360, waveSeed: defaults.WaveSeed) == defaults, "360 and 0 degrees differ.");
         var independent = PresentationConversions.EnvironmentFromSettings(waveDirectionMode: WaveDirectionMode.Independent, waveFromDegrees: 90, waveSeed: -5);
         Near(independent.WaveTravelDirectionWorld, -Vector3d.UnitY, 1e-14);
         Require(independent.WaveSeed == -5, "Seed was not preserved.");

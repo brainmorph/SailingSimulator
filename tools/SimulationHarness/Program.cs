@@ -4,23 +4,29 @@ using SailingSimulator.Core;
 
 var steps = 600;
 var boatScenario = false;
+var waves = false;
+var waveSeed = 1;
+var seedSpecified = false;
 var stepsSpecified = false;
 for (var i = 0; i < args.Length; i++)
 {
     if (args[i] == "--boat" && !boatScenario) boatScenario = true;
+    else if (args[i] == "--waves" && !waves) { waves = true; boatScenario = true; }
+    else if (args[i] == "--wave-seed" && !seedSpecified && ++i < args.Length && int.TryParse(args[i], out waveSeed))
+        seedSpecified = true;
     else if (args[i] == "--steps" && !stepsSpecified && ++i < args.Length && int.TryParse(args[i], out steps) && steps is >= 1 and <= 1_000_000)
         stepsSpecified = true;
     else
     {
-        Console.Error.WriteLine("Usage: SimulationHarness [--boat] [--steps 1..1000000]");
+        Console.Error.WriteLine("Usage: SimulationHarness [--boat | --waves] [--wave-seed integer] [--steps 1..1000000]");
         return 2;
     }
 }
 
 var input = boatScenario ? new SimulationInput(new SailingControls(mainsheet: 0.6, traveler: 0.8, vang: 0.6,
     outhaul: 0.5, cunningham: 0.3, hiking: -0.3),
-    PresentationConversions.EnvironmentFromSettings(windFromDegrees: 270, wavePreset: WavePreset.Calm))
-    : new SimulationInput(new SailingControls(), PresentationConversions.EnvironmentFromSettings());
+    PresentationConversions.EnvironmentFromSettings(windFromDegrees: 270, wavePreset: waves ? WavePreset.Gentle : WavePreset.Calm, waveSeed: waveSeed))
+    : new SimulationInput(new SailingControls(), PresentationConversions.EnvironmentFromSettings(waveSeed: waveSeed));
 var boatModel = new IlcaBoatModel();
 var initial = boatScenario ? boatModel.CreateInitialState(input) : RigidBodyState.AtRest with
 {
@@ -42,7 +48,7 @@ for (var i = 0; i < steps; i++)
 }
 Console.WriteLine(JsonSerializer.Serialize(new
 {
-    Scenario = boatScenario ? "Phase 3 uncalibrated ILCA 7; 10-knot beam wind, flat still water" : "Phase 2 synthetic coasting body; no sailing forces",
+    Scenario = boatScenario ? $"Uncalibrated ILCA 7; 10-knot beam wind, {(waves ? "gentle seeded waves" : "flat still water")}" : "Phase 2 synthetic coasting body; no sailing forces",
     DeterministicReplay = true,
     Snapshot = first.Latest
 }, new JsonSerializerOptions { WriteIndented = true }));
