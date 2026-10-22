@@ -31,7 +31,8 @@ never uses them. Degrees and knots conversions exist only in the adapters.
 `SailingControls` validates all eight controls at construction. Tiller and hiking
 are [-1,1]; the other six are [0,1]. Zero means eased/released or raised; one
 means tightened or lowered. Defaults are zero except the fully lowered
-centerboard. Phase 3 owns physical tiller and hiking sign mapping.
+centerboard. Positive tiller turns the bow to starboard in forward flow;
+positive hiking places the sailor to starboard. See [boat physics](boat-physics.md).
 
 `EnvironmentFromSettings` accepts 0–30 knots and compass from-angles in [0,360]
 at the boundary. It converts wind into a horizontal NED velocity pointing
@@ -44,8 +45,9 @@ Directions are propagation vectors rather than compass degrees. Aligned waves
 retain the wind's requested direction even at zero wind speed. Independent
 waves require their own from-angle; aligned mode rejects an independent angle.
 The default settings are 10 knots from north, gentle waves aligned with wind,
-and seed 1. Callers can choose a different seed for varied sessions. No wave
-surface, wave physical ranges, current, or implicit wind force exists yet.
+and seed 1. Callers can choose a different seed for varied sessions. The
+Phase 3 sail model uses true wind explicitly. No wave surface, wave physical
+ranges, current, or implicit wind force exists yet.
 
 `SimulationInput` packages immutable controls and configuration together.
 `SnapshotMailbox<SimulationInput>` atomically exchanges the whole reference;
@@ -84,8 +86,9 @@ computes moment as `offsetBody × forceBody`. It takes a body-relative offset
 from the current centre of mass, not an absolute hull position. No gravity,
 drag, buoyancy, wind, or damping is added implicitly.
 
-The foundation uses fixed mass and positive diagonal inertia about the centre
-of mass, with principal axes coincident with body axes. Its equations are:
+The original fixed-mass constructor supports diagonal test bodies. Phase 3
+also accepts full positive definite inertia about the combined centre of mass
+and an `IMassModel` sampled once per step. Its equations are:
 
 ```text
 positionDotWorld = velocityWorld
@@ -100,15 +103,25 @@ uses the raw RK4 stage quaternion. Normalize only the completed orientation
 and orientation copies passed to force evaluation. This retains the RK4
 polynomial stages while keeping rotation operations valid.
 
-Phase 3 must extend mass properties for separate contributors and moving sailor
-position, including non-diagonal/variable inertia and centre-of-mass effects as
-needed. The foundation's synthetic test masses are not ILCA estimates. It
-does not claim to implement internal mass transfer or crew dynamics.
+`MassProperties.FromTensor` takes the full tensor and a hull-datum centre.
+The `IMassModel` constructor uses contributor geometry and conserves COM and
+angular momentum when controls reposition internal mass. The model must be
+pure, depend only on controls, and preserve total mass. See
+[the quasi-static approximation](boat-physics.md) before using it for crew
+motion. Synthetic test masses remain separate from the ILCA estimates.
+
+An optional `IRigDynamicsModel` supplies a boom state and its derivatives.
+The solver integrates angle and rate in the same four RK4 stages as the body;
+`ForceEvaluation.Rig` carries the corresponding stage state. Ordinary
+`IForceModel` implementations continue to receive exactly four evaluations.
+`IBoatDiagnosticsModel` supplies completed-state output via a separate `Inspect`
+call at initialization and after integration, before atomic publication.
 
 ## Snapshots, errors, and numerical limits
 
 `Simulation.Latest` is an atomic read of the last immutable completed snapshot.
-It includes step index, time, boat state, and the exact input used. Time is
+It includes step index, time, boat/rig state, mass, optional diagnostics, and
+the exact input used. Time is
 `StepIndex / 60.0`, computed from the integer index rather than accumulated.
 Index/time zero describes initialization. A render thread may read `Latest`
 without accessing a partially integrated body. No interpolation is applied.
@@ -121,19 +134,22 @@ completed state is checked before publication.
 
 Non-finite stages and arithmetic/argument failures in force evaluation throw
 `SimulationStepException` with attempted step, RK4 stage (`k1`–`k4` or
-`completion`), and the original exception. Other model exceptions propagate.
+`completion`, or `mass`), and the original exception. Other model exceptions propagate.
 A failed step does not advance the clock or replace `Latest`. A host should
 surface the failure and stop stepping for diagnosis. Force models must be pure
 because the solver cannot roll back model side effects. Null inputs and bad
 constructor arguments fail directly with argument exceptions.
 
-No force clipping, damping, speed limit, or silent reset hides instability.
+The solver adds no force clipping, damping, speed limit, or silent reset.
+The boat model's explicit resistance and rig damping are documented separately.
 Finite-but-inaccurate motion can still result from stiff or extreme models;
-Phase 3 must check its operating range at the fixed timestep. Deterministic
-replay means exact equal snapshots on the same runtime/platform with identical
+the boat model's tested cases are recorded in the
+[Phase 3 completion](../phases/03-completion.md). Deterministic replay means
+equal state/force/section values on the same runtime/platform with identical
 inputs and pure models. Cross-platform floating-point bit identity is not
-promised. Each successful step allocates one immutable output snapshot;
-allocation and performance instrumentation belong to Phase 7.
+promised. Each successful step allocates an immutable output snapshot; the
+boat model also allocates completed sail-section diagnostics. Allocation and
+performance instrumentation belong to Phase 7.
 
 ## Verification
 

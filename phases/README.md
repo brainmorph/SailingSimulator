@@ -8,7 +8,7 @@ This folder turns [PLAN.md](../PLAN.md) into independently actionable work for f
 | --- | --- | --- | --- |
 | 1 | ~~[Reference data and model contracts](01-reference-data-and-model-contracts.md)~~ | Auditable calibration data and concrete simulation contracts | None |
 | 2 | ~~[Simulation core foundation](02-simulation-core-foundation.md)~~ | Standalone deterministic C# simulation library and stepping foundation | 1 |
-| 3 | [Initial boat physics](03-initial-boat-physics.md) | A controllable six-degree-of-freedom ILCA 7 model in steady conditions | 1, 2 |
+| 3 | ~~[Initial boat physics](03-initial-boat-physics.md)~~ | A controllable six-degree-of-freedom ILCA 7 model in steady conditions | 1, 2 |
 | 4 | [Wind and wave environment](04-wind-and-wave-environment.md) | Configurable, repeatable wind and handling-affecting waves | 2, 3 |
 | 5 | [Godot integration and controls](05-godot-integration-and-controls.md) | Playable Godot scene with threaded simulation and sailing controls | 2, 3, 4 |
 | 6 | [Visual sailing feedback and cameras](06-visual-feedback-and-cameras.md) | Readable boat, sail, water, telltales, and camera views | 5 |

@@ -1,5 +1,8 @@
 # Phase 3: Initial Boat Physics
 
+Completed 2026-10-22. See [the completion record](03-completion.md) for verification,
+provisional-model limitations and the Phase 4 handoff.
+
 ## Objective
 
 Implement the first useful ILCA 7 force model: a boat responds to steering and sail trim across six degrees of freedom in still water and steady wind.

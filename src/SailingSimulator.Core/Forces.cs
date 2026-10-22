@@ -12,7 +12,21 @@ public readonly record struct ForceMoment(Vector3d ForceWorldN, Vector3d MomentB
         new(orientationBodyToWorld.Normalized().Rotate(forceBodyN), Vector3d.Cross(offsetFromCenterOfMassBodyM, forceBodyN));
 }
 
-public readonly record struct ForceEvaluation(double TimeSeconds, RigidBodyState Boat, MassProperties Mass, SimulationInput Input);
+public readonly record struct ForceEvaluation(double TimeSeconds, RigidBodyState Boat, MassProperties Mass, SimulationInput Input,
+    RigState Rig = default);
+
+public readonly record struct RigDerivative(double AngleRate, double AngularAcceleration);
+
+public interface IRigDynamicsModel : IForceModel
+{
+    RigState InitialRig { get; }
+    (ForceMoment Forces, RigDerivative Rig) EvaluateDynamics(in ForceEvaluation evaluation);
+}
+
+public interface IBoatDiagnosticsModel : IForceModel
+{
+    BoatDiagnostics Inspect(in ForceEvaluation evaluation);
+}
 
 /// <summary>Evaluate all RK4 stages without mutating model state or consuming randomness.</summary>
 public interface IForceModel

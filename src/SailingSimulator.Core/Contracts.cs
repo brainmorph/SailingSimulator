@@ -98,19 +98,38 @@ public readonly record struct RigidBodyState(
     }
 }
 
-public sealed record SimulationState(long StepIndex, double TimeSeconds, RigidBodyState Boat, SimulationInput Input);
+public sealed record SimulationState(long StepIndex, double TimeSeconds, RigidBodyState Boat, SimulationInput Input)
+{
+    public MassProperties? Mass { get; init; }
+    public BoatDiagnostics? Diagnostics { get; init; }
+    public RigState Rig { get; init; }
+}
 
-/// <summary>Fixed rigid-body mass and diagonal body-frame inertia about the centre of mass.</summary>
+/// <summary>Reduced-order boom position, positive towards starboard, and relative angular rate.</summary>
+public readonly record struct RigState(double BoomAngleRad, double BoomRateRadPerSec);
+
+/// <summary>Mass, hull-datum centre of mass, and full body-frame inertia about that centre.</summary>
 public sealed record MassProperties
 {
     public double MassKg { get; }
-    public Vector3d PrincipalInertiaKgM2 { get; }
+    public Vector3d CenterOfMassBodyM { get; private init; }
+    public InertiaTensor InertiaBodyKgM2 { get; private init; }
+    /// <summary>Diagonal entries; principal moments only when products of inertia are zero.</summary>
+    public Vector3d PrincipalInertiaKgM2 => new(InertiaBodyKgM2.XX, InertiaBodyKgM2.YY, InertiaBodyKgM2.ZZ);
     public MassProperties(double massKg, Vector3d principalInertiaKgM2)
     {
         if (!double.IsFinite(massKg) || massKg <= 0) throw new ArgumentOutOfRangeException(nameof(massKg));
         if (!principalInertiaKgM2.IsFinite || principalInertiaKgM2.X <= 0 || principalInertiaKgM2.Y <= 0 || principalInertiaKgM2.Z <= 0)
             throw new ArgumentOutOfRangeException(nameof(principalInertiaKgM2));
         MassKg = massKg;
-        PrincipalInertiaKgM2 = principalInertiaKgM2;
+        InertiaBodyKgM2 = new(principalInertiaKgM2.X, principalInertiaKgM2.Y, principalInertiaKgM2.Z, 0, 0, 0);
+    }
+
+    public static MassProperties FromTensor(double massKg, Vector3d centerOfMassBodyM, InertiaTensor inertia)
+    {
+        if (!centerOfMassBodyM.IsFinite) throw new ArgumentException("Centre of mass must be finite.");
+        inertia.Validate();
+        return new MassProperties(massKg, new(inertia.XX, inertia.YY, inertia.ZZ))
+        { CenterOfMassBodyM = centerOfMassBodyM, InertiaBodyKgM2 = inertia };
     }
 }

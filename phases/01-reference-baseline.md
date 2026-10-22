@@ -19,6 +19,12 @@ This is the source-backed baseline gathered during the initial Phase 1 pass. Num
 
 No source-backed breakdown of the 58 kg boat mass into hull, rig, foils, and fittings, or of component centers of mass, was established in this pass. Those remain estimates/open questions and must not be silently treated as measured values.
 
+Phase 3 supplies an explicitly provisional component budget, centres and
+inertias in [the implementation model](../docs/boat-physics.md), totaling the
+plan's 58 kg plus the separate 80 kg sailor. Its small current-class-rule
+review did not establish a removable-equipment mass breakdown. These estimates
+do not change the source-backed baseline or resolve VPP compatibility.
+
 ## Aerodynamic and performance sources
 
 | Source | Extracted facts | Calibration use and limits |

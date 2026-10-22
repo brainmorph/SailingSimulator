@@ -139,6 +139,8 @@ Build a sailing simulator in C# with Godot, aiming for physics fidelity comparab
 - Use a right-handed nautical body frame for the simulation core (+X forward, +Y starboard, +Z down); convert coordinates at the Godot adapter boundary.
 - Represent 3D orientation internally with quaternions; derive human-readable heel, pitch, and heading angles for telemetry and presentation.
 - Phase 2 world frame is north/east/down (+X north, +Y east, +Z down). Position and linear velocity are world-relative; angular velocity is body-relative. Double-precision Hamilton quaternions map body axes into world axes; see [the core API](docs/simulation-core.md).
+- Phase 3 implements a provisional flat-water ILCA 7 model with sampled buoyancy/drag, separate foil forces, six sail sections and a dynamic boom. All estimated mass allocations, geometry and coefficients are documented in [the boat physics model](docs/boat-physics.md); they are not measured calibration data. Positive tiller turns to starboard in forward flow; positive hiking places the sailor to starboard.
+- Phase 3 combines the provisional 58 kg equipped budget and separate 80 kg sailor through full mass-weighted centres and inertia tensors. Internal repositioning preserves the combined centre of mass and angular momentum at the step boundary, using a documented quasi-static approximation. The class-rule review did not resolve the 58 kg removable-equipment interpretation; it remains an open calibration issue.
 - Godot will render the state produced by the C# simulation.
 - The simulation will calculate all six degrees of boat motion.
 - Centerboard and rudder forces will be modeled separately from hull drag.
@@ -222,7 +224,7 @@ Record values with units and source or rationale. Keep experimental conditions a
 
 ## Open questions
 
-- Which force equations and coefficients should model the sectional sail, centerboard, rudder, hull, and waves?
+- The initial sectional sail, centerboard, rudder and flat-water hull equations and provisional coefficients are recorded in [the Phase 3 model](docs/boat-physics.md). Which measured coefficients should replace or calibrate them, and which wave equations should extend them?
 - Extract and verify numeric ILCA 7/Laser VPP polar values, conditions, and crew/rig assumptions before calibration; current sources do not yet provide a verified numeric target table.
 - What ranges and units should the player-facing wind and wave settings use?
 - What fixed key layout should control steering, trim, hiking, and centerboard position?

@@ -65,8 +65,8 @@ The `speed_mps` value is the exact SI conversion of the plan's 10-knot default r
 
 ## Open contract decisions
 
-- Decide and document the tiller sign convention when rudder behavior is implemented (Phase 3).
-- Define whether `Hiking` is modeled as sailor position, righting effort, or an input mapped to both (Phase 3); keep it continuous and centered at zero.
+- Resolved in Phase 3: positive tiller deflects the rudder trailing edge to starboard and turns the bow to starboard in forward flow. It reverses response in reverse flow.
+- Resolved in Phase 3: `Hiking` is continuous sailor position; positive moves the sailor to starboard, up to 0.85 m from the centreplane. The combined centre of mass and full inertia follow the mass point. See [the approximation and model signs](../docs/boat-physics.md).
 - Resolved in Phase 2: `LinearVelocityWorldMps` uses north/east/down world axes; `AngularVelocityBodyRadPerSec` uses nautical body axes. See [the concrete core API](../docs/simulation-core.md).
 - Select numeric wave ranges only when the physical wave model is scoped (Phase 4).
 - Add model-output fields when their owning subsystem exists; avoid speculative fields for future boats or systems.

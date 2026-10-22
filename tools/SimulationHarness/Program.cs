@@ -3,31 +3,53 @@ using SailingSimulator.Adapters;
 using SailingSimulator.Core;
 
 var steps = 600;
-if (args.Length > 0 && (args.Length != 2 || args[0] != "--steps" || !int.TryParse(args[1], out steps) || steps < 1 || steps > 1_000_000))
+var boatScenario = false;
+var stepsSpecified = false;
+for (var i = 0; i < args.Length; i++)
 {
-    Console.Error.WriteLine("Usage: SimulationHarness [--steps 1..1000000]");
-    return 2;
+    if (args[i] == "--boat" && !boatScenario) boatScenario = true;
+    else if (args[i] == "--steps" && !stepsSpecified && ++i < args.Length && int.TryParse(args[i], out steps) && steps is >= 1 and <= 1_000_000)
+        stepsSpecified = true;
+    else
+    {
+        Console.Error.WriteLine("Usage: SimulationHarness [--boat] [--steps 1..1000000]");
+        return 2;
+    }
 }
 
-// Synthetic unit-mass coasting body, not an ILCA model or calibration result.
-var input = new SimulationInput(new SailingControls(), PresentationConversions.EnvironmentFromSettings());
-var initial = RigidBodyState.AtRest with
+var input = boatScenario ? new SimulationInput(new SailingControls(mainsheet: 0.6, traveler: 0.8, vang: 0.6,
+    outhaul: 0.5, cunningham: 0.3, hiking: -0.3),
+    PresentationConversions.EnvironmentFromSettings(windFromDegrees: 270, wavePreset: WavePreset.Calm))
+    : new SimulationInput(new SailingControls(), PresentationConversions.EnvironmentFromSettings());
+var boatModel = new IlcaBoatModel();
+var initial = boatScenario ? boatModel.CreateInitialState(input) : RigidBodyState.AtRest with
 {
     LinearVelocityWorldMps = Vector3d.UnitX,
     AngularVelocityBodyRadPerSec = new(0, 0, 0.1)
 };
 var mass = new MassProperties(1, new(1, 1, 1));
-var first = new Simulation(initial, mass, new CompositeForceModel(), input);
-var second = new Simulation(initial, mass, new CompositeForceModel(), input);
+Simulation Create() => boatScenario ? new(initial, new IlcaMassModel(), boatModel, input)
+    : new(initial, mass, new CompositeForceModel(), input);
+var first = Create();
+var second = Create();
 for (var i = 0; i < steps; i++)
 {
-    if (first.Step(input) != second.Step(input))
+    var a = first.Step(input);
+    var b = second.Step(input);
+    if (a.StepIndex != b.StepIndex || a.TimeSeconds != b.TimeSeconds || a.Input != b.Input ||
+        a.Boat != b.Boat || a.Rig != b.Rig || a.Mass != b.Mass || !SameDiagnostics(a.Diagnostics, b.Diagnostics))
         throw new InvalidOperationException($"Determinism failed at step {i + 1}.");
 }
 Console.WriteLine(JsonSerializer.Serialize(new
 {
-    Scenario = "Phase 2 synthetic coasting body; no sailing forces",
+    Scenario = boatScenario ? "Phase 3 uncalibrated ILCA 7; 10-knot beam wind, flat still water" : "Phase 2 synthetic coasting body; no sailing forces",
     DeterministicReplay = true,
     Snapshot = first.Latest
 }, new JsonSerializerOptions { WriteIndented = true }));
 return 0;
+
+static bool SameDiagnostics(BoatDiagnostics? a, BoatDiagnostics? b) => a is null ? b is null : b is not null &&
+    a.Gravity == b.Gravity && a.Buoyancy == b.Buoyancy && a.HullDrag == b.HullDrag &&
+    a.Centerboard == b.Centerboard && a.Rudder == b.Rudder && a.Sail == b.Sail &&
+    a.SailShape.BoomAngleRad == b.SailShape.BoomAngleRad && a.SailShape.SheetLimitRad == b.SailShape.SheetLimitRad &&
+    a.SailShape.Sections.SequenceEqual(b.SailShape.Sections);
