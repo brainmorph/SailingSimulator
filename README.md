@@ -12,6 +12,13 @@ waves and a fading wake provide visual feedback, with switchable onboard and
 third-person cameras. Debug tools and performance calibration follow in later
 phases.
 
+Press **F2** in-game to show the controls window with all sailing and camera
+bindings; press **F2** again to hide it. Sailing and camera controls remain
+active while the window is open. Hold sailing keys to adjust gradually;
+releasing steering centres the tiller, while trim, board and sailor position
+stay where you leave them. See [launch and controls](godot/README.md) for
+the full key list.
+
 Use a .NET 8 SDK. No third-party packages or Godot installation are needed to
 build the foundation. `global.json` selects the latest installed .NET 8 SDK
 feature band.

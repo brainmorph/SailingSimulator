@@ -9,7 +9,7 @@ public partial class SailingScene
     private int reviewFrame;
     private int reviewIndex;
     private readonly string[] reviewNames =
-    ["reach-starboard", "reach-port", "luff-a", "luff-b", "onboard-starboard", "onboard-port", "heel-wake", "run-before-jibe", "run-after-jibe", "calm-stopped"];
+    ["reach-starboard", "reach-port", "luff-a", "luff-b", "onboard-starboard", "onboard-port", "heel-wake", "run-before-jibe", "run-after-jibe", "calm-stopped", "controls-help"];
 
     private void StartVisualReview()
     {
@@ -20,6 +20,7 @@ public partial class SailingScene
     private void SetReviewFixture()
     {
         var index = reviewIndex;
+        controlsHelp.Visible = index == 10;
         var port = index is 1 or 5 or 8;
         var sign = port ? -1 : 1;
         var luff = index is 2 or 3;

@@ -75,7 +75,9 @@ bounded free look and a 55–95° field of view; the sailor proxy is hidden in
 this view. Both retain independent look/zoom settings. Focus loss releases
 mouse dragging and sailing keys. Camera code never publishes sailing input.
 
-The normal view has a small camera-control hint and no numeric instruments.
+F2 shows/hides a controls reference window. It starts hidden, ignores key
+repeat and leaves sailing/camera input active while open. The normal view
+has a small controls/camera hint and no numeric instruments.
 The temporary Phase 5 deadline/fault label remains until Phase 7 integrates
 it into F1 diagnostics.
 
@@ -101,9 +103,9 @@ calibration remain Phase 8 work.
   releases dragging on focus loss and leaves sailing control state alone.
 
 For reproducible raster inspection use `--visual-review` as documented in
-the host guide. It writes ten 1280×720 PNGs in `/tmp`: both reaching sides,
+the host guide. It writes eleven 1280×720 PNGs in `/tmp`: both reaching sides,
 two luffing instants 0.07 s apart, both onboard sides, heel/wake, downwind boom
-on either side, and calm/stopped with a raised board. Fixtures use seed 123
+on either side, calm/stopped with a raised board, and the controls window. Fixtures use seed 123
 and real force diagnostics but prescribe instantaneous body/rig states.
 They establish rendering behavior, not successful calibrated maneuvers.
 

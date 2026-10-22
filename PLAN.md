@@ -19,6 +19,7 @@ Build a sailing simulator in C# with Godot, aiming for physics fidelity comparab
 | Input handoff | Godot publishes a thread-safe snapshot of current sailing control states for the simulation thread to sample each step |
 | Input response | Hold keys for smooth, gradual adjustments |
 | Key binding settings | Fixed defaults in the first playable version; no rebinding UI initially |
+| Control reference | F2 toggles an in-game controls window; sailing continues while it is open |
 | Fixed sailing keys | A/D tiller; W/S sheet; Q/E traveler; R/F vang; T/G outhaul; U/J cunningham; I/K centerboard; Z/X hiking. See [rates and directions](godot/README.md). |
 | Initial boat | Single-handed ILCA/Laser dinghy |
 | Initial rig reference | ILCA 7 |

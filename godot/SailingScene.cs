@@ -11,6 +11,7 @@ public partial class SailingScene : Node3D
     private WaterPresentation water = null!;
     private Camera3D camera = null!;
     private Label status = null!;
+    private Control controlsHelp = null!;
     private EnvironmentConfig environment = null!;
     private bool focused = true;
     private bool orbiting;
@@ -115,6 +116,15 @@ public partial class SailingScene : Node3D
         }
     }
 
+    public override void _Input(InputEvent @event)
+    {
+        if (@event is InputEventKey key && (key.PhysicalKeycode == Key.F2 || key.Keycode == Key.F2) && focused)
+        {
+            if (key.Pressed && !key.Echo) controlsHelp.Visible = !controlsHelp.Visible;
+            GetViewport().SetInputAsHandled();
+        }
+    }
+
     public override void _UnhandledInput(InputEvent @event)
     {
         if (@event is InputEventKey key && key.PhysicalKeycode == Key.C && key.Pressed && !key.Echo && focused)
@@ -191,9 +201,12 @@ public partial class SailingScene : Node3D
         canvas.AddChild(status);
         canvas.AddChild(new Label
         {
-            Text = "C  Camera    ·    Right drag  Look    ·    Wheel  Zoom",
+            Text = "F2  Controls    ·    C  Camera    ·    Right drag  Look    ·    Wheel  Zoom",
             Position = new(16, 680), Modulate = new(0.9f, 0.94f, 0.96f, 0.8f)
         });
+        controlsHelp = ControlsHelp.Create();
+        canvas.AddChild(controlsHelp);
+        controlsHelp.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
     }
 
     private void SmokeCheck(RunnerSnapshot snapshot)
@@ -210,9 +223,21 @@ public partial class SailingScene : Node3D
             if (!stalled && elapsed > 0.4)
             {
                 Require(snapshot.State.Input.Controls.Tiller > 0.1 && snapshot.State.Input.Controls.Mainsheet > 0.6, "held physical key input");
+                var keys = SailingKeyMap.Read();
+                Require(!controlsHelp.Visible, "controls help starts hidden");
+                SendKey(Key.F2, true);
+                Require(controlsHelp.Visible, "F2 opens controls help");
+                Input.ParseInputEvent(new InputEventKey { PhysicalKeycode = Key.F2, Pressed = true, Echo = true });
+                Input.FlushBufferedEvents();
+                Require(controlsHelp.Visible, "held F2 does not repeatedly toggle help");
+                SendKey(Key.F2, false);
+                Require(controlsHelp.Visible && SailingKeyMap.Read() == keys, "help preserves held sailing keys");
                 var step = runner!.Latest.State.StepIndex;
                 Thread.Sleep(250); // Deliberate main-thread stall: the worker must keep stepping.
                 Require(runner.Latest.State.StepIndex >= step + 10, "render-independent stepping");
+                SendKey(Key.F2, true);
+                SendKey(Key.F2, false);
+                Require(!controlsHelp.Visible && SailingKeyMap.Read() == keys, "F2 closes help without changing sailing input");
                 stalled = true;
                 _Notification((int)NotificationApplicationFocusOut);
                 released = true;
@@ -230,7 +255,7 @@ public partial class SailingScene : Node3D
                 VerifyPresentation(snapshot.State);
                 runner!.Stop();
                 Require(!runner.Latest.Running, "shutdown joins worker");
-                GD.Print($"PASS Godot scene: keys, transforms, focus, render stall, both cameras, sectional sail, foils/body, waves, camera isolation, shutdown; steps={runner.Latest.State.StepIndex}");
+                GD.Print($"PASS Godot scene: keys, F2 controls help, transforms, focus, render stall, both cameras, sectional sail, foils/body, waves, camera isolation, shutdown; steps={runner.Latest.State.StepIndex}");
                 GetTree().Quit();
             }
         }

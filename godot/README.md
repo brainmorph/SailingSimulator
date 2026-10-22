@@ -25,6 +25,8 @@ wake. F1 settings, graphs and detailed diagnostics are Phase 7 work.
 
 Hold a key to adjust. Both keys in a pair cancel. Physical key positions are
 used, independent of keyboard text layout.
+Press **F2** to show the in-game controls window; press **F2** again to hide
+it. Sailing and camera controls continue working while it is open.
 
 | Keys | Action | Rate (normalized units/second) |
 | --- | --- | ---: |
@@ -39,6 +41,7 @@ used, independent of keyboard text layout.
 | C | Switch third-person / onboard camera | — |
 | Right mouse drag | Orbit in third-person; look around onboard | — |
 | Mouse wheel | Third-person distance; onboard field of view | — |
+| F2 | Show / hide controls window | — |
 
 Tiller returns to centre at 1.5 units/second when released. Other settings,
 including hiking, stay at their last value. Losing application focus clears
@@ -74,7 +77,8 @@ The smoke test uses seed 123, checks all physical key pairs and opposing
 keys, compares rendered position/orientation with the completed simulation
 state, deliberately stalls the main thread, tests focus loss and mouse
 isolation in both cameras, checks shared sail/wave data and body/foil
-positions, and joins the worker before exiting. A pass prints `PASS Godot
+positions, verifies F2 show/hide and key-repeat handling, and joins the
+worker before exiting. A pass prints `PASS Godot
 scene` and exits 0. See [the integration contract](../docs/godot-integration.md)
 for ownership, cadence and failure behavior.
 
@@ -84,7 +88,7 @@ For repeatable rendered review (requires a display), run:
 /home/purple-eden/Desktop/Godot_v4.7-stable_mono_linux_x86_64/Godot_v4.7-stable_mono_linux.x86_64 --path godot -- --visual-review
 ```
 
-This opens a brief window, saves ten PNGs to
+This opens a brief window, saves eleven PNGs (including the controls window) to
 `/tmp/SailingSimulator-<fixture>.png`, then exits. It uses real aerodynamic
 diagnostics in frozen instantaneous fixtures, not calibrated steady sailing
 or scripted maneuver physics. It does not start a simulation worker.
