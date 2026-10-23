@@ -187,6 +187,13 @@ Deliver the full initial scope as the first playable milestone: ILCA 7 open prac
 
 ## Calibration sequence
 
+Phase 8 is active. [Free-sailing baselines](docs/calibration.md) record exact
+replay, setup/build metadata and final-window stability screening. These are
+internal observations, not reference polars. Current [milestone evidence and
+remaining work](phases/08-progress.md) retain the unresolved desktop cadence
+defect and missing compatible numeric targets; no physics parameters have
+been calibrated in this pass.
+
 1. Establish steady-sailing behavior under a consistent wind and repeatable water conditions.
 2. Calibrate reaching and sail trim across wind angles.
 3. Calibrate tacking and jibing transitions.

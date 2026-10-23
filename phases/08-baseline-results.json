@@ -1,0 +1,3109 @@
+{
+  "schema_version": 1,
+  "evidence": "Internal model consistency and free-sailing baseline; uncalibrated; no measured speed/pointing targets",
+  "runtime": ".NET 8.0.28",
+  "operating_system": "Ubuntu 26.04 LTS",
+  "architecture": "X64",
+  "assemblies": [
+    {
+      "name": "SailingSimulator.Core",
+      "configuration": "Release",
+      "sha256": "B78ACFC5B11D78EFBF99EF9A1AB0F1C56CEB583545E112770C3ED70ADD4A8144"
+    },
+    {
+      "name": "SailingSimulator.Adapters",
+      "configuration": "Release",
+      "sha256": "17EE342A94ECD07E34D77265EC22A91B504148A51B4C20D8123468AB4798DA6B"
+    },
+    {
+      "name": "SimulationHarness",
+      "configuration": "Release",
+      "sha256": "8A40681D55D13640488F7B6350E7636CEBA986923EC1C9E3E51E6C2FDC354C3A"
+    }
+  ],
+  "protocol": "Start from solved upright hydrostatic balance with initial boom 0.1 rad. Release all keys for 30 s; no heading/balance controller. Trace every 60 steps and at final step. Evaluate all final 600 steps.",
+  "screening": "Steady candidate only if final 10 s: half-window speed mean change \u003C= 0.05 m/s, speed range \u003C= 0.1 m/s, heading error \u003C= 3 deg, |heel| \u003C 45 deg. Design tolerances, not measured accuracy.",
+  "empirical_targets": [],
+  "results": [
+    {
+      "condition": {
+        "id": "coast-calm",
+        "wind_knots": 0,
+        "heading_degrees": 0,
+        "waves": "Calm",
+        "seed": 123,
+        "initial_speed_mps": 3,
+        "controls": {
+          "tiller": 0,
+          "mainsheet": 0,
+          "traveler": 0,
+          "vang": 0,
+          "outhaul": 0,
+          "cunningham": 0,
+          "centerboard": 1,
+          "hiking": 0
+        }
+      },
+      "wind_from_degrees": 0,
+      "current": "Still water; wave orbital flow when non-calm",
+      "boat_mass_kg": 58,
+      "sailor_mass_kg": 80,
+      "step_seconds": 0.016666666666666666,
+      "steps": 1800,
+      "window_steps": 600,
+      "held_throughout": {
+        "tiller": 0,
+        "mainsheet": 0,
+        "traveler": 0,
+        "vang": 0,
+        "outhaul": 0,
+        "cunningham": 0,
+        "centerboard": 0,
+        "hiking": 0
+      },
+      "initial_boat": {
+        "position_world_m": {
+          "x": 0,
+          "y": 0,
+          "z": -0.3514857339267854,
+          "is_finite": true,
+          "length_squared": 0.12354222115405097,
+          "length": 0.3514857339267854
+        },
+        "orientation_body_to_world": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "w": 1,
+          "is_finite": true,
+          "length_squared": 1
+        },
+        "linear_velocity_world_mps": {
+          "x": 3,
+          "y": 0,
+          "z": 0,
+          "is_finite": true,
+          "length_squared": 9,
+          "length": 3
+        },
+        "angular_velocity_body_rad_per_sec": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "is_finite": true,
+          "length_squared": 0,
+          "length": 0
+        }
+      },
+      "initial_rig": {
+        "boom_angle_rad": 0.1,
+        "boom_rate_rad_per_sec": 0
+      },
+      "final_window": {
+        "start_seconds": 20.016666666666666,
+        "end_seconds": 30,
+        "samples": 600,
+        "mean_speed_mps": 0.27106543435828173,
+        "min_speed_mps": 0.22280255030592294,
+        "max_speed_mps": 0.3326098968407902,
+        "speed_change_mps": -0.05409487248114417,
+        "max_heading_error_degrees": 0.16642225533541932,
+        "max_abs_heel_degrees": 6.293282424839144E-05,
+        "steady_candidate": false
+      },
+      "trace": [
+        {
+          "time_seconds": 0,
+          "speed_mps": 3,
+          "heading_degrees": 0,
+          "heel_degrees": 0,
+          "pitch_degrees": 0,
+          "boom_degrees": 5.729577951308232,
+          "mean_luffing": 0.0617791416051067,
+          "sail_drive_n": -4.4947859213892105
+        },
+        {
+          "time_seconds": 1,
+          "speed_mps": 2.1787421160073444,
+          "heading_degrees": 359.62817185103444,
+          "heel_degrees": 0.2730683226626643,
+          "pitch_degrees": -0.02695422147896642,
+          "boom_degrees": -0.4663884336472384,
+          "mean_luffing": 0.9390705915271598,
+          "sail_drive_n": -0.05925822080522243
+        },
+        {
+          "time_seconds": 2,
+          "speed_mps": 1.7099697691475881,
+          "heading_degrees": 359.7730638519847,
+          "heel_degrees": 0.061656815941807594,
+          "pitch_degrees": -0.06863813711882023,
+          "boom_degrees": -1.363615983296593,
+          "mean_luffing": 0.658199483154377,
+          "sail_drive_n": -0.14832020767190707
+        },
+        {
+          "time_seconds": 3,
+          "speed_mps": 1.4057062862357748,
+          "heading_degrees": 359.81067330531295,
+          "heel_degrees": 0.01080175570690056,
+          "pitch_degrees": -0.08255686139494255,
+          "boom_degrees": -0.8500623720180724,
+          "mean_luffing": 0.8356395077064754,
+          "sail_drive_n": -0.03805372200736149
+        },
+        {
+          "time_seconds": 4,
+          "speed_mps": 1.1922182335867235,
+          "heading_degrees": 359.81866689558683,
+          "heel_degrees": 0.0033787006700511926,
+          "pitch_degrees": -0.050102275216104074,
+          "boom_degrees": -0.6283646595430575,
+          "mean_luffing": 0.9000649029937368,
+          "sail_drive_n": -0.015231340223394507
+        },
+        {
+          "time_seconds": 5,
+          "speed_mps": 1.0340253949282594,
+          "heading_degrees": 359.82203227382405,
+          "heel_degrees": 0.0015294489666255091,
+          "pitch_degrees": -0.0029215674327990092,
+          "boom_degrees": -0.5495065120990574,
+          "mean_luffing": 0.9203766303594375,
+          "sail_drive_n": -0.009000497871097407
+        },
+        {
+          "time_seconds": 6,
+          "speed_mps": 0.912174137495234,
+          "heading_degrees": 359.82410258226736,
+          "heel_degrees": 0.000854938889912107,
+          "pitch_degrees": 0.022187187157977694,
+          "boom_degrees": -0.514201024715235,
+          "mean_luffing": 0.9292335474387622,
+          "sail_drive_n": -0.006444754545249516
+        },
+        {
+          "time_seconds": 7,
+          "speed_mps": 0.8154341418140929,
+          "heading_degrees": 359.8256132060947,
+          "heel_degrees": 0.0005600257296244641,
+          "pitch_degrees": 0.015411046208368228,
+          "boom_degrees": -0.49378510939227743,
+          "mean_luffing": 0.9343416777960103,
+          "sail_drive_n": -0.00498645951486686
+        },
+        {
+          "time_seconds": 8,
+          "speed_mps": 0.7367687688750774,
+          "heading_degrees": 359.8268101997802,
+          "heel_degrees": 0.00041450160198424984,
+          "pitch_degrees": -0.005718896223035439,
+          "boom_degrees": -0.4799358566656631,
+          "mean_luffing": 0.937765733110591,
+          "sail_drive_n": -0.003898576960772126
+        },
+        {
+          "time_seconds": 9,
+          "speed_mps": 0.6715149983057704,
+          "heading_degrees": 359.82780370656764,
+          "heel_degrees": 0.000330720490639857,
+          "pitch_degrees": -0.017878702887675013,
+          "boom_degrees": -0.46971774828417046,
+          "mean_luffing": 0.9402352741372825,
+          "sail_drive_n": -0.0030250542956301884
+        },
+        {
+          "time_seconds": 10,
+          "speed_mps": 0.616505069917011,
+          "heading_degrees": 359.8286530937194,
+          "heel_degrees": 0.00027206107775002385,
+          "pitch_degrees": -0.012232499446802339,
+          "boom_degrees": -0.4618109913335915,
+          "mean_luffing": 0.9420930788063376,
+          "sail_drive_n": -0.00238033019187222
+        },
+        {
+          "time_seconds": 11,
+          "speed_mps": 0.5695060975794228,
+          "heading_degrees": 359.82939425283956,
+          "heel_degrees": 0.00022489863934435782,
+          "pitch_degrees": 0.0027069258969095998,
+          "boom_degrees": -0.45549746282229,
+          "mean_luffing": 0.9435419410088891,
+          "sail_drive_n": -0.0019552406005315737
+        },
+        {
+          "time_seconds": 12,
+          "speed_mps": 0.5289006553906709,
+          "heading_degrees": 359.8300506306238,
+          "heel_degrees": 0.00018600390423354263,
+          "pitch_degrees": 0.012915012360616684,
+          "boom_degrees": -0.4503368945553827,
+          "mean_luffing": 0.9447156781908572,
+          "sail_drive_n": -0.0016828330389963015
+        },
+        {
+          "time_seconds": 13,
+          "speed_mps": 0.493474375685416,
+          "heading_degrees": 359.8306385295732,
+          "heel_degrees": 0.00015538793655172113,
+          "pitch_degrees": 0.011962822838982468,
+          "boom_degrees": -0.4460395796350245,
+          "mean_luffing": 0.9456970369218348,
+          "sail_drive_n": -0.0014800659211154164
+        },
+        {
+          "time_seconds": 14,
+          "speed_mps": 0.46229438431127484,
+          "heading_degrees": 359.83116993685485,
+          "heel_degrees": 0.0001325271650523223,
+          "pitch_degrees": 0.004223137680537157,
+          "boom_degrees": -0.4424063080301901,
+          "mean_luffing": 0.9465308411474033,
+          "sail_drive_n": -0.0012929493630785354
+        },
+        {
+          "time_seconds": 15,
+          "speed_mps": 0.4346350311840255,
+          "heading_degrees": 359.8316540524251,
+          "heel_degrees": 0.00011550461458700298,
+          "pitch_degrees": -0.0015904951418021153,
+          "boom_degrees": -0.4392956760440751,
+          "mean_luffing": 0.9472416767248658,
+          "sail_drive_n": -0.0011128536402715426
+        },
+        {
+          "time_seconds": 16,
+          "speed_mps": 0.4099284053451301,
+          "heading_degrees": 359.83209811161635,
+          "heel_degrees": 0.00010192497461155369,
+          "pitch_degrees": -0.0007809497938006854,
+          "boom_degrees": -0.4366043799869526,
+          "mean_luffing": 0.9478479742177831,
+          "sail_drive_n": -0.0009571912215728291
+        },
+        {
+          "time_seconds": 17,
+          "speed_mps": 0.3877271683225423,
+          "heading_degrees": 359.8325078456662,
+          "heel_degrees": 9.013113466039554E-05,
+          "pitch_degrees": 0.0045568714780599,
+          "boom_degrees": -0.4342547679013938,
+          "mean_luffing": 0.9483688571161276,
+          "sail_drive_n": -0.0008390549952360757
+        },
+        {
+          "time_seconds": 18,
+          "speed_mps": 0.36767219355674285,
+          "heading_degrees": 359.8328878093246,
+          "heel_degrees": 7.960433087487342E-05,
+          "pitch_degrees": 0.00907043192234727,
+          "boom_degrees": -0.4321870072724967,
+          "mean_luffing": 0.9488240292044088,
+          "sail_drive_n": -0.0007540469833666984
+        },
+        {
+          "time_seconds": 19,
+          "speed_mps": 0.3494694345470274,
+          "heading_degrees": 359.8332416621114,
+          "heel_degrees": 7.05179532494648E-05,
+          "pitch_degrees": 0.009462536972350187,
+          "boom_degrees": -0.4303542126372404,
+          "mean_luffing": 0.94922916398284,
+          "sail_drive_n": -0.0006867912243966947
+        },
+        {
+          "time_seconds": 20,
+          "speed_mps": 0.33287364997293134,
+          "heading_degrees": 359.83357241021065,
+          "heel_degrees": 6.304668152277145E-05,
+          "pitch_degrees": 0.006692002944036205,
+          "boom_degrees": -0.4287192880049715,
+          "mean_luffing": 0.9495931529509126,
+          "sail_drive_n": -0.0006238236456128012
+        },
+        {
+          "time_seconds": 21,
+          "speed_mps": 0.31767969816227604,
+          "heading_degrees": 359.8338825836603,
+          "heel_degrees": 5.699531057279837E-05,
+          "pitch_degrees": 0.004072580013230521,
+          "boom_degrees": -0.42725265770891657,
+          "mean_luffing": 0.9499199021756334,
+          "sail_drive_n": -0.0005615281954435474
+        },
+        {
+          "time_seconds": 22,
+          "speed_mps": 0.3037160968232853,
+          "heading_degrees": 359.83417434347484,
+          "heel_degrees": 5.189839440182459E-05,
+          "pitch_degrees": 0.003909502110058612,
+          "boom_degrees": -0.4259304724869074,
+          "mean_luffing": 0.950212046999865,
+          "sail_drive_n": -0.0005042032556318562
+        },
+        {
+          "time_seconds": 23,
+          "speed_mps": 0.29083959699293543,
+          "heading_degrees": 359.83444953984986,
+          "heel_degrees": 4.733840605631031E-05,
+          "pitch_degrees": 0.005844549204971064,
+          "boom_degrees": -0.42473319421626166,
+          "mean_luffing": 0.9504735153839482,
+          "sail_drive_n": -0.00045665901039757933
+        },
+        {
+          "time_seconds": 24,
+          "speed_mps": 0.27892924719213624,
+          "heading_degrees": 359.8347097530223,
+          "heel_degrees": 4.314887486793109E-05,
+          "pitch_degrees": 0.007847235624351703,
+          "boom_degrees": -0.4236445701304122,
+          "mean_luffing": 0.9507096963870612,
+          "sail_drive_n": -0.00041921714285739166
+        },
+        {
+          "time_seconds": 25,
+          "speed_mps": 0.26788133445746876,
+          "heading_degrees": 359.83495633637307,
+          "heel_degrees": 3.937363229647111E-05,
+          "pitch_degrees": 0.008338332960371465,
+          "boom_degrees": -0.4226509540295483,
+          "mean_luffing": 0.9509256849550121,
+          "sail_drive_n": -0.00038820476643603076
+        },
+        {
+          "time_seconds": 26,
+          "speed_mps": 0.25760574571248646,
+          "heading_degrees": 359.8351904622355,
+          "heel_degrees": 3.6092397038356625E-05,
+          "pitch_degrees": 0.0073945321768341,
+          "boom_degrees": -0.4217408532469152,
+          "mean_luffing": 0.9511246643033607,
+          "sail_drive_n": -0.00035950818555304816
+        },
+        {
+          "time_seconds": 27,
+          "speed_mps": 0.24802393039233828,
+          "heading_degrees": 359.8354131613522,
+          "heel_degrees": 3.32875775495356E-05,
+          "pitch_degrees": 0.006260174213783252,
+          "boom_degrees": -0.4209045743586083,
+          "mean_luffing": 0.9513079294132387,
+          "sail_drive_n": -0.0003314794170845977
+        },
+        {
+          "time_seconds": 28,
+          "speed_mps": 0.2390676457670445,
+          "heading_degrees": 359.8356253490157,
+          "heel_degrees": 3.084181125567487E-05,
+          "pitch_degrees": 0.006012554328854955,
+          "boom_degrees": -0.42013389840120036,
+          "mean_luffing": 0.9514760968027939,
+          "sail_drive_n": -0.0003050730888840785
+        },
+        {
+          "time_seconds": 29,
+          "speed_mps": 0.23067771397344203,
+          "heading_degrees": 359.8358278395391,
+          "heel_degrees": 2.862460983016935E-05,
+          "pitch_degrees": 0.00670522085855847,
+          "boom_degrees": -0.41942178564617416,
+          "mean_luffing": 0.9516302583947898,
+          "sail_drive_n": -0.00028188320028191185
+        },
+        {
+          "time_seconds": 30,
+          "speed_mps": 0.22280255030592294,
+          "heading_degrees": 359.8360213558848,
+          "heel_degrees": 2.656882575200388E-05,
+          "pitch_degrees": 0.007585616059057782,
+          "boom_degrees": -0.41876214037573256,
+          "mean_luffing": 0.9517722606728564,
+          "sail_drive_n": -0.00026234967340417004
+        }
+      ],
+      "final_boat": {
+        "position_world_m": {
+          "x": 19.561888813508734,
+          "y": -0.06520961832032289,
+          "z": -0.3514854573469683,
+          "is_finite": true,
+          "length_squared": 382.795288273126,
+          "length": 19.565154951421317
+        },
+        "orientation_body_to_world": {
+          "x": 3.265832792154779E-07,
+          "y": 6.619658840367824E-05,
+          "z": -0.0014309831452215078,
+          "w": 0.9999989739520453,
+          "is_finite": true,
+          "length_squared": 1.0000000000000002
+        },
+        "linear_velocity_world_mps": {
+          "x": 0.22280165332013877,
+          "y": -0.0006322188197272485,
+          "z": 1.6566852771559458E-06,
+          "is_finite": true,
+          "length_squared": 0.049640976425567925,
+          "length": 0.2228025503120822
+        },
+        "angular_velocity_body_rad_per_sec": {
+          "x": -4.1793804286619274E-08,
+          "y": 0.00015813420925529065,
+          "z": 3.3031218804174987E-06,
+          "is_finite": true,
+          "length_squared": 2.5017340497675023E-08,
+          "length": 0.00015816870897138606
+        }
+      },
+      "final_rig": {
+        "boom_angle_rad": -0.007308778132255218,
+        "boom_rate_rad_per_sec": 1.1083568590217676E-05
+      },
+      "exact_replay": true,
+      "wave_direction_mode": "AlignedWithWind",
+      "wave_from_degrees": 0
+    },
+    {
+      "condition": {
+        "id": "head-to-wind-calm",
+        "wind_knots": 10,
+        "heading_degrees": 0,
+        "waves": "Calm",
+        "seed": 123,
+        "initial_speed_mps": 0,
+        "controls": {
+          "tiller": 0,
+          "mainsheet": 0,
+          "traveler": 0,
+          "vang": 0,
+          "outhaul": 0,
+          "cunningham": 0,
+          "centerboard": 1,
+          "hiking": 0
+        }
+      },
+      "wind_from_degrees": 0,
+      "current": "Still water; wave orbital flow when non-calm",
+      "boat_mass_kg": 58,
+      "sailor_mass_kg": 80,
+      "step_seconds": 0.016666666666666666,
+      "steps": 1800,
+      "window_steps": 600,
+      "held_throughout": {
+        "tiller": 0,
+        "mainsheet": 0,
+        "traveler": 0,
+        "vang": 0,
+        "outhaul": 0,
+        "cunningham": 0,
+        "centerboard": 0,
+        "hiking": 0
+      },
+      "initial_boat": {
+        "position_world_m": {
+          "x": 0,
+          "y": 0,
+          "z": -0.3514857339267854,
+          "is_finite": true,
+          "length_squared": 0.12354222115405097,
+          "length": 0.3514857339267854
+        },
+        "orientation_body_to_world": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "w": 1,
+          "is_finite": true,
+          "length_squared": 1
+        },
+        "linear_velocity_world_mps": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "is_finite": true,
+          "length_squared": 0,
+          "length": 0
+        },
+        "angular_velocity_body_rad_per_sec": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "is_finite": true,
+          "length_squared": 0,
+          "length": 0
+        }
+      },
+      "initial_rig": {
+        "boom_angle_rad": 0.1,
+        "boom_rate_rad_per_sec": 0
+      },
+      "final_window": {
+        "start_seconds": 20.016666666666666,
+        "end_seconds": 30,
+        "samples": 600,
+        "mean_speed_mps": 0.03361079703000764,
+        "min_speed_mps": 0.03284740729863841,
+        "max_speed_mps": 0.03406631038780679,
+        "speed_change_mps": -0.000634537232466155,
+        "max_heading_error_degrees": 1.398205046914029,
+        "max_abs_heel_degrees": 0.0043403083588218,
+        "steady_candidate": true
+      },
+      "trace": [
+        {
+          "time_seconds": 0,
+          "speed_mps": 0,
+          "heading_degrees": 0,
+          "heel_degrees": 0,
+          "pitch_degrees": 0,
+          "boom_degrees": 5.729577951308232,
+          "mean_luffing": 0.06177914160510666,
+          "sail_drive_n": -13.217321854352315
+        },
+        {
+          "time_seconds": 1,
+          "speed_mps": 0.02349100052583551,
+          "heading_degrees": 359.09995761391565,
+          "heel_degrees": 1.2311283749582629,
+          "pitch_degrees": 0.00250311463590574,
+          "boom_degrees": -2.0246574427097688,
+          "mean_luffing": 0.4203591923069263,
+          "sail_drive_n": -2.6670489591471207
+        },
+        {
+          "time_seconds": 2,
+          "speed_mps": 0.03696213206596124,
+          "heading_degrees": 359.1628998775682,
+          "heel_degrees": 0.1458174477770294,
+          "pitch_degrees": 0.029725158860430815,
+          "boom_degrees": 0.04247669572319305,
+          "mean_luffing": 0.9699972585505509,
+          "sail_drive_n": -0.07172861972265818
+        },
+        {
+          "time_seconds": 3,
+          "speed_mps": 0.03541714149395744,
+          "heading_degrees": 358.87393921422415,
+          "heel_degrees": 0.15153204932580625,
+          "pitch_degrees": 0.0656567582721575,
+          "boom_degrees": -0.9780908326105489,
+          "mean_luffing": 0.84387387423741,
+          "sail_drive_n": -0.4315529127568279
+        },
+        {
+          "time_seconds": 4,
+          "speed_mps": 0.03518296617551099,
+          "heading_degrees": 358.7869533682235,
+          "heel_degrees": 0.005371131759553926,
+          "pitch_degrees": 0.03922788754825754,
+          "boom_degrees": -0.48695992735299276,
+          "mean_luffing": 0.976852295456251,
+          "sail_drive_n": -0.048740324666196565
+        },
+        {
+          "time_seconds": 5,
+          "speed_mps": 0.034832943594771626,
+          "heading_degrees": 358.7045739861911,
+          "heel_degrees": -0.03797393490722234,
+          "pitch_degrees": -0.002506839418155991,
+          "boom_degrees": -0.3770199180202965,
+          "mean_luffing": 0.9929768127945459,
+          "sail_drive_n": -0.024576686243741992
+        },
+        {
+          "time_seconds": 6,
+          "speed_mps": 0.0345400537757176,
+          "heading_degrees": 358.614809575028,
+          "heel_degrees": -0.0269117231815428,
+          "pitch_degrees": -0.023625762016386637,
+          "boom_degrees": -0.3967077496269032,
+          "mean_luffing": 0.9946883115124782,
+          "sail_drive_n": -0.02820354065061193
+        },
+        {
+          "time_seconds": 7,
+          "speed_mps": 0.03430116481066832,
+          "heading_degrees": 358.5258346938455,
+          "heel_degrees": 0.010836509519726489,
+          "pitch_degrees": -0.01249806375630809,
+          "boom_degrees": -0.44793387871559637,
+          "mean_luffing": 0.9935047246940636,
+          "sail_drive_n": -0.03034774748487257
+        },
+        {
+          "time_seconds": 8,
+          "speed_mps": 0.034104322153778135,
+          "heading_degrees": 358.4468459408399,
+          "heel_degrees": 0.025359360810873803,
+          "pitch_degrees": 0.013307121827423394,
+          "boom_degrees": -0.5045280979196785,
+          "mean_luffing": 0.9890190206097643,
+          "sail_drive_n": -0.034543044818558695
+        },
+        {
+          "time_seconds": 9,
+          "speed_mps": 0.03395387552180109,
+          "heading_degrees": 358.3817406071043,
+          "heel_degrees": 0.007432853172174839,
+          "pitch_degrees": 0.0283945276217567,
+          "boom_degrees": -0.5575570618412072,
+          "mean_luffing": 0.9831978787309669,
+          "sail_drive_n": -0.043257583950720324
+        },
+        {
+          "time_seconds": 10,
+          "speed_mps": 0.033849584193607556,
+          "heading_degrees": 358.32944187549396,
+          "heel_degrees": -0.011553147600840327,
+          "pitch_degrees": 0.023088662394139196,
+          "boom_degrees": -0.602991471901775,
+          "mean_luffing": 0.9807055639836131,
+          "sail_drive_n": -0.048132552098032466
+        },
+        {
+          "time_seconds": 11,
+          "speed_mps": 0.03378641975470336,
+          "heading_degrees": 358.2894176963012,
+          "heel_degrees": -0.009417954679506017,
+          "pitch_degrees": 0.007106982709727939,
+          "boom_degrees": -0.6392151895498477,
+          "mean_luffing": 0.9801068693986489,
+          "sail_drive_n": -0.04981076705568894
+        },
+        {
+          "time_seconds": 12,
+          "speed_mps": 0.03376394922324712,
+          "heading_degrees": 358.264198819663,
+          "heel_degrees": 0.004115931169703769,
+          "pitch_degrees": -0.0033824023063428778,
+          "boom_degrees": -0.6659560867991322,
+          "mean_luffing": 0.9782582782587551,
+          "sail_drive_n": -0.053100518306439734
+        },
+        {
+          "time_seconds": 13,
+          "speed_mps": 0.03377957621118777,
+          "heading_degrees": 358.25668940402187,
+          "heel_degrees": 0.010588310437946691,
+          "pitch_degrees": -0.0009910838049315633,
+          "boom_degrees": -0.6833612542573018,
+          "mean_luffing": 0.975152078645539,
+          "sail_drive_n": -0.058298325530213496
+        },
+        {
+          "time_seconds": 14,
+          "speed_mps": 0.03382424320194261,
+          "heading_degrees": 358.2672809599895,
+          "heel_degrees": 0.006813742236831781,
+          "pitch_degrees": 0.008980224444776998,
+          "boom_degrees": -0.6918089226659179,
+          "mean_luffing": 0.9728929098953993,
+          "sail_drive_n": -0.06204798435108584
+        },
+        {
+          "time_seconds": 15,
+          "speed_mps": 0.033883851587846396,
+          "heading_degrees": 358.2941298594665,
+          "heel_degrees": 0.0016853311040852907,
+          "pitch_degrees": 0.01628456841830336,
+          "boom_degrees": -0.6921084694810241,
+          "mean_luffing": 0.9725589496150766,
+          "sail_drive_n": -0.06228667556498783
+        },
+        {
+          "time_seconds": 16,
+          "speed_mps": 0.03394535473699176,
+          "heading_degrees": 358.33497697166877,
+          "heel_degrees": 0.0012959922810764717,
+          "pitch_degrees": 0.015510572606309031,
+          "boom_degrees": -0.6854232382678473,
+          "mean_luffing": 0.9732633017268671,
+          "sail_drive_n": -0.060436960819459526
+        },
+        {
+          "time_seconds": 17,
+          "speed_mps": 0.03400002016883974,
+          "heading_degrees": 358.3879854977333,
+          "heel_degrees": 0.003931800154378817,
+          "pitch_degrees": 0.009373328155721327,
+          "boom_degrees": -0.6729324112574234,
+          "mean_luffing": 0.9739676861405728,
+          "sail_drive_n": -0.058334613408111906
+        },
+        {
+          "time_seconds": 18,
+          "speed_mps": 0.03404184207454717,
+          "heading_degrees": 358.45137658256687,
+          "heel_degrees": 0.005502817359776561,
+          "pitch_degrees": 0.00435086587254844,
+          "boom_degrees": -0.6556712279659372,
+          "mean_luffing": 0.9745689870031149,
+          "sail_drive_n": -0.05622502632628933
+        },
+        {
+          "time_seconds": 19,
+          "speed_mps": 0.03406553069217429,
+          "heading_degrees": 358.52299826175044,
+          "heel_degrees": 0.004810590757005099,
+          "pitch_degrees": 0.004349615188035159,
+          "boom_degrees": -0.6346008385389057,
+          "mean_luffing": 0.9754472589382045,
+          "sail_drive_n": -0.053528808537233186
+        },
+        {
+          "time_seconds": 20,
+          "speed_mps": 0.0340664043747445,
+          "heading_degrees": 358.6004579906909,
+          "heel_degrees": 0.00342037312288989,
+          "pitch_degrees": 0.008082922356422783,
+          "boom_degrees": -0.6106821471137631,
+          "mean_luffing": 0.9767495500219022,
+          "sail_drive_n": -0.050087901509622244
+        },
+        {
+          "time_seconds": 21,
+          "speed_mps": 0.03404143573778992,
+          "heading_degrees": 358.68154708878825,
+          "heel_degrees": 0.002843707573408647,
+          "pitch_degrees": 0.011471598045496375,
+          "boom_degrees": -0.5848415557683433,
+          "mean_luffing": 0.9782599930252837,
+          "sail_drive_n": -0.04636153839404853
+        },
+        {
+          "time_seconds": 22,
+          "speed_mps": 0.03398983457116362,
+          "heading_degrees": 358.7644895966622,
+          "heel_degrees": 0.00307411339527708,
+          "pitch_degrees": 0.011744287118930516,
+          "boom_degrees": -0.5578896503936636,
+          "mean_luffing": 0.9797207599437111,
+          "sail_drive_n": -0.042830417719502085
+        },
+        {
+          "time_seconds": 23,
+          "speed_mps": 0.03391263858655486,
+          "heading_degrees": 358.8479037102978,
+          "heel_degrees": 0.00328211015993444,
+          "pitch_degrees": 0.009433418248885878,
+          "boom_degrees": -0.5304806829668176,
+          "mean_luffing": 0.981058823351742,
+          "sail_drive_n": -0.039613544940326074
+        },
+        {
+          "time_seconds": 24,
+          "speed_mps": 0.033811867401549935,
+          "heading_degrees": 358.93066298128684,
+          "heel_degrees": 0.003014618193982905,
+          "pitch_degrees": 0.007099322481574262,
+          "boom_degrees": -0.503124854357885,
+          "mean_luffing": 0.9823323770486945,
+          "sail_drive_n": -0.036599594723198015
+        },
+        {
+          "time_seconds": 25,
+          "speed_mps": 0.03368987626196704,
+          "heading_degrees": 359.01183365429335,
+          "heel_degrees": 0.00250185805662416,
+          "pitch_degrees": 0.006684214087914667,
+          "boom_degrees": -0.47621637021440427,
+          "mean_luffing": 0.9835813631064099,
+          "sail_drive_n": -0.03373154354337609
+        },
+        {
+          "time_seconds": 26,
+          "speed_mps": 0.03354908785903261,
+          "heading_degrees": 359.0906970517209,
+          "heel_degrees": 0.002148974980255023,
+          "pitch_degrees": 0.00803992160186488,
+          "boom_degrees": -0.4500506451410952,
+          "mean_luffing": 0.9847719248195544,
+          "sail_drive_n": -0.031095108587397856
+        },
+        {
+          "time_seconds": 27,
+          "speed_mps": 0.03339197299907828,
+          "heading_degrees": 359.1667689348436,
+          "heel_degrees": 0.002054240661227023,
+          "pitch_degrees": 0.00957240096520149,
+          "boom_degrees": -0.42483172626792964,
+          "mean_luffing": 0.9858486785338355,
+          "sail_drive_n": -0.02880113136372277
+        },
+        {
+          "time_seconds": 28,
+          "speed_mps": 0.03322104174008197,
+          "heading_degrees": 359.23976250359294,
+          "heel_degrees": 0.002026692031930691,
+          "pitch_degrees": 0.009937339085222563,
+          "boom_degrees": -0.4006818029757341,
+          "mean_luffing": 0.9867958153854506,
+          "sail_drive_n": -0.026864960383722384
+        },
+        {
+          "time_seconds": 29,
+          "speed_mps": 0.033038759086023745,
+          "heading_degrees": 359.3095188827602,
+          "heel_degrees": 0.0018927904602342655,
+          "pitch_degrees": 0.009103979734290508,
+          "boom_degrees": -0.3776574394774989,
+          "mean_luffing": 0.9876396570216951,
+          "sail_drive_n": -0.025211710227713433
+        },
+        {
+          "time_seconds": 30,
+          "speed_mps": 0.03284740729863841,
+          "heading_degrees": 359.37595518317704,
+          "heel_degrees": 0.0016709661235814856,
+          "pitch_degrees": 0.008056062715185164,
+          "boom_degrees": -0.35576796902797286,
+          "mean_luffing": 0.9884113667904036,
+          "sail_drive_n": -0.023761848311264884
+        }
+      ],
+      "final_boat": {
+        "position_world_m": {
+          "x": -0.9884866810146785,
+          "y": -0.05576670163740623,
+          "z": -0.3514854995603247,
+          "is_finite": true,
+          "length_squared": 1.1037578999561013,
+          "length": 1.0505988292188895
+        },
+        "orientation_body_to_world": {
+          "x": 1.49645662696729E-05,
+          "y": 7.022195687267765E-05,
+          "z": -0.005445792460200041,
+          "w": 0.9999851689847301,
+          "is_finite": true,
+          "length_squared": 1.0000000000000002
+        },
+        "linear_velocity_world_mps": {
+          "x": -0.032779240676641216,
+          "y": 0.00211507609921571,
+          "z": -1.9091898470166696E-06,
+          "is_finite": true,
+          "length_squared": 0.0010789521698876495,
+          "length": 0.032847407354122324
+        },
+        "angular_velocity_body_rad_per_sec": {
+          "x": -1.2149503394799547E-05,
+          "y": -0.00019808802010342909,
+          "z": 0.0011312591639200315,
+          "is_finite": true,
+          "length_squared": 1.3191337700942855E-06,
+          "length": 0.001148535489261993
+        }
+      },
+      "final_rig": {
+        "boom_angle_rad": -0.006209322432671337,
+        "boom_rate_rad_per_sec": 0.0003722661341056249
+      },
+      "exact_replay": true,
+      "wave_direction_mode": "AlignedWithWind",
+      "wave_from_degrees": 0
+    },
+    {
+      "condition": {
+        "id": "upwind-45-calm",
+        "wind_knots": 10,
+        "heading_degrees": 45,
+        "waves": "Calm",
+        "seed": 123,
+        "initial_speed_mps": 0,
+        "controls": {
+          "tiller": 0,
+          "mainsheet": 0.85,
+          "traveler": 0.8,
+          "vang": 0.6,
+          "outhaul": 0.5,
+          "cunningham": 0.3,
+          "centerboard": 1,
+          "hiking": -0.3
+        }
+      },
+      "wind_from_degrees": 0,
+      "current": "Still water; wave orbital flow when non-calm",
+      "boat_mass_kg": 58,
+      "sailor_mass_kg": 80,
+      "step_seconds": 0.016666666666666666,
+      "steps": 1800,
+      "window_steps": 600,
+      "held_throughout": {
+        "tiller": 0,
+        "mainsheet": 0,
+        "traveler": 0,
+        "vang": 0,
+        "outhaul": 0,
+        "cunningham": 0,
+        "centerboard": 0,
+        "hiking": 0
+      },
+      "initial_boat": {
+        "position_world_m": {
+          "x": 0,
+          "y": 0,
+          "z": -0.37235529914417664,
+          "is_finite": true,
+          "length_squared": 0.13864846880074927,
+          "length": 0.37235529914417664
+        },
+        "orientation_body_to_world": {
+          "x": 0,
+          "y": 0,
+          "z": 0.3826834323650898,
+          "w": 0.9238795325112867,
+          "is_finite": true,
+          "length_squared": 1
+        },
+        "linear_velocity_world_mps": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "is_finite": true,
+          "length_squared": 0,
+          "length": 0
+        },
+        "angular_velocity_body_rad_per_sec": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "is_finite": true,
+          "length_squared": 0,
+          "length": 0
+        }
+      },
+      "initial_rig": {
+        "boom_angle_rad": 0.1,
+        "boom_rate_rad_per_sec": 0
+      },
+      "final_window": {
+        "start_seconds": 20.016666666666666,
+        "end_seconds": 30,
+        "samples": 600,
+        "mean_speed_mps": 2.5115203011935696,
+        "min_speed_mps": 2.3384783842633015,
+        "max_speed_mps": 2.609183224138539,
+        "speed_change_mps": 0.13489264161095882,
+        "max_heading_error_degrees": 51.0521158289865,
+        "max_abs_heel_degrees": 1.9167496665063148,
+        "steady_candidate": false
+      },
+      "trace": [
+        {
+          "time_seconds": 0,
+          "speed_mps": 0,
+          "heading_degrees": 45.00000000000001,
+          "heel_degrees": 0,
+          "pitch_degrees": 0,
+          "boom_degrees": 5.729577951308232,
+          "mean_luffing": 2.374495717657934E-08,
+          "sail_drive_n": 55.36351147223361
+        },
+        {
+          "time_seconds": 1,
+          "speed_mps": 0.3876479473451941,
+          "heading_degrees": 42.373896031857846,
+          "heel_degrees": -1.175241842256259,
+          "pitch_degrees": 0.06439699625764912,
+          "boom_degrees": 20.634609311234737,
+          "mean_luffing": 0.3635371342123342,
+          "sail_drive_n": 25.719473226804162
+        },
+        {
+          "time_seconds": 2,
+          "speed_mps": 0.5581938694259617,
+          "heading_degrees": 42.52621643555867,
+          "heel_degrees": -1.5813663947287009,
+          "pitch_degrees": -0.04141532039293025,
+          "boom_degrees": 20.163867264087422,
+          "mean_luffing": 0.4284823600939281,
+          "sail_drive_n": 22.526727094919803
+        },
+        {
+          "time_seconds": 3,
+          "speed_mps": 0.7232405826434181,
+          "heading_degrees": 44.45313871192115,
+          "heel_degrees": -1.3937863181224777,
+          "pitch_degrees": -0.12125604599856209,
+          "boom_degrees": 20.352025328603546,
+          "mean_luffing": 0.37208177055042874,
+          "sail_drive_n": 26.90955332121123
+        },
+        {
+          "time_seconds": 4,
+          "speed_mps": 0.8872534813090487,
+          "heading_degrees": 46.36245161134971,
+          "heel_degrees": -1.177577156058827,
+          "pitch_degrees": -0.16344575178639092,
+          "boom_degrees": 20.567810567861034,
+          "mean_luffing": 0.3258714034121259,
+          "sail_drive_n": 30.84173194022692
+        },
+        {
+          "time_seconds": 5,
+          "speed_mps": 1.040313129320069,
+          "heading_degrees": 48.19410607826718,
+          "heel_degrees": -0.9739387563622277,
+          "pitch_degrees": -0.19138165004239208,
+          "boom_degrees": 20.756697548210735,
+          "mean_luffing": 0.27893603815225465,
+          "sail_drive_n": 34.745120983539465
+        },
+        {
+          "time_seconds": 6,
+          "speed_mps": 1.179656478162427,
+          "heading_degrees": 49.99714373278326,
+          "heel_degrees": -0.7764987304407391,
+          "pitch_degrees": -0.20652089751901273,
+          "boom_degrees": 20.942946593434307,
+          "mean_luffing": 0.2419189084850569,
+          "sail_drive_n": 38.43084386502333
+        },
+        {
+          "time_seconds": 7,
+          "speed_mps": 1.3054765229189857,
+          "heading_degrees": 51.80087557706961,
+          "heel_degrees": -0.5754961062730158,
+          "pitch_degrees": -0.21407934492279912,
+          "boom_degrees": 21.121718594757503,
+          "mean_luffing": 0.20632145652057854,
+          "sail_drive_n": 42.24277087443954
+        },
+        {
+          "time_seconds": 8,
+          "speed_mps": 1.4196463316640424,
+          "heading_degrees": 53.625336147046376,
+          "heel_degrees": -0.36527460405924433,
+          "pitch_degrees": -0.22618894156019634,
+          "boom_degrees": 21.295713431462925,
+          "mean_luffing": 0.17446148519531793,
+          "sail_drive_n": 46.15551812792001
+        },
+        {
+          "time_seconds": 9,
+          "speed_mps": 1.5243617321652958,
+          "heading_degrees": 55.483095504067485,
+          "heel_degrees": -0.1534114937908459,
+          "pitch_degrees": -0.2433895114118726,
+          "boom_degrees": 21.466488478644063,
+          "mean_luffing": 0.14351713049972623,
+          "sail_drive_n": 50.24890465080693
+        },
+        {
+          "time_seconds": 10,
+          "speed_mps": 1.6217828546423354,
+          "heading_degrees": 57.37999397444762,
+          "heel_degrees": 0.054689059140769304,
+          "pitch_degrees": -0.2676544199668037,
+          "boom_degrees": 21.63349708257153,
+          "mean_luffing": 0.11417871888679604,
+          "sail_drive_n": 54.52744833481165
+        },
+        {
+          "time_seconds": 11,
+          "speed_mps": 1.7131685386394904,
+          "heading_degrees": 59.31528070847372,
+          "heel_degrees": 0.2702793185850467,
+          "pitch_degrees": -0.302992175750178,
+          "boom_degrees": 21.796102518814283,
+          "mean_luffing": 0.08778478454101313,
+          "sail_drive_n": 58.88977845875996
+        },
+        {
+          "time_seconds": 12,
+          "speed_mps": 1.799595619859211,
+          "heading_degrees": 61.287871905083946,
+          "heel_degrees": 0.4826856900859779,
+          "pitch_degrees": -0.33993252815926167,
+          "boom_degrees": 21.95529588082913,
+          "mean_luffing": 0.06428411162882108,
+          "sail_drive_n": 63.3820330952226
+        },
+        {
+          "time_seconds": 13,
+          "speed_mps": 1.8816759875853422,
+          "heading_degrees": 63.29098871287409,
+          "heel_degrees": 0.6857445116172135,
+          "pitch_degrees": -0.37701207488679817,
+          "boom_degrees": 22.109177143444736,
+          "mean_luffing": 0.04503204302711536,
+          "sail_drive_n": 67.89207582011093
+        },
+        {
+          "time_seconds": 14,
+          "speed_mps": 1.95960332325657,
+          "heading_degrees": 65.31745713492073,
+          "heel_degrees": 0.876452691619299,
+          "pitch_degrees": -0.4133735859464716,
+          "boom_degrees": 22.2558729582514,
+          "mean_luffing": 0.030062846406791605,
+          "sail_drive_n": 72.37413477552468
+        },
+        {
+          "time_seconds": 15,
+          "speed_mps": 2.0333897791948483,
+          "heading_degrees": 67.36017121280491,
+          "heel_degrees": 1.0470736037263757,
+          "pitch_degrees": -0.4427868933882189,
+          "boom_degrees": 22.39490315491665,
+          "mean_luffing": 0.01900232423437573,
+          "sail_drive_n": 76.80016970818755
+        },
+        {
+          "time_seconds": 16,
+          "speed_mps": 2.1027692308392916,
+          "heading_degrees": 69.40957136936422,
+          "heel_degrees": 1.2006871355242135,
+          "pitch_degrees": -0.4724645283325272,
+          "boom_degrees": 22.52291851097017,
+          "mean_luffing": 0.011482447919171754,
+          "sail_drive_n": 81.0623529495906
+        },
+        {
+          "time_seconds": 17,
+          "speed_mps": 2.167906598868714,
+          "heading_degrees": 71.45831439252895,
+          "heel_degrees": 1.3386510884253453,
+          "pitch_degrees": -0.5012296944695488,
+          "boom_degrees": 22.640282355686256,
+          "mean_luffing": 0.0065727050584433976,
+          "sail_drive_n": 85.16204212395809
+        },
+        {
+          "time_seconds": 18,
+          "speed_mps": 2.22863698596971,
+          "heading_degrees": 73.50013517737877,
+          "heel_degrees": 1.4604378538785228,
+          "pitch_degrees": -0.5285973684807961,
+          "boom_degrees": 22.745982029842963,
+          "mean_luffing": 0.003558594716801247,
+          "sail_drive_n": 89.0584787741083
+        },
+        {
+          "time_seconds": 19,
+          "speed_mps": 2.2852277176435747,
+          "heading_degrees": 75.52800374301297,
+          "heel_degrees": 1.5663246369502883,
+          "pitch_degrees": -0.5543275646789381,
+          "boom_degrees": 22.839262871150773,
+          "mean_luffing": 0.0018225473505605553,
+          "sail_drive_n": 92.71788679123188
+        },
+        {
+          "time_seconds": 20,
+          "speed_mps": 2.337642088976361,
+          "heading_degrees": 77.53620750305198,
+          "heel_degrees": 1.6562067007965144,
+          "pitch_degrees": -0.578509224984663,
+          "boom_degrees": 22.919750914100646,
+          "mean_luffing": 0.0008840881921884317,
+          "sail_drive_n": 96.11013355059517
+        },
+        {
+          "time_seconds": 21,
+          "speed_mps": 2.3855074308587634,
+          "heading_degrees": 79.52051470855885,
+          "heel_degrees": 1.7402177688739775,
+          "pitch_degrees": -0.6028990848042546,
+          "boom_degrees": 22.98667115490194,
+          "mean_luffing": 0.0004044727692965148,
+          "sail_drive_n": 99.21004078878711
+        },
+        {
+          "time_seconds": 22,
+          "speed_mps": 2.4287654965330825,
+          "heading_degrees": 81.47864609048995,
+          "heel_degrees": 1.8072306072519444,
+          "pitch_degrees": -0.624716944204982,
+          "boom_degrees": 23.041194979089678,
+          "mean_luffing": 0.00017347756913772738,
+          "sail_drive_n": 102.03498446229806
+        },
+        {
+          "time_seconds": 23,
+          "speed_mps": 2.4673304198028534,
+          "heading_degrees": 83.40818331991876,
+          "heel_degrees": 1.8579348300269256,
+          "pitch_degrees": -0.6442301866012421,
+          "boom_degrees": 23.08279850330601,
+          "mean_luffing": 6.977170168345454E-05,
+          "sail_drive_n": 104.55354016885221
+        },
+        {
+          "time_seconds": 24,
+          "speed_mps": 2.5011990339075876,
+          "heading_degrees": 85.3077977244042,
+          "heel_degrees": 1.8927171457227876,
+          "pitch_degrees": -0.661382977355996,
+          "boom_degrees": 23.111656279512363,
+          "mean_luffing": 2.6238787545214073E-05,
+          "sail_drive_n": 106.75678317750507
+        },
+        {
+          "time_seconds": 25,
+          "speed_mps": 2.5303894951965353,
+          "heading_degrees": 87.17666718805069,
+          "heel_degrees": 1.9119560030355445,
+          "pitch_degrees": -0.6774498830281596,
+          "boom_degrees": 23.12810601087578,
+          "mean_luffing": 9.207529283164722E-06,
+          "sail_drive_n": 108.63816548993884
+        },
+        {
+          "time_seconds": 26,
+          "speed_mps": 2.5549511142340067,
+          "heading_degrees": 89.0144414531053,
+          "heel_degrees": 1.9165096105176043,
+          "pitch_degrees": -0.6910198762056019,
+          "boom_degrees": 23.13247002748759,
+          "mean_luffing": 3.002661654254096E-06,
+          "sail_drive_n": 110.19333736233163
+        },
+        {
+          "time_seconds": 27,
+          "speed_mps": 2.5749964057989465,
+          "heading_degrees": 90.82075980248038,
+          "heel_degrees": 1.9071414224004608,
+          "pitch_degrees": -0.7020443035126147,
+          "boom_degrees": 23.125248867732264,
+          "mean_luffing": 9.085049738406056E-07,
+          "sail_drive_n": 111.41975250694253
+        },
+        {
+          "time_seconds": 28,
+          "speed_mps": 2.5906390985285213,
+          "heading_degrees": 92.59556989559833,
+          "heel_degrees": 1.8846513471246575,
+          "pitch_degrees": -0.7105262555485761,
+          "boom_degrees": 23.106971821598087,
+          "mean_luffing": 2.5453331060302576E-07,
+          "sail_drive_n": 112.3168946727219
+        },
+        {
+          "time_seconds": 29,
+          "speed_mps": 2.6019951598150075,
+          "heading_degrees": 94.3391522616376,
+          "heel_degrees": 1.8498984161054581,
+          "pitch_degrees": -0.7164838314312785,
+          "boom_degrees": 23.078223130772976,
+          "mean_luffing": 6.590592830377027E-08,
+          "sail_drive_n": 112.88634862809513
+        },
+        {
+          "time_seconds": 30,
+          "speed_mps": 2.609183224138539,
+          "heading_degrees": 96.0521158289865,
+          "heel_degrees": 1.8037896550543047,
+          "pitch_degrees": -0.7199512363722801,
+          "boom_degrees": 23.039630129162685,
+          "mean_luffing": 1.5742913744855753E-08,
+          "sail_drive_n": 113.13141541387493
+        }
+      ],
+      "final_boat": {
+        "position_world_m": {
+          "x": 10.629173745352015,
+          "y": 52.75536999141298,
+          "z": -0.37815626486586806,
+          "is_finite": true,
+          "length_squared": 2896.251399600415,
+          "length": 53.816831935746784
+        },
+        "orientation_body_to_world": {
+          "x": 0.015197146531774133,
+          "y": 0.007500628213802334,
+          "z": 0.7434084300022431,
+          "w": 0.6686229830893418,
+          "is_finite": true,
+          "length_squared": 1
+        },
+        "linear_velocity_world_mps": {
+          "x": -0.40355499232679753,
+          "y": 2.5777859618855286,
+          "z": 0.0001446798651628942,
+          "is_finite": true,
+          "length_squared": 6.807837118058244,
+          "length": 2.6091832281498064
+        },
+        "angular_velocity_body_rad_per_sec": {
+          "x": -0.000525807482467939,
+          "y": 0.0008941567522743952,
+          "z": 0.029618747896842892,
+          "is_finite": true,
+          "length_squared": 0.0008783462167829924,
+          "length": 0.02963690632949047
+        }
+      },
+      "final_rig": {
+        "boom_angle_rad": 0.4021174041955753,
+        "boom_rate_rad_per_sec": -0.0007560311810367474
+      },
+      "exact_replay": true,
+      "wave_direction_mode": "AlignedWithWind",
+      "wave_from_degrees": 0
+    },
+    {
+      "condition": {
+        "id": "reach-90-calm",
+        "wind_knots": 10,
+        "heading_degrees": 90,
+        "waves": "Calm",
+        "seed": 123,
+        "initial_speed_mps": 0,
+        "controls": {
+          "tiller": 0,
+          "mainsheet": 0.6,
+          "traveler": 0.8,
+          "vang": 0.6,
+          "outhaul": 0.5,
+          "cunningham": 0.3,
+          "centerboard": 1,
+          "hiking": -0.3
+        }
+      },
+      "wind_from_degrees": 0,
+      "current": "Still water; wave orbital flow when non-calm",
+      "boat_mass_kg": 58,
+      "sailor_mass_kg": 80,
+      "step_seconds": 0.016666666666666666,
+      "steps": 1800,
+      "window_steps": 600,
+      "held_throughout": {
+        "tiller": 0,
+        "mainsheet": 0,
+        "traveler": 0,
+        "vang": 0,
+        "outhaul": 0,
+        "cunningham": 0,
+        "centerboard": 0,
+        "hiking": 0
+      },
+      "initial_boat": {
+        "position_world_m": {
+          "x": 0,
+          "y": 0,
+          "z": -0.37235529914417664,
+          "is_finite": true,
+          "length_squared": 0.13864846880074927,
+          "length": 0.37235529914417664
+        },
+        "orientation_body_to_world": {
+          "x": 0,
+          "y": 0,
+          "z": 0.7071067811865475,
+          "w": 0.7071067811865476,
+          "is_finite": true,
+          "length_squared": 1
+        },
+        "linear_velocity_world_mps": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "is_finite": true,
+          "length_squared": 0,
+          "length": 0
+        },
+        "angular_velocity_body_rad_per_sec": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "is_finite": true,
+          "length_squared": 0,
+          "length": 0
+        }
+      },
+      "initial_rig": {
+        "boom_angle_rad": 0.1,
+        "boom_rate_rad_per_sec": 0
+      },
+      "final_window": {
+        "start_seconds": 20.016666666666666,
+        "end_seconds": 30,
+        "samples": 600,
+        "mean_speed_mps": 1.9127850254086487,
+        "min_speed_mps": 1.90159029162521,
+        "max_speed_mps": 1.9239398160335777,
+        "speed_change_mps": -0.011191949727261008,
+        "max_heading_error_degrees": 10.612446610569265,
+        "max_abs_heel_degrees": 1.295146958141931,
+        "steady_candidate": false
+      },
+      "trace": [
+        {
+          "time_seconds": 0,
+          "speed_mps": 0,
+          "heading_degrees": 89.99999999999999,
+          "heel_degrees": 0,
+          "pitch_degrees": 0,
+          "boom_degrees": 5.729577951308232,
+          "mean_luffing": 4.332320846425539E-29,
+          "sail_drive_n": 47.02609274435811
+        },
+        {
+          "time_seconds": 1,
+          "speed_mps": 0.7319064089686298,
+          "heading_degrees": 84.25063211823228,
+          "heel_degrees": -0.02685610867184107,
+          "pitch_degrees": 0.004633476625328447,
+          "boom_degrees": 40.902710288808755,
+          "mean_luffing": 4.284697180013945E-05,
+          "sail_drive_n": 78.73477104892908
+        },
+        {
+          "time_seconds": 2,
+          "speed_mps": 1.2830324964569304,
+          "heading_degrees": 82.04839144313316,
+          "heel_degrees": -0.5562057018966574,
+          "pitch_degrees": -0.19620672216884785,
+          "boom_degrees": 40.97404373007221,
+          "mean_luffing": 0.008312727195428738,
+          "sail_drive_n": 85.00854762814001
+        },
+        {
+          "time_seconds": 3,
+          "speed_mps": 1.6136812420658437,
+          "heading_degrees": 81.48818546985288,
+          "heel_degrees": -0.8656756494868963,
+          "pitch_degrees": -0.28429482224373887,
+          "boom_degrees": 40.78379790726537,
+          "mean_luffing": 0.06092305863514192,
+          "sail_drive_n": 76.06647112282519
+        },
+        {
+          "time_seconds": 4,
+          "speed_mps": 1.7885707743094776,
+          "heading_degrees": 81.20203659565789,
+          "heel_degrees": -1.0199207019962218,
+          "pitch_degrees": -0.3447987604997709,
+          "boom_degrees": 40.5950864113713,
+          "mean_luffing": 0.11086082691217271,
+          "sail_drive_n": 70.53332076092536
+        },
+        {
+          "time_seconds": 5,
+          "speed_mps": 1.874957911014105,
+          "heading_degrees": 81.04165413870946,
+          "heel_degrees": -1.1127122104141705,
+          "pitch_degrees": -0.3618347311084504,
+          "boom_degrees": 40.49751794930845,
+          "mean_luffing": 0.13784415896287192,
+          "sail_drive_n": 67.55547735003876
+        },
+        {
+          "time_seconds": 6,
+          "speed_mps": 1.9157048212683334,
+          "heading_degrees": 80.93336095557208,
+          "heel_degrees": -1.159452741249009,
+          "pitch_degrees": -0.3640704146160882,
+          "boom_degrees": 40.44884939866316,
+          "mean_luffing": 0.15086356819629584,
+          "sail_drive_n": 66.07947486987703
+        },
+        {
+          "time_seconds": 7,
+          "speed_mps": 1.9341362588591764,
+          "heading_degrees": 80.84927973898284,
+          "heel_degrees": -1.1850320289456968,
+          "pitch_degrees": -0.36175757466185837,
+          "boom_degrees": 40.42763160413586,
+          "mean_luffing": 0.15884633791404343,
+          "sail_drive_n": 65.21925338500347
+        },
+        {
+          "time_seconds": 8,
+          "speed_mps": 1.9417413610149927,
+          "heading_degrees": 80.7759856099083,
+          "heel_degrees": -1.198920778529465,
+          "pitch_degrees": -0.3581891904359309,
+          "boom_degrees": 40.415581725092515,
+          "mean_luffing": 0.1632110950483675,
+          "sail_drive_n": 64.75033509881129
+        },
+        {
+          "time_seconds": 9,
+          "speed_mps": 1.944205181397342,
+          "heading_degrees": 80.70780557770836,
+          "heel_degrees": -1.2073315192240472,
+          "pitch_degrees": -0.35583287566110233,
+          "boom_degrees": 40.40825743506818,
+          "mean_luffing": 0.16656995288495366,
+          "sail_drive_n": 64.42612945175728
+        },
+        {
+          "time_seconds": 10,
+          "speed_mps": 1.9442026443014242,
+          "heading_degrees": 80.64218222598072,
+          "heel_degrees": -1.2136307812902636,
+          "pitch_degrees": -0.35412505812821415,
+          "boom_degrees": 40.40251420101492,
+          "mean_luffing": 0.16890845831339515,
+          "sail_drive_n": 64.1961144600995
+        },
+        {
+          "time_seconds": 11,
+          "speed_mps": 1.943037014812701,
+          "heading_degrees": 80.57774136318757,
+          "heel_degrees": -1.2185183163120765,
+          "pitch_degrees": -0.3530426725355459,
+          "boom_degrees": 40.39741693318362,
+          "mean_luffing": 0.1707586519591708,
+          "sail_drive_n": 64.01072835634531
+        },
+        {
+          "time_seconds": 12,
+          "speed_mps": 1.9413173373836095,
+          "heading_degrees": 80.51398814407439,
+          "heel_degrees": -1.223030408611612,
+          "pitch_degrees": -0.35201253414759487,
+          "boom_degrees": 40.392918741056334,
+          "mean_luffing": 0.17238568328319173,
+          "sail_drive_n": 63.843094471766705
+        },
+        {
+          "time_seconds": 13,
+          "speed_mps": 1.9393333278964773,
+          "heading_degrees": 80.45057342659224,
+          "heel_degrees": -1.2271993458335233,
+          "pitch_degrees": -0.3510423873751812,
+          "boom_degrees": 40.38855391553509,
+          "mean_luffing": 0.17384862180989544,
+          "sail_drive_n": 63.6884300240347
+        },
+        {
+          "time_seconds": 14,
+          "speed_mps": 1.9372250233531245,
+          "heading_degrees": 80.38738840708656,
+          "heel_degrees": -1.231269173144981,
+          "pitch_degrees": -0.3500664745138734,
+          "boom_degrees": 40.384383146012375,
+          "mean_luffing": 0.17529351311583682,
+          "sail_drive_n": 63.53623123785526
+        },
+        {
+          "time_seconds": 15,
+          "speed_mps": 1.9350559582902496,
+          "heading_degrees": 80.32435534122119,
+          "heel_degrees": -1.2352802097776494,
+          "pitch_degrees": -0.349084304124539,
+          "boom_degrees": 40.380243045612914,
+          "mean_luffing": 0.1766993453096961,
+          "sail_drive_n": 63.387293676043925
+        },
+        {
+          "time_seconds": 16,
+          "speed_mps": 1.9328583789026268,
+          "heading_degrees": 80.26143894992202,
+          "heel_degrees": -1.2392560894262463,
+          "pitch_degrees": -0.34811378164474005,
+          "boom_degrees": 40.3761347652556,
+          "mean_luffing": 0.17810561846530482,
+          "sail_drive_n": 63.239013959018536
+        },
+        {
+          "time_seconds": 17,
+          "speed_mps": 1.930646335301245,
+          "heading_degrees": 80.19862331106026,
+          "heel_degrees": -1.243231083327355,
+          "pitch_degrees": -0.3471401348588663,
+          "boom_degrees": 40.37203787525718,
+          "mean_luffing": 0.17950720333149348,
+          "sail_drive_n": 63.09136383932369
+        },
+        {
+          "time_seconds": 18,
+          "speed_mps": 1.9284269356951553,
+          "heading_degrees": 80.13589281637873,
+          "heel_degrees": -1.2471968638865374,
+          "pitch_degrees": -0.34617300317605304,
+          "boom_degrees": 40.36793843756987,
+          "mean_luffing": 0.18090811618806157,
+          "sail_drive_n": 62.94411164898287
+        },
+        {
+          "time_seconds": 19,
+          "speed_mps": 1.926203347772208,
+          "heading_degrees": 80.07324133220905,
+          "heel_degrees": -1.251167287962475,
+          "pitch_degrees": -0.3452059054547018,
+          "boom_degrees": 40.363842503987485,
+          "mean_luffing": 0.18231166626501516,
+          "sail_drive_n": 62.79694518053013
+        },
+        {
+          "time_seconds": 20,
+          "speed_mps": 1.9239769421716868,
+          "heading_degrees": 80.01066063771891,
+          "heel_degrees": -1.2551391662788793,
+          "pitch_degrees": -0.3442406385452439,
+          "boom_degrees": 40.359741590534334,
+          "mean_luffing": 0.18371600025174595,
+          "sail_drive_n": 62.6499780825722
+        },
+        {
+          "time_seconds": 21,
+          "speed_mps": 1.9217483714464878,
+          "heading_degrees": 79.94814520645836,
+          "heel_degrees": -1.2591152867443167,
+          "pitch_degrees": -0.3432765337536708,
+          "boom_degrees": 40.355638798339385,
+          "mean_luffing": 0.18512351235576374,
+          "sail_drive_n": 62.50304556022492
+        },
+        {
+          "time_seconds": 22,
+          "speed_mps": 1.9195177802977528,
+          "heading_degrees": 79.88568929570182,
+          "heel_degrees": -1.2630961768481321,
+          "pitch_degrees": -0.342313141220181,
+          "boom_degrees": 40.351531669180076,
+          "mean_luffing": 0.18653325277443522,
+          "sail_drive_n": 62.35619130750873
+        },
+        {
+          "time_seconds": 23,
+          "speed_mps": 1.9172851966754199,
+          "heading_degrees": 79.82328741134368,
+          "heel_degrees": -1.2670817645235077,
+          "pitch_degrees": -0.34135087236409056,
+          "boom_degrees": 40.347420221129774,
+          "mean_luffing": 0.1879458978800331,
+          "sail_drive_n": 62.209371316855965
+        },
+        {
+          "time_seconds": 24,
+          "speed_mps": 1.9150505209823925,
+          "heading_degrees": 79.76093438239762,
+          "heel_degrees": -1.2710729408058425,
+          "pitch_degrees": -0.340389262676283,
+          "boom_degrees": 40.34330417176648,
+          "mean_luffing": 0.18936139569783728,
+          "sail_drive_n": 62.06257675106473
+        },
+        {
+          "time_seconds": 25,
+          "speed_mps": 1.9128136247329912,
+          "heading_degrees": 79.69862491498658,
+          "heel_degrees": -1.2750696005696502,
+          "pitch_degrees": -0.339428482700784,
+          "boom_degrees": 40.33918289190871,
+          "mean_luffing": 0.19077980014775564,
+          "sail_drive_n": 61.915799865700265
+        },
+        {
+          "time_seconds": 26,
+          "speed_mps": 1.9105743575290692,
+          "heading_degrees": 79.63635392549999,
+          "heel_degrees": -1.2790722390751783,
+          "pitch_degrees": -0.33846835162211736,
+          "boom_degrees": 40.33505630919153,
+          "mean_luffing": 0.19220126543681967,
+          "sail_drive_n": 61.769023353140355
+        },
+        {
+          "time_seconds": 27,
+          "speed_mps": 1.9083325563184175,
+          "heading_degrees": 79.57411629840067,
+          "heel_degrees": -1.2830810240494264,
+          "pitch_degrees": -0.33750883821332617,
+          "boom_degrees": 40.330923940228665,
+          "mean_luffing": 0.1936257876270632,
+          "sail_drive_n": 61.62224116516798
+        },
+        {
+          "time_seconds": 28,
+          "speed_mps": 1.906088057271079,
+          "heading_degrees": 79.51190699686406,
+          "heel_degrees": -1.2870962334980334,
+          "pitch_degrees": -0.3365498800969799,
+          "boom_degrees": 40.32678555689837,
+          "mean_luffing": 0.19505348434266964,
+          "sail_drive_n": 61.47543980772642
+        },
+        {
+          "time_seconds": 29,
+          "speed_mps": 1.903840691712942,
+          "heading_degrees": 79.44972101716586,
+          "heel_degrees": -1.2911181329480894,
+          "pitch_degrees": -0.33559139882447697,
+          "boom_degrees": 40.32264081763137,
+          "mean_luffing": 0.19648439812307528,
+          "sail_drive_n": 61.328610143063244
+        },
+        {
+          "time_seconds": 30,
+          "speed_mps": 1.90159029162521,
+          "heading_degrees": 79.38755338943074,
+          "heel_degrees": -1.295146958141931,
+          "pitch_degrees": -0.334633345538829,
+          "boom_degrees": 40.318489415077124,
+          "mean_luffing": 0.19791860602719524,
+          "sail_drive_n": 61.181741403261604
+        }
+      ],
+      "final_boat": {
+        "position_world_m": {
+          "x": 6.604440014153488,
+          "y": 54.0152661289819,
+          "z": -0.3691889225134215,
+          "is_finite": true,
+          "length_squared": 2961.403903345798,
+          "length": 54.41878263380942
+        },
+        "orientation_body_to_world": {
+          "x": -0.0068315571901005805,
+          "y": -0.009465286778394416,
+          "z": 0.638615331839315,
+          "w": 0.7694375842862908,
+          "is_finite": true,
+          "length_squared": 1
+        },
+        "linear_velocity_world_mps": {
+          "x": 0.2779265329296188,
+          "y": 1.8811705078213865,
+          "z": 1.048798982303605E-05,
+          "is_finite": true,
+          "length_squared": 3.6160456373132495,
+          "length": 1.9015902916541327
+        },
+        "angular_velocity_body_rad_per_sec": {
+          "x": -7.671463438226608E-05,
+          "y": 4.123490442969945E-05,
+          "z": -0.0010842248186257333,
+          "is_finite": true,
+          "length_squared": 1.1831289097957355E-06,
+          "length": 0.0010877172931399663
+        }
+      },
+      "final_rig": {
+        "boom_angle_rad": 0.7036903897235784,
+        "boom_rate_rad_per_sec": -7.251585364445839E-05
+      },
+      "exact_replay": true,
+      "wave_direction_mode": "AlignedWithWind",
+      "wave_from_degrees": 0
+    },
+    {
+      "condition": {
+        "id": "broad-reach-135-calm",
+        "wind_knots": 10,
+        "heading_degrees": 135,
+        "waves": "Calm",
+        "seed": 123,
+        "initial_speed_mps": 0,
+        "controls": {
+          "tiller": 0,
+          "mainsheet": 0.3,
+          "traveler": 0.8,
+          "vang": 0.6,
+          "outhaul": 0.5,
+          "cunningham": 0.3,
+          "centerboard": 1,
+          "hiking": -0.3
+        }
+      },
+      "wind_from_degrees": 0,
+      "current": "Still water; wave orbital flow when non-calm",
+      "boat_mass_kg": 58,
+      "sailor_mass_kg": 80,
+      "step_seconds": 0.016666666666666666,
+      "steps": 1800,
+      "window_steps": 600,
+      "held_throughout": {
+        "tiller": 0,
+        "mainsheet": 0,
+        "traveler": 0,
+        "vang": 0,
+        "outhaul": 0,
+        "cunningham": 0,
+        "centerboard": 0,
+        "hiking": 0
+      },
+      "initial_boat": {
+        "position_world_m": {
+          "x": 0,
+          "y": 0,
+          "z": -0.37235529914417664,
+          "is_finite": true,
+          "length_squared": 0.13864846880074927,
+          "length": 0.37235529914417664
+        },
+        "orientation_body_to_world": {
+          "x": 0,
+          "y": 0,
+          "z": 0.9238795325112867,
+          "w": 0.38268343236508984,
+          "is_finite": true,
+          "length_squared": 1
+        },
+        "linear_velocity_world_mps": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "is_finite": true,
+          "length_squared": 0,
+          "length": 0
+        },
+        "angular_velocity_body_rad_per_sec": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "is_finite": true,
+          "length_squared": 0,
+          "length": 0
+        }
+      },
+      "initial_rig": {
+        "boom_angle_rad": 0.1,
+        "boom_rate_rad_per_sec": 0
+      },
+      "final_window": {
+        "start_seconds": 20.016666666666666,
+        "end_seconds": 30,
+        "samples": 600,
+        "mean_speed_mps": 1.0825103475023865,
+        "min_speed_mps": 0.8860994044510734,
+        "max_speed_mps": 1.299604735319223,
+        "speed_change_mps": -0.20674581126963565,
+        "max_heading_error_degrees": 55.144138130677234,
+        "max_abs_heel_degrees": 3.2893540598607003,
+        "steady_candidate": false
+      },
+      "trace": [
+        {
+          "time_seconds": 0,
+          "speed_mps": 0,
+          "heading_degrees": 135,
+          "heel_degrees": 0,
+          "pitch_degrees": 0,
+          "boom_degrees": 5.729577951308232,
+          "mean_luffing": 4.9549116366288346E-20,
+          "sail_drive_n": -19.369426546755534
+        },
+        {
+          "time_seconds": 1,
+          "speed_mps": 0.6368404185153377,
+          "heading_degrees": 130.59704017220002,
+          "heel_degrees": -5.375181307018518,
+          "pitch_degrees": -1.2333882081255398,
+          "boom_degrees": 62.589058662974594,
+          "mean_luffing": 4.2338599458189636E-19,
+          "sail_drive_n": 157.25776404547614
+        },
+        {
+          "time_seconds": 2,
+          "speed_mps": 1.4135353081546715,
+          "heading_degrees": 120.3939022843645,
+          "heel_degrees": -3.350726166520757,
+          "pitch_degrees": -0.9075061163900381,
+          "boom_degrees": 64.03267909317881,
+          "mean_luffing": 7.167157581498809E-06,
+          "sail_drive_n": 115.53991519088488
+        },
+        {
+          "time_seconds": 3,
+          "speed_mps": 1.8117587265673478,
+          "heading_degrees": 115.34038238846972,
+          "heel_degrees": -2.514742760466047,
+          "pitch_degrees": -0.6306021317917818,
+          "boom_degrees": 63.590063400301915,
+          "mean_luffing": 0.0027717021670012527,
+          "sail_drive_n": 91.73276874647473
+        },
+        {
+          "time_seconds": 4,
+          "speed_mps": 1.9730977922438389,
+          "heading_degrees": 112.25158423314308,
+          "heel_degrees": -2.398051913184468,
+          "pitch_degrees": -0.5016972410924316,
+          "boom_degrees": 63.311028621691,
+          "mean_luffing": 0.02380779318405683,
+          "sail_drive_n": 78.06231776897583
+        },
+        {
+          "time_seconds": 5,
+          "speed_mps": 2.017169009297868,
+          "heading_degrees": 109.89507307487995,
+          "heel_degrees": -2.4375354987649427,
+          "pitch_degrees": -0.42305762463629953,
+          "boom_degrees": 63.153357381471274,
+          "mean_luffing": 0.06428080319054293,
+          "sail_drive_n": 70.14020780656473
+        },
+        {
+          "time_seconds": 6,
+          "speed_mps": 2.0073818523234115,
+          "heading_degrees": 107.8537986354075,
+          "heel_degrees": -2.4764276838464987,
+          "pitch_degrees": -0.3773826830437326,
+          "boom_degrees": 63.04147973376563,
+          "mean_luffing": 0.11468751110832624,
+          "sail_drive_n": 64.62328304791393
+        },
+        {
+          "time_seconds": 7,
+          "speed_mps": 1.9734580797634453,
+          "heading_degrees": 105.97833411765451,
+          "heel_degrees": -2.510347158688128,
+          "pitch_degrees": -0.3381646749224156,
+          "boom_degrees": 62.945471117826315,
+          "mean_luffing": 0.16772895402064894,
+          "sail_drive_n": 60.13132180713667
+        },
+        {
+          "time_seconds": 8,
+          "speed_mps": 1.928537684726072,
+          "heading_degrees": 104.21023725005013,
+          "heel_degrees": -2.5447493730678277,
+          "pitch_degrees": -0.305584430910912,
+          "boom_degrees": 62.85348481076086,
+          "mean_luffing": 0.22091035728047115,
+          "sail_drive_n": 56.12486508461324
+        },
+        {
+          "time_seconds": 9,
+          "speed_mps": 1.8784018415033132,
+          "heading_degrees": 102.52516007084543,
+          "heel_degrees": -2.5830296720827013,
+          "pitch_degrees": -0.275799215729388,
+          "boom_degrees": 62.76304910386817,
+          "mean_luffing": 0.272881222647782,
+          "sail_drive_n": 52.3708339995038
+        },
+        {
+          "time_seconds": 10,
+          "speed_mps": 1.8256668791653652,
+          "heading_degrees": 100.91158073862364,
+          "heel_degrees": -2.6252631471849623,
+          "pitch_degrees": -0.25055652690222974,
+          "boom_degrees": 62.672848539341054,
+          "mean_luffing": 0.322669308301961,
+          "sail_drive_n": 48.79555671878479
+        },
+        {
+          "time_seconds": 11,
+          "speed_mps": 1.7716407375355323,
+          "heading_degrees": 99.36353646893005,
+          "heel_degrees": -2.669123376707731,
+          "pitch_degrees": -0.22699217329798924,
+          "boom_degrees": 62.58344036786351,
+          "mean_luffing": 0.3692164867780598,
+          "sail_drive_n": 45.37731217292253
+        },
+        {
+          "time_seconds": 12,
+          "speed_mps": 1.717084980522895,
+          "heading_degrees": 97.87773816267375,
+          "heel_degrees": -2.7134519896584886,
+          "pitch_degrees": -0.20532143414265422,
+          "boom_degrees": 62.49485007156467,
+          "mean_luffing": 0.4119089423774811,
+          "sail_drive_n": 42.11536870170613
+        },
+        {
+          "time_seconds": 13,
+          "speed_mps": 1.6624839747467268,
+          "heading_degrees": 96.4521505526673,
+          "heel_degrees": -2.7576497413935726,
+          "pitch_degrees": -0.18534734504222353,
+          "boom_degrees": 62.40771620211593,
+          "mean_luffing": 0.4503926974179175,
+          "sail_drive_n": 39.01344857255589
+        },
+        {
+          "time_seconds": 14,
+          "speed_mps": 1.6081866507721259,
+          "heading_degrees": 95.08521376764799,
+          "heel_degrees": -2.80090043835894,
+          "pitch_degrees": -0.1671072436684883,
+          "boom_degrees": 62.32251139066531,
+          "mean_luffing": 0.4845832096618543,
+          "sail_drive_n": 36.077135893659786
+        },
+        {
+          "time_seconds": 15,
+          "speed_mps": 1.5544668259403687,
+          "heading_degrees": 93.77584013462508,
+          "heel_degrees": -2.844166131866568,
+          "pitch_degrees": -0.1499211156954634,
+          "boom_degrees": 62.24009682164631,
+          "mean_luffing": 0.5145207980238732,
+          "sail_drive_n": 33.31589518838325
+        },
+        {
+          "time_seconds": 16,
+          "speed_mps": 1.501547358805162,
+          "heading_degrees": 92.52239705954266,
+          "heel_degrees": -2.891281459012374,
+          "pitch_degrees": -0.13342108089902463,
+          "boom_degrees": 62.160241070397646,
+          "mean_luffing": 0.540608698128551,
+          "sail_drive_n": 30.712984299605395
+        },
+        {
+          "time_seconds": 17,
+          "speed_mps": 1.4495511613716923,
+          "heading_degrees": 91.32396120535192,
+          "heel_degrees": -2.9354170920946645,
+          "pitch_degrees": -0.11836228946893546,
+          "boom_degrees": 62.083855766635,
+          "mean_luffing": 0.563041064335504,
+          "sail_drive_n": 28.279039809248612
+        },
+        {
+          "time_seconds": 18,
+          "speed_mps": 1.3986335981293805,
+          "heading_degrees": 90.17891962082962,
+          "heel_degrees": -2.9768867856617316,
+          "pitch_degrees": -0.10461735654537452,
+          "boom_degrees": 62.01106657305059,
+          "mean_luffing": 0.5821931015682967,
+          "sail_drive_n": 26.007567674240928
+        },
+        {
+          "time_seconds": 19,
+          "speed_mps": 1.3489020138688326,
+          "heading_degrees": 89.08549477621311,
+          "heel_degrees": -3.0158499350108103,
+          "pitch_degrees": -0.09203767906421365,
+          "boom_degrees": 61.94206271466358,
+          "mean_luffing": 0.598437706421418,
+          "sail_drive_n": 23.891241968720074
+        },
+        {
+          "time_seconds": 20,
+          "speed_mps": 1.300402299992384,
+          "heading_degrees": 88.04161977087145,
+          "heel_degrees": -3.0501934026069795,
+          "pitch_degrees": -0.08183933858353369,
+          "boom_degrees": 61.87677645350665,
+          "mean_luffing": 0.6121199685269475,
+          "sail_drive_n": 21.921035277443963
+        },
+        {
+          "time_seconds": 21,
+          "speed_mps": 1.2531959194832385,
+          "heading_degrees": 87.045569383294,
+          "heel_degrees": -3.0822435280305176,
+          "pitch_degrees": -0.0725857404773211,
+          "boom_degrees": 61.81558694978479,
+          "mean_luffing": 0.6235558498085262,
+          "sail_drive_n": 20.09441512334691
+        },
+        {
+          "time_seconds": 22,
+          "speed_mps": 1.2073146336694964,
+          "heading_degrees": 86.09477877253299,
+          "heel_degrees": -3.1120723691827568,
+          "pitch_degrees": -0.06409685355931494,
+          "boom_degrees": 61.75814330588832,
+          "mean_luffing": 0.6330548535648672,
+          "sail_drive_n": 18.398350023598976
+        },
+        {
+          "time_seconds": 23,
+          "speed_mps": 1.1627649653773335,
+          "heading_degrees": 85.1871035743309,
+          "heel_degrees": -3.139903369598605,
+          "pitch_degrees": -0.056279375118232985,
+          "boom_degrees": 61.70436300362431,
+          "mean_luffing": 0.6408794004241106,
+          "sail_drive_n": 16.824298275153936
+        },
+        {
+          "time_seconds": 24,
+          "speed_mps": 1.119538124411876,
+          "heading_degrees": 84.32034113930989,
+          "heel_degrees": -3.165849333161927,
+          "pitch_degrees": -0.049049790022358035,
+          "boom_degrees": 61.65412485055759,
+          "mean_luffing": 0.6472587096920736,
+          "sail_drive_n": 15.36375903325385
+        },
+        {
+          "time_seconds": 25,
+          "speed_mps": 1.077612099833492,
+          "heading_degrees": 83.49227182707536,
+          "heel_degrees": -3.190062694304989,
+          "pitch_degrees": -0.04233667730354852,
+          "boom_degrees": 61.607278308652496,
+          "mean_luffing": 0.6523924953164443,
+          "sail_drive_n": 14.00838063635151
+        },
+        {
+          "time_seconds": 26,
+          "speed_mps": 1.0369546335729483,
+          "heading_degrees": 82.70067543154099,
+          "heel_degrees": -3.2126584383923924,
+          "pitch_degrees": -0.03608375491437359,
+          "boom_degrees": 61.563647019965224,
+          "mean_luffing": 0.6564517934839086,
+          "sail_drive_n": 12.750044363993473
+        },
+        {
+          "time_seconds": 27,
+          "speed_mps": 0.9975247517959873,
+          "heading_degrees": 81.94335937519908,
+          "heel_degrees": -3.2337709653364626,
+          "pitch_degrees": -0.030242218393345097,
+          "boom_degrees": 61.52304157640486,
+          "mean_luffing": 0.6595853780231918,
+          "sail_drive_n": 11.581072751067898
+        },
+        {
+          "time_seconds": 28,
+          "speed_mps": 0.9592748737948297,
+          "heading_degrees": 81.21817211598854,
+          "heel_degrees": -3.253514779293538,
+          "pitch_degrees": -0.024770762787218348,
+          "boom_degrees": 61.48526846446158,
+          "mean_luffing": 0.6619201890182659,
+          "sail_drive_n": 10.4941479860531
+        },
+        {
+          "time_seconds": 29,
+          "speed_mps": 0.9221520483209792,
+          "heading_degrees": 80.52301722588625,
+          "heel_degrees": -3.2720075489812257,
+          "pitch_degrees": -0.01963147419386356,
+          "boom_degrees": 61.450133605775626,
+          "mean_luffing": 0.6635663115549238,
+          "sail_drive_n": 9.482452873865572
+        },
+        {
+          "time_seconds": 30,
+          "speed_mps": 0.8860994044510734,
+          "heading_degrees": 79.85586186932277,
+          "heel_degrees": -3.2893540598607003,
+          "pitch_degrees": -0.014791348114096901,
+          "boom_degrees": 61.417447986033224,
+          "mean_luffing": 0.6646169526931686,
+          "sail_drive_n": 8.539576408951762
+        }
+      ],
+      "final_boat": {
+        "position_world_m": {
+          "x": -6.201541856022496,
+          "y": 41.443508628868166,
+          "z": -0.3648737612926766,
+          "is_finite": true,
+          "length_squared": 1756.1566617247488,
+          "length": 41.90652290186754
+        },
+        "orientation_body_to_world": {
+          "x": -0.021926684780191722,
+          "y": -0.018519976971745095,
+          "z": 0.6415562855865288,
+          "w": 0.7665388205250485,
+          "is_finite": true,
+          "length_squared": 1
+        },
+        "linear_velocity_world_mps": {
+          "x": 0.14260346185924366,
+          "y": 0.874549259467016,
+          "z": 2.9165276907624156E-05,
+          "is_finite": true,
+          "length_squared": 0.7851721554191602,
+          "length": 0.8860994049310496
+        },
+        "angular_velocity_body_rad_per_sec": {
+          "x": -0.0002961894198998568,
+          "y": 0.0007366890674256186,
+          "z": -0.011387754990153248,
+          "is_finite": true,
+          "length_squared": 0.00013031140267028522,
+          "length": 0.011415401993372166
+        }
+      },
+      "final_rig": {
+        "boom_angle_rad": 1.07193668552864,
+        "boom_rate_rad_per_sec": -0.0005501869064572754
+      },
+      "exact_replay": true,
+      "wave_direction_mode": "AlignedWithWind",
+      "wave_from_degrees": 0
+    },
+    {
+      "condition": {
+        "id": "run-180-calm",
+        "wind_knots": 10,
+        "heading_degrees": 180,
+        "waves": "Calm",
+        "seed": 123,
+        "initial_speed_mps": 0,
+        "controls": {
+          "tiller": 0,
+          "mainsheet": 0.2,
+          "traveler": 0.8,
+          "vang": 0.6,
+          "outhaul": 0.5,
+          "cunningham": 0.3,
+          "centerboard": 1,
+          "hiking": -0.3
+        }
+      },
+      "wind_from_degrees": 0,
+      "current": "Still water; wave orbital flow when non-calm",
+      "boat_mass_kg": 58,
+      "sailor_mass_kg": 80,
+      "step_seconds": 0.016666666666666666,
+      "steps": 1800,
+      "window_steps": 600,
+      "held_throughout": {
+        "tiller": 0,
+        "mainsheet": 0,
+        "traveler": 0,
+        "vang": 0,
+        "outhaul": 0,
+        "cunningham": 0,
+        "centerboard": 0,
+        "hiking": 0
+      },
+      "initial_boat": {
+        "position_world_m": {
+          "x": 0,
+          "y": 0,
+          "z": -0.37235529914417664,
+          "is_finite": true,
+          "length_squared": 0.13864846880074927,
+          "length": 0.37235529914417664
+        },
+        "orientation_body_to_world": {
+          "x": 0,
+          "y": 0,
+          "z": 1,
+          "w": 6.123233995736766E-17,
+          "is_finite": true,
+          "length_squared": 1
+        },
+        "linear_velocity_world_mps": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "is_finite": true,
+          "length_squared": 0,
+          "length": 0
+        },
+        "angular_velocity_body_rad_per_sec": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "is_finite": true,
+          "length_squared": 0,
+          "length": 0
+        }
+      },
+      "initial_rig": {
+        "boom_angle_rad": 0.1,
+        "boom_rate_rad_per_sec": 0
+      },
+      "final_window": {
+        "start_seconds": 20.016666666666666,
+        "end_seconds": 30,
+        "samples": 600,
+        "mean_speed_mps": 1.7265184493026162,
+        "min_speed_mps": 1.4056534795769744,
+        "max_speed_mps": 2.0369695125367655,
+        "speed_change_mps": -0.3241738918741379,
+        "max_heading_error_degrees": 81.83496530212645,
+        "max_abs_heel_degrees": 3.1237095910491415,
+        "steady_candidate": false
+      },
+      "trace": [
+        {
+          "time_seconds": 0,
+          "speed_mps": 0,
+          "heading_degrees": 180,
+          "heel_degrees": 0,
+          "pitch_degrees": 0,
+          "boom_degrees": 5.729577951308232,
+          "mean_luffing": 0.12471763925757447,
+          "sail_drive_n": 7.306825881210614
+        },
+        {
+          "time_seconds": 1,
+          "speed_mps": 0.40634765274828755,
+          "heading_degrees": 180.10957203791472,
+          "heel_degrees": 0.6707315201212564,
+          "pitch_degrees": -0.4030824845507132,
+          "boom_degrees": 57.010210837311746,
+          "mean_luffing": 8.865890405932973E-13,
+          "sail_drive_n": 68.78655739593692
+        },
+        {
+          "time_seconds": 2,
+          "speed_mps": 1.038594790478236,
+          "heading_degrees": 174.47164989624295,
+          "heel_degrees": 0.1408870519502065,
+          "pitch_degrees": -0.8307025589781338,
+          "boom_degrees": 70.60121290278678,
+          "mean_luffing": 4.1424648058673596E-30,
+          "sail_drive_n": 100.25845925555697
+        },
+        {
+          "time_seconds": 3,
+          "speed_mps": 1.4676425565036264,
+          "heading_degrees": 170.9371612351073,
+          "heel_degrees": -1.2798517349396943,
+          "pitch_degrees": -0.6152806253746793,
+          "boom_degrees": 70.71755812988091,
+          "mean_luffing": 1.3502955652097823E-30,
+          "sail_drive_n": 77.6799881169041
+        },
+        {
+          "time_seconds": 4,
+          "speed_mps": 1.6998657988560604,
+          "heading_degrees": 168.02631368308465,
+          "heel_degrees": -2.495243211081888,
+          "pitch_degrees": -0.49701674341391205,
+          "boom_degrees": 70.58958425697053,
+          "mean_luffing": 2.1084226457951814E-30,
+          "sail_drive_n": 69.08555873428239
+        },
+        {
+          "time_seconds": 5,
+          "speed_mps": 1.8302860907651701,
+          "heading_degrees": 165.2624697122141,
+          "heel_degrees": -3.237687674289386,
+          "pitch_degrees": -0.475330044891624,
+          "boom_degrees": 70.57535846020293,
+          "mean_luffing": 5.703213751307873E-29,
+          "sail_drive_n": 67.61399694983345
+        },
+        {
+          "time_seconds": 6,
+          "speed_mps": 1.9105455746930229,
+          "heading_degrees": 162.34370339062173,
+          "heel_degrees": -3.458685448942063,
+          "pitch_degrees": -0.4774459929993862,
+          "boom_degrees": 70.61370113516516,
+          "mean_luffing": 1.9310306205097755E-26,
+          "sail_drive_n": 69.6731808924308
+        },
+        {
+          "time_seconds": 7,
+          "speed_mps": 1.9697886889248477,
+          "heading_degrees": 159.1700278674158,
+          "heel_degrees": -3.4397524375838278,
+          "pitch_degrees": -0.49044347460130605,
+          "boom_degrees": 70.66516695027943,
+          "mean_luffing": 7.609018770949005E-24,
+          "sail_drive_n": 71.93258544746652
+        },
+        {
+          "time_seconds": 8,
+          "speed_mps": 2.0227309721701063,
+          "heading_degrees": 155.77109889416792,
+          "heel_degrees": -3.5032667091973337,
+          "pitch_degrees": -0.4979725842750655,
+          "boom_degrees": 70.70951156688508,
+          "mean_luffing": 1.8289316789773763E-21,
+          "sail_drive_n": 74.03268437967397
+        },
+        {
+          "time_seconds": 9,
+          "speed_mps": 2.0733221681993848,
+          "heading_degrees": 152.22189526186517,
+          "heel_degrees": -3.613811152093513,
+          "pitch_degrees": -0.5127400232317066,
+          "boom_degrees": 70.77959689993345,
+          "mean_luffing": 1.2230535340478698E-18,
+          "sail_drive_n": 76.66614626024402
+        },
+        {
+          "time_seconds": 10,
+          "speed_mps": 2.1200275977955823,
+          "heading_degrees": 148.56043642358057,
+          "heel_degrees": -3.6233604441139264,
+          "pitch_degrees": -0.5283079087290519,
+          "boom_degrees": 70.8569912606702,
+          "mean_luffing": 1.318513292256219E-15,
+          "sail_drive_n": 79.38953580279657
+        },
+        {
+          "time_seconds": 11,
+          "speed_mps": 2.160710836554417,
+          "heading_degrees": 144.85053960075263,
+          "heel_degrees": -3.558551240409993,
+          "pitch_degrees": -0.5372473410246392,
+          "boom_degrees": 70.92308488732185,
+          "mean_luffing": 9.871564429478888E-13,
+          "sail_drive_n": 81.29989945853576
+        },
+        {
+          "time_seconds": 12,
+          "speed_mps": 2.192320152423405,
+          "heading_degrees": 141.17184962252566,
+          "heel_degrees": -3.464500637139439,
+          "pitch_degrees": -0.5399934372358942,
+          "boom_degrees": 70.96966964682599,
+          "mean_luffing": 3.5733137158221923E-10,
+          "sail_drive_n": 82.26264079915902
+        },
+        {
+          "time_seconds": 13,
+          "speed_mps": 2.2121557482731453,
+          "heading_degrees": 137.5856743062818,
+          "heel_degrees": -3.351790714152779,
+          "pitch_degrees": -0.5355898219122975,
+          "boom_degrees": 70.9942823423912,
+          "mean_luffing": 5.2751137171532286E-08,
+          "sail_drive_n": 82.23492392433235
+        },
+        {
+          "time_seconds": 14,
+          "speed_mps": 2.219043281036267,
+          "heading_degrees": 134.1316895345756,
+          "heel_degrees": -3.2408988781028625,
+          "pitch_degrees": -0.523725943843884,
+          "boom_degrees": 70.99493781366621,
+          "mean_luffing": 2.9513080961816417E-06,
+          "sail_drive_n": 81.26008829601324
+        },
+        {
+          "time_seconds": 15,
+          "speed_mps": 2.213084729891016,
+          "heading_degrees": 130.83216693992003,
+          "heel_degrees": -3.1366331219754593,
+          "pitch_degrees": -0.5054731165606096,
+          "boom_degrees": 70.97175139061888,
+          "mean_luffing": 6.65508474741386E-05,
+          "sail_drive_n": 79.40848594892086
+        },
+        {
+          "time_seconds": 16,
+          "speed_mps": 2.195497933693406,
+          "heading_degrees": 127.6999333294572,
+          "heel_degrees": -3.0586326271743087,
+          "pitch_degrees": -0.4851748215769484,
+          "boom_degrees": 70.92929482083647,
+          "mean_luffing": 0.0007097685386721689,
+          "sail_drive_n": 76.88743909554393
+        },
+        {
+          "time_seconds": 17,
+          "speed_mps": 2.1677349034711715,
+          "heading_degrees": 124.73573075030413,
+          "heel_degrees": -2.9924182375922856,
+          "pitch_degrees": -0.4611973537582463,
+          "boom_degrees": 70.87074225407599,
+          "mean_luffing": 0.004161487692725307,
+          "sail_drive_n": 73.82204553899561
+        },
+        {
+          "time_seconds": 18,
+          "speed_mps": 2.131368438925863,
+          "heading_degrees": 121.93555514876587,
+          "heel_degrees": -2.940633901754556,
+          "pitch_degrees": -0.4339126957065476,
+          "boom_degrees": 70.79945127803923,
+          "mean_luffing": 0.015442250005198823,
+          "sail_drive_n": 70.31510977830501
+        },
+        {
+          "time_seconds": 19,
+          "speed_mps": 2.0877095935401875,
+          "heading_degrees": 119.29160622903342,
+          "heel_degrees": -2.9036339206664823,
+          "pitch_degrees": -0.4035217293314179,
+          "boom_degrees": 70.7180884292509,
+          "mean_luffing": 0.040659218168183,
+          "sail_drive_n": 66.43421250781087
+        },
+        {
+          "time_seconds": 20,
+          "speed_mps": 2.037848671999819,
+          "heading_degrees": 116.79424212210827,
+          "heel_degrees": -2.881473542579706,
+          "pitch_degrees": -0.3706223381379011,
+          "boom_degrees": 70.6285364910243,
+          "mean_luffing": 0.08297007531724036,
+          "sail_drive_n": 62.25368213166334
+        },
+        {
+          "time_seconds": 21,
+          "speed_mps": 1.982636011897107,
+          "heading_degrees": 114.43343097847767,
+          "heel_degrees": -2.8733111713240853,
+          "pitch_degrees": -0.33504629986650863,
+          "boom_degrees": 70.5327287441985,
+          "mean_luffing": 0.1401835027577559,
+          "sail_drive_n": 57.89107934497634
+        },
+        {
+          "time_seconds": 22,
+          "speed_mps": 1.9230569484226934,
+          "heading_degrees": 112.19978664625836,
+          "heel_degrees": -2.877190881137119,
+          "pitch_degrees": -0.29816467108298705,
+          "boom_degrees": 70.43223909145708,
+          "mean_luffing": 0.2064968999563059,
+          "sail_drive_n": 53.471101190429465
+        },
+        {
+          "time_seconds": 23,
+          "speed_mps": 1.8601932485492174,
+          "heading_degrees": 110.0847906829617,
+          "heel_degrees": -2.891132778101048,
+          "pitch_degrees": -0.2629212693061742,
+          "boom_degrees": 70.32888015152405,
+          "mean_luffing": 0.2752536958913848,
+          "sail_drive_n": 49.11266058318064
+        },
+        {
+          "time_seconds": 24,
+          "speed_mps": 1.7951616099948375,
+          "heading_degrees": 108.08158438784515,
+          "heel_degrees": -2.912612311144345,
+          "pitch_degrees": -0.23057429514381644,
+          "boom_degrees": 70.22437067357185,
+          "mean_luffing": 0.34134615170720733,
+          "sail_drive_n": 44.899239773147904
+        },
+        {
+          "time_seconds": 25,
+          "speed_mps": 1.7289807532730728,
+          "heading_degrees": 106.1855224559256,
+          "heel_degrees": -2.945582562852737,
+          "pitch_degrees": -0.20235020014554922,
+          "boom_degrees": 70.12085535833346,
+          "mean_luffing": 0.4009831598083175,
+          "sail_drive_n": 40.9158794777002
+        },
+        {
+          "time_seconds": 26,
+          "speed_mps": 1.6625006278210308,
+          "heading_degrees": 104.39106925756347,
+          "heel_degrees": -2.9822750120957426,
+          "pitch_degrees": -0.176368811447638,
+          "boom_degrees": 70.01892247950002,
+          "mean_luffing": 0.4531883633155889,
+          "sail_drive_n": 37.16277546107983
+        },
+        {
+          "time_seconds": 27,
+          "speed_mps": 1.5964408617974777,
+          "heading_degrees": 102.69567119340972,
+          "heel_degrees": -3.019888320960926,
+          "pitch_degrees": -0.15314884857925826,
+          "boom_degrees": 69.92040276839154,
+          "mean_luffing": 0.49750734570345273,
+          "sail_drive_n": 33.67301836072666
+        },
+        {
+          "time_seconds": 28,
+          "speed_mps": 1.531360854656281,
+          "heading_degrees": 101.09543400413186,
+          "heel_degrees": -3.056780190695887,
+          "pitch_degrees": -0.13251013664590133,
+          "boom_degrees": 69.82616095874039,
+          "mean_luffing": 0.5343707751579782,
+          "sail_drive_n": 30.449393861224404
+        },
+        {
+          "time_seconds": 29,
+          "speed_mps": 1.4676737347554514,
+          "heading_degrees": 99.58658860596039,
+          "heel_degrees": -3.0921869760617158,
+          "pitch_degrees": -0.11416418698261836,
+          "boom_degrees": 69.7369504422575,
+          "mean_luffing": 0.564565279999429,
+          "sail_drive_n": 27.486175237112846
+        },
+        {
+          "time_seconds": 30,
+          "speed_mps": 1.4056534795769744,
+          "heading_degrees": 98.16503469787355,
+          "heel_degrees": -3.1237095910491415,
+          "pitch_degrees": -0.09897630479797329,
+          "boom_degrees": 69.65315527557796,
+          "mean_luffing": 0.5890009115229459,
+          "sail_drive_n": 24.769008037063415
+        }
+      ],
+      "final_boat": {
+        "position_world_m": {
+          "x": -33.72406433407507,
+          "y": 36.81002621285942,
+          "z": -0.3651491113035259,
+          "is_finite": true,
+          "length_squared": 2492.4238788737175,
+          "length": 49.92418130399053
+        },
+        "orientation_body_to_world": {
+          "x": -0.017199542143290614,
+          "y": -0.0211616975946265,
+          "z": 0.7553572134731088,
+          "w": 0.6547456287438008,
+          "is_finite": true,
+          "length_squared": 1
+        },
+        "linear_velocity_world_mps": {
+          "x": -0.20935350791717441,
+          "y": 1.3899758319372424,
+          "z": 4.328224316776334E-05,
+          "is_finite": true,
+          "length_squared": 1.9758617065202082,
+          "length": 1.405653480243338
+        },
+        "angular_velocity_body_rad_per_sec": {
+          "x": -0.000533842465374478,
+          "y": 0.0015318448467428647,
+          "z": -0.024022629550152868,
+          "is_finite": true,
+          "length_squared": 0.0005797182669162076,
+          "length": 0.024077339282325354
+        }
+      },
+      "final_rig": {
+        "boom_angle_rad": 1.2156768939616938,
+        "boom_rate_rad_per_sec": -0.0014265879658238079
+      },
+      "exact_replay": true,
+      "wave_direction_mode": "AlignedWithWind",
+      "wave_from_degrees": 0
+    },
+    {
+      "condition": {
+        "id": "default-reach-gentle",
+        "wind_knots": 10,
+        "heading_degrees": 90,
+        "waves": "Gentle",
+        "seed": 123,
+        "initial_speed_mps": 0,
+        "controls": {
+          "tiller": 0,
+          "mainsheet": 0.6,
+          "traveler": 0.8,
+          "vang": 0.6,
+          "outhaul": 0.5,
+          "cunningham": 0.3,
+          "centerboard": 1,
+          "hiking": -0.3
+        }
+      },
+      "wind_from_degrees": 0,
+      "current": "Still water; wave orbital flow when non-calm",
+      "boat_mass_kg": 58,
+      "sailor_mass_kg": 80,
+      "step_seconds": 0.016666666666666666,
+      "steps": 1800,
+      "window_steps": 600,
+      "held_throughout": {
+        "tiller": 0,
+        "mainsheet": 0,
+        "traveler": 0,
+        "vang": 0,
+        "outhaul": 0,
+        "cunningham": 0,
+        "centerboard": 0,
+        "hiking": 0
+      },
+      "initial_boat": {
+        "position_world_m": {
+          "x": 0,
+          "y": 0,
+          "z": -0.4092570667655411,
+          "is_finite": true,
+          "length_squared": 0.16749134669753454,
+          "length": 0.4092570667655411
+        },
+        "orientation_body_to_world": {
+          "x": 0,
+          "y": 0,
+          "z": 0.7071067811865475,
+          "w": 0.7071067811865476,
+          "is_finite": true,
+          "length_squared": 1
+        },
+        "linear_velocity_world_mps": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "is_finite": true,
+          "length_squared": 0,
+          "length": 0
+        },
+        "angular_velocity_body_rad_per_sec": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "is_finite": true,
+          "length_squared": 0,
+          "length": 0
+        }
+      },
+      "initial_rig": {
+        "boom_angle_rad": 0.1,
+        "boom_rate_rad_per_sec": 0
+      },
+      "final_window": {
+        "start_seconds": 20.016666666666666,
+        "end_seconds": 30,
+        "samples": 600,
+        "mean_speed_mps": 1.9682151208388647,
+        "min_speed_mps": 1.9294498958933912,
+        "max_speed_mps": 2.051299653782887,
+        "speed_change_mps": -0.03714025318385361,
+        "max_heading_error_degrees": 10.413881735763837,
+        "max_abs_heel_degrees": 6.565143151085618,
+        "steady_candidate": false
+      },
+      "trace": [
+        {
+          "time_seconds": 0,
+          "speed_mps": 0,
+          "heading_degrees": 89.99999999999999,
+          "heel_degrees": 0,
+          "pitch_degrees": 0,
+          "boom_degrees": 5.729577951308232,
+          "mean_luffing": 4.332320846425539E-29,
+          "sail_drive_n": 47.02609274435811
+        },
+        {
+          "time_seconds": 1,
+          "speed_mps": 0.7456119356635676,
+          "heading_degrees": 85.12484328079299,
+          "heel_degrees": -1.1259387802203955,
+          "pitch_degrees": -0.16309901332321555,
+          "boom_degrees": 40.8099287449649,
+          "mean_luffing": 2.7104997000055433E-06,
+          "sail_drive_n": 70.54538334144976
+        },
+        {
+          "time_seconds": 2,
+          "speed_mps": 1.2997099832433059,
+          "heading_degrees": 83.21231777213173,
+          "heel_degrees": -0.30518047533306236,
+          "pitch_degrees": -1.2658469955108695,
+          "boom_degrees": 41.38517141291926,
+          "mean_luffing": 0.002859464330531216,
+          "sail_drive_n": 101.31113335542753
+        },
+        {
+          "time_seconds": 3,
+          "speed_mps": 1.6358571511488593,
+          "heading_degrees": 81.76847795580488,
+          "heel_degrees": -1.7945097689269562,
+          "pitch_degrees": -0.3431670865522116,
+          "boom_degrees": 40.91828082444488,
+          "mean_luffing": 0.07020152452456671,
+          "sail_drive_n": 82.72343710371969
+        },
+        {
+          "time_seconds": 4,
+          "speed_mps": 1.773677623349602,
+          "heading_degrees": 81.44796748674337,
+          "heel_degrees": 4.486996568673651,
+          "pitch_degrees": 0.818137941485626,
+          "boom_degrees": 40.141903472043595,
+          "mean_luffing": 0.22486425491545683,
+          "sail_drive_n": 58.19716858228953
+        },
+        {
+          "time_seconds": 5,
+          "speed_mps": 1.959132323970785,
+          "heading_degrees": 81.15788054029659,
+          "heel_degrees": -5.603636737826825,
+          "pitch_degrees": -0.8838755317061621,
+          "boom_degrees": 40.31859590941421,
+          "mean_luffing": 0.13819590233573395,
+          "sail_drive_n": 61.30437600963806
+        },
+        {
+          "time_seconds": 6,
+          "speed_mps": 1.9555269656132603,
+          "heading_degrees": 82.19986783680342,
+          "heel_degrees": -0.7685731738438982,
+          "pitch_degrees": -0.38580156189185516,
+          "boom_degrees": 41.04169174918617,
+          "mean_luffing": 0.05832216759790403,
+          "sail_drive_n": 85.6455217834401
+        },
+        {
+          "time_seconds": 7,
+          "speed_mps": 1.9622196327886179,
+          "heading_degrees": 81.14717468265155,
+          "heel_degrees": -1.8156394493563313,
+          "pitch_degrees": -1.4117195548590609,
+          "boom_degrees": 40.60119745047942,
+          "mean_luffing": 0.05473958025333462,
+          "sail_drive_n": 72.27805260899515
+        },
+        {
+          "time_seconds": 8,
+          "speed_mps": 1.9752857486940276,
+          "heading_degrees": 81.7206421981034,
+          "heel_degrees": -1.8985688318173668,
+          "pitch_degrees": -1.5030029633374604,
+          "boom_degrees": 40.973535298852966,
+          "mean_luffing": 0.0715837582435974,
+          "sail_drive_n": 85.84446729545887
+        },
+        {
+          "time_seconds": 9,
+          "speed_mps": 1.9474643505228144,
+          "heading_degrees": 81.201216198697,
+          "heel_degrees": 1.072761366211702,
+          "pitch_degrees": -0.6215979750602888,
+          "boom_degrees": 40.1089702987669,
+          "mean_luffing": 0.3098150033339688,
+          "sail_drive_n": 56.92731233709519
+        },
+        {
+          "time_seconds": 10,
+          "speed_mps": 1.9873280691007618,
+          "heading_degrees": 80.87111303637465,
+          "heel_degrees": -2.5943998287421635,
+          "pitch_degrees": -0.7849482937843649,
+          "boom_degrees": 40.62546028334436,
+          "mean_luffing": 0.10344719075954222,
+          "sail_drive_n": 72.1809076180059
+        },
+        {
+          "time_seconds": 11,
+          "speed_mps": 1.9762892022893963,
+          "heading_degrees": 81.47888001479576,
+          "heel_degrees": -1.4782242407102033,
+          "pitch_degrees": -0.5423541671921884,
+          "boom_degrees": 40.930832548310676,
+          "mean_luffing": 0.09094533260194508,
+          "sail_drive_n": 82.46241856679899
+        },
+        {
+          "time_seconds": 12,
+          "speed_mps": 1.9396550510880772,
+          "heading_degrees": 80.58330965378947,
+          "heel_degrees": 2.810465833549076,
+          "pitch_degrees": -0.5589269390807892,
+          "boom_degrees": 39.97244980257518,
+          "mean_luffing": 0.2501468272721854,
+          "sail_drive_n": 54.077596837947546
+        },
+        {
+          "time_seconds": 13,
+          "speed_mps": 2.021769655382515,
+          "heading_degrees": 81.22694277488719,
+          "heel_degrees": -4.629164453444208,
+          "pitch_degrees": -0.8637977142326974,
+          "boom_degrees": 40.40725342686867,
+          "mean_luffing": 0.19371735954934474,
+          "sail_drive_n": 63.29731044547798
+        },
+        {
+          "time_seconds": 14,
+          "speed_mps": 1.9730786812949714,
+          "heading_degrees": 81.29025255215285,
+          "heel_degrees": -0.7144506628631246,
+          "pitch_degrees": -0.34199783943971596,
+          "boom_degrees": 40.85541971142152,
+          "mean_luffing": 0.07519747006134268,
+          "sail_drive_n": 80.54863651316904
+        },
+        {
+          "time_seconds": 15,
+          "speed_mps": 1.964153557914521,
+          "heading_degrees": 80.96938857173065,
+          "heel_degrees": -0.5202774279708052,
+          "pitch_degrees": -0.2013344624312377,
+          "boom_degrees": 40.31273229147572,
+          "mean_luffing": 0.16199100022967083,
+          "sail_drive_n": 62.146546848257636
+        },
+        {
+          "time_seconds": 16,
+          "speed_mps": 1.956815959206892,
+          "heading_degrees": 80.58392255291218,
+          "heel_degrees": -0.47715103744417514,
+          "pitch_degrees": -0.35486252203385427,
+          "boom_degrees": 40.29069736258683,
+          "mean_luffing": 0.16650524008685433,
+          "sail_drive_n": 60.176094413661374
+        },
+        {
+          "time_seconds": 17,
+          "speed_mps": 2.00808603868852,
+          "heading_degrees": 81.25968266271074,
+          "heel_degrees": -4.790260444032364,
+          "pitch_degrees": 0.45272587878701137,
+          "boom_degrees": 40.66777302767933,
+          "mean_luffing": 0.09728836786288508,
+          "sail_drive_n": 68.64458995174739
+        },
+        {
+          "time_seconds": 18,
+          "speed_mps": 1.947698942134161,
+          "heading_degrees": 81.04913987602464,
+          "heel_degrees": 0.06154596334277855,
+          "pitch_degrees": -1.3178398811006586,
+          "boom_degrees": 40.76512105160159,
+          "mean_luffing": 0.02902574734680558,
+          "sail_drive_n": 72.11956734333886
+        },
+        {
+          "time_seconds": 19,
+          "speed_mps": 2.030251669357417,
+          "heading_degrees": 81.39470470759184,
+          "heel_degrees": -6.707030633645488,
+          "pitch_degrees": -1.2406901329993614,
+          "boom_degrees": 41.197904256377235,
+          "mean_luffing": 0.014430596465994655,
+          "sail_drive_n": 87.27592176064249
+        },
+        {
+          "time_seconds": 20,
+          "speed_mps": 1.9737408014159672,
+          "heading_degrees": 81.68028528094348,
+          "heel_degrees": -0.0724581604237082,
+          "pitch_degrees": -1.3487079627142433,
+          "boom_degrees": 41.175814302739276,
+          "mean_luffing": 0.06466485904113538,
+          "sail_drive_n": 92.3338855394981
+        },
+        {
+          "time_seconds": 21,
+          "speed_mps": 1.9592833972065538,
+          "heading_degrees": 80.00912512972249,
+          "heel_degrees": 3.8918817822882392,
+          "pitch_degrees": 0.7738179880797309,
+          "boom_degrees": 39.799420060902534,
+          "mean_luffing": 0.34305303577780694,
+          "sail_drive_n": 47.413367438566226
+        },
+        {
+          "time_seconds": 22,
+          "speed_mps": 2.0455938889512426,
+          "heading_degrees": 80.98138111931533,
+          "heel_degrees": -6.232898658347784,
+          "pitch_degrees": -0.7341090164013288,
+          "boom_degrees": 40.27758376484413,
+          "mean_luffing": 0.21114472167678633,
+          "sail_drive_n": 58.813789823277986
+        },
+        {
+          "time_seconds": 23,
+          "speed_mps": 1.9579940109384708,
+          "heading_degrees": 81.22107138757204,
+          "heel_degrees": 0.969815425102616,
+          "pitch_degrees": 0.23501319719424102,
+          "boom_degrees": 40.54509881133353,
+          "mean_luffing": 0.16370205237268665,
+          "sail_drive_n": 67.05994491590002
+        },
+        {
+          "time_seconds": 24,
+          "speed_mps": 1.9913738204949034,
+          "heading_degrees": 80.38010254474189,
+          "heel_degrees": -3.560564008996519,
+          "pitch_degrees": -0.4550389909887073,
+          "boom_degrees": 40.53748686320343,
+          "mean_luffing": 0.07653051061129594,
+          "sail_drive_n": 70.0541071921677
+        },
+        {
+          "time_seconds": 25,
+          "speed_mps": 1.9313666493695953,
+          "heading_degrees": 80.80980769095596,
+          "heel_degrees": 1.2619820121513785,
+          "pitch_degrees": -0.024287604753126035,
+          "boom_degrees": 40.16473347937722,
+          "mean_luffing": 0.268457138676553,
+          "sail_drive_n": 57.561495372612946
+        },
+        {
+          "time_seconds": 26,
+          "speed_mps": 1.962842365702496,
+          "heading_degrees": 79.74321391063326,
+          "heel_degrees": -1.6832874700442688,
+          "pitch_degrees": 0.23780608138627152,
+          "boom_degrees": 39.88685425788906,
+          "mean_luffing": 0.33015874784632454,
+          "sail_drive_n": 49.166412857657185
+        },
+        {
+          "time_seconds": 27,
+          "speed_mps": 1.976267013339559,
+          "heading_degrees": 80.78248460696699,
+          "heel_degrees": -2.542324435835974,
+          "pitch_degrees": 0.47560327722180673,
+          "boom_degrees": 40.20368006153592,
+          "mean_luffing": 0.29237274483750886,
+          "sail_drive_n": 56.94993171446473
+        },
+        {
+          "time_seconds": 28,
+          "speed_mps": 1.9475502738714205,
+          "heading_degrees": 79.82984179972351,
+          "heel_degrees": -1.384001092098247,
+          "pitch_degrees": -0.19546344583281977,
+          "boom_degrees": 40.31494930425007,
+          "mean_luffing": 0.1190510225646952,
+          "sail_drive_n": 63.60323800451509
+        },
+        {
+          "time_seconds": 29,
+          "speed_mps": 1.9522003318340184,
+          "heading_degrees": 80.38030158790467,
+          "heel_degrees": -1.6954800653116076,
+          "pitch_degrees": 0.44410986205263636,
+          "boom_degrees": 40.30111086047893,
+          "mean_luffing": 0.19917884532421792,
+          "sail_drive_n": 60.49291003048425
+        },
+        {
+          "time_seconds": 30,
+          "speed_mps": 1.9432396542904917,
+          "heading_degrees": 80.26670033482432,
+          "heel_degrees": -2.9370270928012077,
+          "pitch_degrees": -1.3981466407359258,
+          "boom_degrees": 40.294340446243915,
+          "mean_luffing": 0.19590014576363393,
+          "sail_drive_n": 58.26556557629845
+        }
+      ],
+      "final_boat": {
+        "position_world_m": {
+          "x": 6.0471713720118645,
+          "y": 55.29292003865373,
+          "z": -0.32734464210787956,
+          "is_finite": true,
+          "length_squared": 3093.9824425181523,
+          "length": 55.62357811682158
+        },
+        "orientation_body_to_world": {
+          "x": -0.011730332323483809,
+          "y": -0.025842549669835985,
+          "z": 0.6440700379783714,
+          "w": 0.7644398917564952,
+          "is_finite": true,
+          "length_squared": 1.0000000000000002
+        },
+        "linear_velocity_world_mps": {
+          "x": 0.27535032412880284,
+          "y": 1.9236326450258618,
+          "z": 0.051708617085457,
+          "is_finite": true,
+          "length_squared": 3.7788541350879203,
+          "length": 1.943927502528816
+        },
+        "angular_velocity_body_rad_per_sec": {
+          "x": 0.15023557677378488,
+          "y": 0.071602801338979,
+          "z": -0.046559333979766256,
+          "is_finite": true,
+          "length_squared": 0.02986546126878052,
+          "length": 0.172816264479882
+        }
+      },
+      "final_rig": {
+        "boom_angle_rad": 0.7032689107064775,
+        "boom_rate_rad_per_sec": -0.0481614971669677
+      },
+      "exact_replay": true,
+      "wave_direction_mode": "AlignedWithWind",
+      "wave_from_degrees": 0
+    }
+  ]
+}

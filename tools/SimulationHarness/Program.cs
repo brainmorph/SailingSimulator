@@ -2,6 +2,12 @@ using System.Text.Json;
 using SailingSimulator.Adapters;
 using SailingSimulator.Core;
 
+if (args is ["--calibration-review"])
+{
+    Console.WriteLine(CalibrationReview.ReportJson());
+    return 0;
+}
+
 var steps = 600;
 var boatScenario = false;
 var waves = false;
@@ -18,7 +24,7 @@ for (var i = 0; i < args.Length; i++)
         stepsSpecified = true;
     else
     {
-        Console.Error.WriteLine("Usage: SimulationHarness [--boat | --waves] [--wave-seed integer] [--steps 1..1000000]");
+        Console.Error.WriteLine("Usage: SimulationHarness [--boat | --waves] [--wave-seed integer] [--steps 1..1000000] | --calibration-review");
         return 2;
     }
 }

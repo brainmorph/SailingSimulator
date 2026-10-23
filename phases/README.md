@@ -19,6 +19,8 @@ This folder turns [PLAN.md](../PLAN.md) into independently actionable work for f
 
 Phase 7 evidence and remaining desktop timing defect: [completion record](07-completion.md).
 The next active phase is [Calibration and first playable](08-calibration-and-first-playable.md).
+Phase 8 has started; see its [progress and milestone evidence](08-progress.md)
+and [recorded free-sailing baselines](08-baseline-results.json). It remains open.
 
 - Treat `PLAN.md` as the source of truth. Preserve its confirmed decisions; flag conflicts instead of silently changing them.
 - Keep each change within the active phase. Update `PLAN.md` when a confirmed decision, assumption, source, or open question changes.

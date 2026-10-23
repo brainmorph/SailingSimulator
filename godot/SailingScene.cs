@@ -79,12 +79,20 @@ public partial class SailingScene : Node3D
         var frameSeconds = previousFrameTimestamp == 0 ? delta
             : Stopwatch.GetElapsedTime(previousFrameTimestamp, frameTimestamp).TotalSeconds;
         previousFrameTimestamp = frameTimestamp;
+        if (performanceReview) ObservePerformanceInterval(frameSeconds);
         runner.PublishInput(new(focused ? SailingKeyMap.Read() : HeldSailingInput.Released, environment));
         var snapshot = runner.Latest; // One completed snapshot drives the whole render frame.
+        var renderStart = performanceReview ? Stopwatch.GetTimestamp() : 0;
         Render(snapshot.State);
+        var overlayStart = performanceReview ? Stopwatch.GetTimestamp() : 0;
         debug.Observe(snapshot, frameSeconds);
         if (smokeTest) SmokeCheck(snapshot);
-        if (performanceReview) ProcessPerformanceReview(snapshot, frameSeconds);
+        if (performanceReview)
+        {
+            ObservePerformanceFrame(Stopwatch.GetElapsedTime(renderStart, overlayStart).TotalMilliseconds,
+                Stopwatch.GetElapsedTime(overlayStart).TotalMilliseconds);
+            ProcessPerformanceReview(snapshot, frameSeconds);
+        }
     }
 
     private void Render(SimulationState state)
@@ -311,6 +319,15 @@ public partial class SailingScene : Node3D
 
     private void VerifyDebugControls(HeldSailingInput keys)
     {
+        var graph = new DebugGraph("Window check", 1);
+        debug.AddChild(graph);
+        for (var i = 0; i < 1200; i++) graph.Add(i / 60.0, i);
+        Require(graph.SampleCount == 600, "graph capacity is bounded");
+        graph.Add(1199 / 60.0, -1);
+        Require(graph.SampleCount == 600, "duplicate graph timestamps ignored");
+        graph.Add(100, 0);
+        Require(graph.SampleCount == 1, "graph time window evicts old samples after a gap");
+        graph.QueueFree();
         Require(!debug.Visible && debug.Settings.WindSpeedKnots == 10 && debug.Settings.AlignWaves &&
             debug.Settings.WavePreset == WavePreset.Gentle && debug.Settings.WaveSeed == 123, "F1 defaults");
         SendKey(Key.F1, true);

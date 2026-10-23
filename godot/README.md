@@ -113,3 +113,9 @@ This opens a brief window, saves eleven PNGs (including the controls window) to
 `/tmp/SailingSimulator-<fixture>.png`, then exits. It uses real aerodynamic
 diagnostics in frozen instantaneous fixtures, not calibrated steady sailing
 or scripted maneuver physics. It does not start a simulation worker.
+
+For offline Phase 8 comparisons, see the [calibration baseline protocol](../docs/calibration.md).
+The baseline suite records simulation conditions and assembly hashes and
+rejects unsettled free-sailing cases as steady comparison candidates. Its
+results are internal model observations; published-data calibration and
+desktop timing remain open in the [Phase 8 progress record](../phases/08-progress.md).

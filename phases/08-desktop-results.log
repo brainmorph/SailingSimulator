@@ -1,0 +1,12 @@
+Godot Engine v4.7.stable.mono.official.5b4e0cb0f - https://godotengine.org
+OpenGL API 4.6 (Core Profile) Mesa 26.0.3-1ubuntu1 - Compatibility - Using Device: Intel - Mesa Intel(R) HD Graphics 530 (SKL GT2)
+
+PERFORMANCE hidden: frames=300, fps=59.95, frame p50/p95/p99/max=16.68/16.91/17.12/17.37 ms; step compute p50/p95/p99/max=5.314/6.440/8.247/9.008 ms; late=0, consecutive=0, allocation=134.0 KiB/s, GC=1/0/0
+ATTRIBUTION hidden: render mean/max=3.226/6.292 ms, overlay mean/max=0.008/0.030 ms, main allocation=367.3 KiB/s, process GC pause=4.12 ms, process JIT=6.73 ms; max-frame GC pause/JIT=0.00/0.00 ms, worker lateness=0.00 ms
+PERFORMANCE telemetry: frames=296, fps=59.15, frame p50/p95/p99/max=16.69/18.96/26.22/54.72 ms; step compute p50/p95/p99/max=5.235/10.093/16.074/19.486 ms; late=11, consecutive=0, allocation=134.0 KiB/s, GC=2/1/0
+ATTRIBUTION telemetry: render mean/max=5.051/16.288 ms, overlay mean/max=0.075/8.454 ms, main allocation=611.8 KiB/s, process GC pause=5.01 ms, process JIT=172.85 ms; max-frame GC pause/JIT=0.00/0.00 ms, worker lateness=0.00 ms
+PERFORMANCE environment: frames=300, fps=59.95, frame p50/p95/p99/max=16.68/17.09/19.23/23.88 ms; step compute p50/p95/p99/max=4.930/7.666/16.724/17.680 ms; late=13, consecutive=0, allocation=134.0 KiB/s, GC=3/1/0
+ATTRIBUTION environment: render mean/max=4.667/15.188 ms, overlay mean/max=0.025/0.288 ms, main allocation=489.8 KiB/s, process GC pause=2.94 ms, process JIT=52.82 ms; max-frame GC pause/JIT=0.00/0.00 ms, worker lateness=0.00 ms
+PERFORMANCE performance: frames=298, fps=59.75, frame p50/p95/p99/max=16.69/17.23/20.07/33.15 ms; step compute p50/p95/p99/max=4.721/7.455/16.540/22.956 ms; late=66, consecutive=54, allocation=133.8 KiB/s, GC=4/1/0
+ATTRIBUTION performance: render mean/max=4.356/20.335 ms, overlay mean/max=0.030/2.507 ms, main allocation=494.4 KiB/s, process GC pause=2.37 ms, process JIT=1.19 ms; max-frame GC pause/JIT=0.00/0.00 ms, worker lateness=7.19 ms
+PASS performance review capture (measurements above; no automatic FPS acceptance)

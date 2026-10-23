@@ -1,5 +1,9 @@
 # Phase 8: Calibration and First Playable
 
+Started 2026-10-23. See the [progress record](08-progress.md),
+[baseline protocol](../docs/calibration.md), and [recorded results](08-baseline-results.json).
+This phase and the first-playable milestone remain open.
+
 ## Objective
 
 Calibrate and verify the complete open-practice experience against compatible published data, reproducible behavior/visual checks and desktop performance measurements, then close the first playable milestone defined in `PLAN.md`.

@@ -35,6 +35,30 @@ Require(root.GetProperty("results").ValueKind == JsonValueKind.Null, "Example re
 
 Console.WriteLine("Phase 1 calibration condition contract passed.");
 
+// Screening math must reject an unsettled speed even when the half-window means happen to match.
+CalibrationReview.Sample Sample(double t, double speed, double heading = 0, double heel = 0) =>
+    new(t, speed, heading, heel, 0, 0, 0, 0);
+var stable = CalibrationReview.Summarize(new[] { Sample(1, 2, 359), Sample(2, 2, 1) }, 0);
+Require(stable.SteadyCandidate && stable.MaxHeadingErrorDegrees == 1 && stable.Samples == 2,
+    "Circular heading comparison or stable-screen calculation failed.");
+var oscillating = CalibrationReview.Summarize(new[] { Sample(1, 1), Sample(2, 3), Sample(3, 1), Sample(4, 3) }, 0);
+Require(!oscillating.SteadyCandidate && oscillating.SpeedChangeMps == 0 && oscillating.MinSpeedMps == 1 && oscillating.MaxSpeedMps == 3,
+    "A matching mean must not conceal oscillating speed.");
+Require(!CalibrationReview.Summarize(new[] { Sample(1, 2), Sample(2, 2, heel: 46) }, 0).SteadyCandidate,
+    "Overturned motion must not qualify for steady comparison.");
+var coasting = CalibrationReview.Run(CalibrationReview.Conditions.Single(c => c.Id == "coast-calm"), 120, 60);
+Require(coasting.ExactReplay && coasting.Trace.Length == 3 && coasting.FinalWindow.Samples == 60 &&
+    coasting.FinalWindow.StartSeconds == 61 * SailingSimulator.Core.Simulation.StepSeconds &&
+    coasting.FinalWindow.EndSeconds == 2 && coasting.Trace[^1].SpeedMps < coasting.Trace[0].SpeedMps,
+    "Coasting replay, time boundaries, sample count or dissipation failed.");
+var gentleCondition = CalibrationReview.Conditions.Single(c => c.Id == "default-reach-gentle");
+var gentle = CalibrationReview.Run(gentleCondition, 61, 30);
+var repeated = CalibrationReview.Run(gentleCondition, 61, 30);
+Require(gentle.FinalBoat == repeated.FinalBoat && gentle.FinalRig == repeated.FinalRig &&
+    gentle.Trace.SequenceEqual(repeated.Trace) && gentle.Trace.Length == 3 && gentle.Condition.Seed == 123,
+    "Seeded baseline must reproduce the same trace including a partial final second.");
+Console.WriteLine("Phase 8 calibration screening, coasting and seeded replay checks passed.");
+
 static void RequireRange(JsonElement controls, string field, double minimum, double maximum)
 {
     var value = controls.GetProperty(field).GetDouble();

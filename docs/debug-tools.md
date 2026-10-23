@@ -47,7 +47,9 @@ Live graphs show speed, heel, step time and deadline lateness over ten
 simulation seconds. Each is limited to 600 observed snapshots, samples a
 completed step only once, and uses actual snapshot timestamps. A slow render
 frame can skip observations; this is not a log of every physics step. Graphs
-retain history while F1 is hidden. Text refreshes at up to 10 Hz while visible.
+retain history while F1 is hidden. Text and graph drawing refresh at up to
+10 Hz while visible; observation still records each new rendered snapshot.
+Graphs reuse a 600-point drawing buffer and a preallocated bounded queue.
 Graph scales expand to the observed range; step time marks the 16.667 ms budget.
 
 ## Performance measurements
@@ -103,11 +105,25 @@ metrics and warning/fault display, alongside existing rendering/lifecycle checks
 For desktop measurements, launch Godot with `-- --performance-review`.
 This uses seed 123, warms up for two seconds, then samples five seconds each
 with F1 hidden and each of its three tabs visible. It prints frame and compute
-percentiles, allocations, GC and deadline misses. Once measurements finish,
-it joins the worker and captures four frozen PNGs at
+percentiles, allocations, GC and deadline misses. It also collects main-thread
+managed allocation rate, CPU time inside boat/water rendering and overlay
+updates, process GC pause duration, and process JIT compilation time. The
+longest frame's GC/JIT counter deltas share its frame-start boundaries; these
+are correlation evidence, not proof of a stall's cause. Render CPU timings
+exclude native layout/drawing after `_Process`, GPU work and OS scheduling.
+Process JIT time can include compilation on other threads.
+
+The review preallocates its sample buffers. At each view boundary the
+review retains its observations without sorting or logging. Once all timed
+windows finish, it joins the worker, computes/prints statistics, and captures
+four frozen PNGs at
 `/tmp/SailingSimulator-debug-{hidden,telemetry,environment,performance}.png`.
 GPU readback cannot affect the timed samples. It exits after capture.
 `PASS` means capture completed, not a promise that
 the measured FPS or cadence meets the target. Judge the printed measurements
 and retain hardware/renderer context; a short local sample is not universal
 performance evidence.
+
+Phase 8's [progress record](../phases/08-progress.md) retains the current
+measurements and unresolved cadence/frame defects. Review output is diagnostic;
+neither capture success nor reduced allocations establishes the milestone.

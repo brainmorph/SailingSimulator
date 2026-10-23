@@ -11,7 +11,9 @@ thread. Sectional sail shape, luffing, airflow telltales, sailor/foil positions,
 waves and a fading wake provide visual feedback, with switchable onboard and
 third-person cameras. F1 provides environment controls, live telemetry/graphs,
 deadline warnings, subsystem timing, allocation and GC diagnostics. Physics
-calibration remains the next phase.
+calibration is active in Phase 8. [Repeatable baseline runs](docs/calibration.md)
+and a [first-playable evidence checklist](phases/08-progress.md) are available;
+published polar calibration and the desktop performance milestone remain open.
 
 Launch the game directly without opening the Godot editor:
 
@@ -51,6 +53,7 @@ dotnet run --project tests/GodotIntegrationCheck
 dotnet run --project tools/SimulationHarness -- --steps 600
 dotnet run --project tools/SimulationHarness -- --boat --steps 600
 dotnet run --project tools/SimulationHarness -- --waves --wave-seed 123 --steps 600
+dotnet run -c Release --project tools/SimulationHarness -- --calibration-review
 ```
 
 The harness runs two identical trajectories, compares every completed boat,

@@ -6,4 +6,7 @@
     <Nullable>enable</Nullable>
     <NuGetAudit>false</NuGetAudit>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../tools/SimulationHarness/SimulationHarness.csproj" />
+  </ItemGroup>
 </Project>
