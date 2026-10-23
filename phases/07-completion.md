@@ -120,7 +120,7 @@ timed results for performance comparisons, not FPS shown during PNG capture.
   drop time or lower simulation rate to hide it.
 - Physics coefficients, mass interpretations, wave estimates and missing
   verified numeric polar targets remain unchanged and uncalibrated. Obtain
-  compatible references and sailor feedback as planned.
+  compatible references and run reproducible handling/visual checks as planned.
 - Saved conditions are an environment setup, not a persistent full-session
   replay. Graphs show observed render snapshots, not every worker sample.
   Percentiles include warm-up and may be hardware/load dependent.

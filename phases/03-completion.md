@@ -83,4 +83,4 @@ cadence, rendering frame rate, or measured ILCA speed/polar fidelity.
 - Phase 5 owns gradual held-key input, actual Godot/thread lifecycle and
   wall-clock scheduling. Phase 6 owns sail/telltale rendering. Phase 7 owns
   timing/allocation diagnostics; new section snapshots intentionally allocate.
-  Phase 8 owns speed, pointing and sailor-feedback calibration.
+  Phase 8 owns speed/pointing calibration and reproducible handling checks.

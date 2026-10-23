@@ -87,8 +87,9 @@ access outside sandbox settings/socket/display restrictions.
 
 - The review fixtures prescribe instantaneous body/rig states and inspect
   real force diagnostics. They do not establish calibrated steady sailing,
-  maneuver quality, human usability or sailor approval. Follow the short
-  sailing checklist during Phase 8 feedback/calibration.
+  calibrated maneuver performance or human usability. Follow the short
+  sailing checklist during Phase 8 reproducible checks and data-based
+  calibration.
 - Sailcloth/ribbons/wake and proxy hull/foil geometry are deliberately modest.
   Continuous physical waves are approximated between rendered vertices;
   coarse distant detail fades. Water is opaque. No capsize recovery.

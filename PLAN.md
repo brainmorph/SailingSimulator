@@ -87,10 +87,10 @@ Build a sailing simulator in C# with Godot, aiming for physics fidelity comparab
 | Performance diagnostics | F1 includes timing percentiles, subsystem timings, allocations, and garbage-collection metrics in addition to late-step warnings |
 | Time integration | RK4 at the initial 60 Hz physics rate |
 | Performance target | Stable 60 FPS on a typical desktop |
-| Calibration approach | Published measurements lead where available; sailor feedback helps assess behavior the data does not cover |
-| Performance target | Use published ILCA 7 VPP polars as initial speed and pointing targets, with conditions and assumptions recorded; validate behavior with sailor feedback |
+| Calibration approach | Compare against compatible published measurements; use reproducible behavior checks and document data gaps and estimates |
+| Performance target | Use published ILCA 7 VPP polars as initial speed and pointing targets, with conditions and assumptions recorded |
 | Performance data sources | Include the 2016 Laser-dinghy study as a candidate alongside the 2022 ILCA 7 study, subject to compatibility checks |
-| Available sailing experience | No firsthand sailing experience; plan for sailor review during calibration |
+| Validation scope | Published reference comparisons, reproducible numerical/behavior checks, visual consistency checks, and desktop performance measurements |
 | Deferred areas | Racing and capsize recovery are not initial priorities |
 
 ## Design goals
@@ -147,7 +147,7 @@ Build a sailing simulator in C# with Godot, aiming for physics fidelity comparab
 - Environment creation chooses a random wave seed when omitted; an explicit integer reproduces a realization. Preserve that seed when editing settings so slider changes do not reshuffle the wave phases. Physics and rendering sampling consume no randomness.
 - Godot will render the state produced by the C# simulation.
 - Phase 5 implements the [Godot host and thread boundary](docs/godot-integration.md): immutable held-key/environment publication, fixed-step control ramps, completed state/timing snapshots, absolute 60 Hz deadlines, visible misses/faults, and joined shutdown. The root solution stays engine-independent; build the Godot 4.7 .NET project separately. Render meshes use the hull datum, offset from the published combined centre of mass.
-- Phase 6 implements [visual feedback and cameras](docs/visual-feedback.md): sectional sail camber/twist and wind-gated luffing from aerodynamic diagnostics; paired airflow telltales; mass-following sailor/board and rudder meshes; shared-spectrum wave rendering and a bounded, fading wake. C switches a heading-following third-person orbit and a body-following onboard view; mouse look/zoom never changes sailing input. Ribbon separation thresholds and wake/cloth animation are presentation estimates pending sailor review. Water geometry approximates the continuous field between vertices.
+- Phase 6 implements [visual feedback and cameras](docs/visual-feedback.md): sectional sail camber/twist and wind-gated luffing from aerodynamic diagnostics; paired airflow telltales; mass-following sailor/board and rudder meshes; shared-spectrum wave rendering and a bounded, fading wake. C switches a heading-following third-person orbit and a body-following onboard view; mouse look/zoom never changes sailing input. Ribbon separation thresholds and wake/cloth animation are presentation estimates checked for consistency with simulation state. Water geometry approximates the continuous field between vertices.
 - Phase 7 implements [F1 debug tools and performance](docs/debug-tools.md): environment sliders/presets, signed seeds and session-local saved conditions; completed-state telemetry, force/moment breakdowns and bounded live graphs; 300-step compute percentiles, nested subsystem timing, worker allocations, process GC/heap and render FPS. Full current-step/deadline timing includes metrics collection. The original absolute 60 Hz schedule and 3/5-miss warnings remain unchanged. Environment edits retain the seed; restoring conditions does not rewind boat state or time.
 - The simulation will calculate all six degrees of boat motion.
 - Centerboard and rudder forces will be modeled separately from hull drag.
@@ -159,10 +159,10 @@ Build a sailing simulator in C# with Godot, aiming for physics fidelity comparab
 - Model hiking by shifting sailor mass position to produce a righting moment.
 - Represent the sailor as one movable mass point in the initial physics model; hiking input shifts that point continuously.
 - Keep hull, rig, foils, and sailor as separate mass contributors in the physics model; establish component masses and centers of mass from measured data where available and record approximations for missing values.
-- Use published measurements as the baseline where available; use sailor feedback to assess behavior not covered by the data.
+- Use compatible published measurements as the calibration baseline; use reproducible scenarios to check behavior and keep unsupported values explicitly provisional.
 - Use published ILCA 7 VPP polars as initial quantitative speed and pointing targets, recording the underlying assumptions and conditions.
 - Target stable 60 FPS on a typical desktop.
-- As firsthand sailing experience is unavailable, plan to seek an ILCA sailor's feedback during calibration.
+- Complete calibration through published-data comparisons, reproducible simulation/visual checks and performance measurements. Subjective sailing feel remains unassessed and is not a milestone requirement.
 
 ### Working proposal (to review)
 
@@ -222,7 +222,7 @@ ILCA Australia gives an ideal ILCA 7 sailor weight range of 75–85 kg and a typ
 - Verify the working interpretation of the handbook's 58 kg nominal weight (with fittings) against class measurement rules and the selected VPP assumptions; avoid double-counting the rig or removable gear.
 - Wind speed/direction ranges are resolved: 0–30 knots (10 default), 0–360° from-bearing. Phase 4 verifies their adapter conversion; Phase 7 supplies F1 controls.
 - Expected boat-speed and pointing targets at representative upwind, reaching, and downwind angles, with source conditions recorded. The identified 2022 VPP source is downwind-focused; locate or extract suitable upwind/reaching data.
-- Phase 4 selects provisional wave height, wavelength and spread ranges in [the environment model](docs/wind-and-waves.md). Calibrate these estimates against desired practice conditions and sailor feedback; they are not measured sea states.
+- Phase 4 selects provisional wave height, wavelength and spread ranges in [the environment model](docs/wind-and-waves.md). Check these estimates against compatible published sea-state data where available and reproducible handling scenarios; retain unsupported values as estimates.
 - Water current model and settings (deferred from the initial environment).
 - Any reliable upwind or broad-reach ILCA 7 performance data beyond the identified studies.
 
@@ -234,7 +234,7 @@ Record values with units and source or rationale. Keep experimental conditions a
 - Extract and verify numeric ILCA 7/Laser VPP polar values, conditions, and crew/rig assumptions before calibration; current sources do not yet provide a verified numeric target table.
 - Wind and wave settings use the confirmed knots/compass angles and calm/gentle/moderate presets. Phase 7 implements F1 editing, seed selection and session-local saved conditions; usability remains subject to Phase 8 review.
 - The initial fixed keys and adjustment rates are documented in [the host controls](godot/README.md). Assess their usability during visual review and calibration.
-- Phase 6's low-fidelity renderer now shows shared sail shape, telltales, heel, wake and waves; assess cue readability and camera usability with sailor feedback during calibration. Presentation heuristics and the reproducible review checklist are recorded in [visual feedback](docs/visual-feedback.md).
+- Phase 6's low-fidelity renderer now shows shared sail shape, telltales, heel, wake and waves; check cue visibility, camera framing and consistency with simulation state through reproducible visual scenarios during calibration. Presentation heuristics and the review checklist are recorded in [visual feedback](docs/visual-feedback.md).
 
 ## Deferred scope
 

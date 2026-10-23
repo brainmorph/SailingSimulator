@@ -91,7 +91,8 @@ was verified by rebuilding and rerunning the affected `Seeded` group.
   snapshot's field/time; sampling must never create a new realization.
 - Phase 5 owns Godot scene/thread lifecycle, gradual held-key input and 60 Hz
   wall-clock scheduling. Phase 6 owns water visuals, Phase 7 F1 settings and
-  diagnostics, Phase 8 numerical/sailor calibration. These offline runs do not
+  diagnostics, Phase 8 data-based calibration and handling checks. These
+  offline runs do not
   establish deadline cadence, frame rate, speed polars or validated handling.
 - Existing provisional boat coefficients/masses, unresolved 58 kg interpretation
   and published target compatibility remain open.
