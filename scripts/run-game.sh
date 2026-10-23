@@ -15,7 +15,7 @@ command -v dotnet >/dev/null 2>&1 || fail "Install the .NET 8 SDK to build and l
 if [[ -n "${GODOT_BIN:-}" ]]; then
     godot_executable="$(command -v -- "$GODOT_BIN")" || fail "Cannot find Godot: $GODOT_BIN"
 else
-    godot_executable="$HOME/Desktop/Godot_v4.7-stable_mono_linux_x86_64/Godot_v4.7-stable_mono_linux.x86_64"
+    godot_executable="$HOME/Downloads/Godot_v4.7-stable_mono_win64/Godot_v4.7-stable_mono_win64/Godot_v4.7-stable_mono_win64_console.exe"
     if [[ ! -x "$godot_executable" ]]; then
         godot_executable=""
         for candidate in godot-mono godot4-mono godot4 godot; do
