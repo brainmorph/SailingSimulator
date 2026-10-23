@@ -28,6 +28,12 @@ on `PATH`. To use another installation, set
 `GODOT_BIN=/path/to/Godot_v4.7-stable_mono_linux.x86_64 ./scripts/run-game.sh`.
 The .NET 8 SDK and Godot 4.7 .NET must already be installed.
 
+On Windows, run `scripts\run-game.cmd` (or `scripts\run-game.ps1` from
+PowerShell) instead. It searches `PATH`, then the Desktop, Downloads,
+`%LOCALAPPDATA%\Programs`, Program Files, `C:\Godot` and `C:\tools` for
+`Godot_v4.7*_mono_win64_console.exe`; otherwise set
+`$env:GODOT_BIN = 'C:\path\to\Godot_v4.7-stable_mono_win64_console.exe'`.
+
 Press **F2** in-game to show the controls window with all sailing and camera
 bindings; press **F2** again to hide it. Sailing and camera controls remain
 active while the window is open. Hold sailing keys to adjust gradually;
@@ -39,9 +45,10 @@ Press **F1** for wind/wave sliders, repeatable seeds and detailed development
 diagnostics. Both panels leave sailing active. See [debug tools and
 performance](docs/debug-tools.md) for units, measurement boundaries and review.
 
-Use a .NET 8 SDK. No third-party packages or Godot installation are needed to
-build the foundation. `global.json` selects the latest installed .NET 8 SDK
-feature band.
+Use a .NET 8 SDK or newer (it builds the `net8.0` targets; the .NET 8 runtime
+is still needed to run them). No third-party packages or Godot installation are needed to
+build the foundation. `global.json` selects the latest installed SDK at
+or above 8.0.100.
 
 ```sh
 dotnet build SailingSimulator.sln

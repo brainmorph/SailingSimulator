@@ -84,7 +84,7 @@ public partial class SailingScene
             try
             {
                 await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
-                Require(GetViewport().GetTexture().GetImage().SavePng($"/tmp/SailingSimulator-debug-{performanceNames[captureStage]}.png") == Error.Ok,
+                Require(GetViewport().GetTexture().GetImage().SavePng(System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"SailingSimulator-debug-{performanceNames[captureStage]}.png")) == Error.Ok,
                     "debug review capture");
                 if (++captureStage == performanceNames.Length)
                 {

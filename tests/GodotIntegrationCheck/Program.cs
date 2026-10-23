@@ -155,6 +155,7 @@ var tests = new (string Name, Action Run)[]
         var measured = new Simulation(initial, new IlcaMassModel(), model, input);
         var plain = new Simulation(initial, new IlcaMassModel(), model, input);
         var profiler = new StepProfiler();
+        double mass = 0, rk4 = 0, diagnostics = 0, hull = 0, centerboard = 0, rudder = 0, sail = 0;
         for (var i = 0; i < 120; i++)
         {
             if (i == 60) input = new(new(mainsheet: 0.5, hiking: -0.5, tiller: 0.1), Environment(321));
@@ -165,11 +166,14 @@ var tests = new (string Name, Action Run)[]
                 a.Diagnostics!.Total == b.Diagnostics!.Total &&
                 a.Diagnostics.SailShape.Sections.SequenceEqual(b.Diagnostics.SailShape.Sections), "Profiling changed physics");
             var p = profiler.Snapshot();
-            Require(p.MassMs > 0 && p.Rk4Ms > 0 && p.DiagnosticsMs > 0 && p.HullMs > 0 &&
-                p.CenterboardMs > 0 && p.RudderMs > 0 && p.SailMs > 0, "Missing subsystem timing");
             Require(p.HullMs + p.CenterboardMs + p.RudderMs + p.SailMs <= p.Rk4Ms + p.DiagnosticsMs,
                 "Nested subsystem accounting");
+            // Windows Stopwatch ticks at 10 MHz, so a single fast scope can read zero; sum across steps.
+            mass += p.MassMs; rk4 += p.Rk4Ms; diagnostics += p.DiagnosticsMs; hull += p.HullMs;
+            centerboard += p.CenterboardMs; rudder += p.RudderMs; sail += p.SailMs;
         }
+        Require(mass > 0 && rk4 > 0 && diagnostics > 0 && hull > 0 &&
+            centerboard > 0 && rudder > 0 && sail > 0, "Missing subsystem timing");
         profiler.Reset();
         Require(profiler.Snapshot() == default, "Profile carries over between steps");
     }),

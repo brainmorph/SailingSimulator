@@ -103,7 +103,7 @@ published-data calibration and performance measurements remain Phase 8 work.
   releases dragging on focus loss and leaves sailing control state alone.
 
 For reproducible raster inspection use `--visual-review` as documented in
-the host guide. It writes eleven 1280×720 PNGs in `/tmp`: both reaching sides,
+the host guide. It writes eleven 1280×720 PNGs to the system temp directory: both reaching sides,
 two luffing instants 0.07 s apart, both onboard sides, heel/wake, downwind boom
 on either side, calm/stopped with a raised board, and the controls window. Fixtures use seed 123
 and real force diagnostics but prescribe instantaneous body/rig states.

@@ -1,6 +1,6 @@
 # Godot host
 
-Run `./scripts/run-game.sh` from the repository root to build and launch the game
+Run `./scripts/run-game.sh` (Windows: `scripts\run-game.cmd`) from the repository root to build and launch the game
 directly. The script also prepares imported resources on first launch, so
 you do not need to open the editor. Set `GODOT_BIN` to override the detected
 Godot 4.7 .NET executable.
@@ -97,7 +97,8 @@ New random seed explicitly select another realization. Save/Restore conditions
 stores one session-local environment; it does not rewind the boat or time.
 
 For a 22-second live desktop frame/worker measurement with F1 hidden and each
-tab visible, including screenshots in `/tmp/SailingSimulator-debug-*.png`:
+tab visible, including screenshots in the system temp directory as `SailingSimulator-debug-*.png`
+(`/tmp` on Linux, `%TEMP%` on Windows):
 
 ```sh
 /home/purple-eden/Desktop/Godot_v4.7-stable_mono_linux_x86_64/Godot_v4.7-stable_mono_linux.x86_64 --path godot -- --performance-review
@@ -110,7 +111,7 @@ For repeatable rendered review (requires a display), run:
 ```
 
 This opens a brief window, saves eleven PNGs (including the controls window) to
-`/tmp/SailingSimulator-<fixture>.png`, then exits. It uses real aerodynamic
+`SailingSimulator-<fixture>.png` in the system temp directory, then exits. It uses real aerodynamic
 diagnostics in frozen instantaneous fixtures, not calibrated steady sailing
 or scripted maneuver physics. It does not start a simulation worker.
 

@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
 using SailingSimulator.Core;
 
 namespace SailingSimulator.Adapters;
@@ -57,6 +59,7 @@ public sealed class SimulationRunner : IDisposable
     private readonly SnapshotMailbox<HostInput> input;
     private readonly SnapshotMailbox<RunnerSnapshot> output;
     private readonly ManualResetEventSlim stop = new(false);
+    private WindowsHighResolutionTimer? timer;
     private readonly object lifecycle = new();
     private Thread? worker;
     private bool stopped;
@@ -109,6 +112,7 @@ public sealed class SimulationRunner : IDisposable
             if (disposed) return;
             Stop();
             stop.Dispose();
+            timer?.Dispose();
             disposed = true;
         }
     }
@@ -171,9 +175,48 @@ public sealed class SimulationRunner : IDisposable
             var remaining = (timestamp - Stopwatch.GetTimestamp()) / (double)Stopwatch.Frequency;
             if (remaining <= 0) return true;
             // Sleep for most of the interval; a short final spin avoids millisecond timer quantization.
-            if (remaining > 0.002) stop.Wait(TimeSpan.FromSeconds(remaining - 0.001));
+            if (remaining > 0.002) Sleep(remaining - 0.001);
             else Thread.SpinWait(32);
         }
         return false;
     }
+
+    private void Sleep(double seconds)
+    {
+        if (!OperatingSystem.IsWindows() || !(timer ??= WindowsHighResolutionTimer.TryCreate()).Arm(seconds))
+            stop.Wait(TimeSpan.FromSeconds(seconds));
+        else WaitHandle.WaitAny([timer, stop.WaitHandle]);
+    }
+}
+
+/// <summary>
+/// Default Windows sleeps round up to ~15.6 ms quanta, overshooting every 60 Hz deadline, and
+/// timeBeginPeriod is ignored for windowless processes. High-resolution waitable timers are not.
+/// </summary>
+internal sealed class WindowsHighResolutionTimer : WaitHandle
+{
+    private const uint HighResolution = 0x2, AllAccess = 0x1F0003;
+
+    public static WindowsHighResolutionTimer TryCreate()
+    {
+        var timer = new WindowsHighResolutionTimer();
+        timer.SafeWaitHandle = new SafeWaitHandle(CreateWaitableTimerExW(IntPtr.Zero, null, HighResolution, AllAccess), true);
+        return timer;
+    }
+
+    /// <summary>False when the timer is unavailable (Windows before 10 1803), so callers fall back.</summary>
+    public bool Arm(double seconds)
+    {
+        if (SafeWaitHandle.IsInvalid) return false;
+        var dueTime = -(long)(seconds * 10_000_000); // Negative: relative, in 100 ns units.
+        return SetWaitableTimer(SafeWaitHandle, ref dueTime, 0, IntPtr.Zero, IntPtr.Zero, false);
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern IntPtr CreateWaitableTimerExW(IntPtr attributes, string? name, uint flags, uint access);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetWaitableTimer(SafeWaitHandle timer, ref long dueTime, int period,
+        IntPtr completionRoutine, IntPtr completionArgument, [MarshalAs(UnmanagedType.Bool)] bool resume);
 }

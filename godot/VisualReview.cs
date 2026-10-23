@@ -70,7 +70,7 @@ public partial class SailingScene
         try
         {
             await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
-            var result = GetViewport().GetTexture().GetImage().SavePng($"/tmp/SailingSimulator-{reviewNames[reviewIndex]}.png");
+            var result = GetViewport().GetTexture().GetImage().SavePng(System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"SailingSimulator-{reviewNames[reviewIndex]}.png"));
             Require(result == Error.Ok, "review screenshot saved");
             GD.Print($"REVIEW {reviewNames[reviewIndex]}");
             if (++reviewIndex == reviewNames.Length)

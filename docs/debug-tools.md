@@ -117,7 +117,8 @@ The review preallocates its sample buffers. At each view boundary the
 review retains its observations without sorting or logging. Once all timed
 windows finish, it joins the worker, computes/prints statistics, and captures
 four frozen PNGs at
-`/tmp/SailingSimulator-debug-{hidden,telemetry,environment,performance}.png`.
+`SailingSimulator-debug-{hidden,telemetry,environment,performance}.png` in the system
+temp directory (`/tmp` on Linux, `%TEMP%` on Windows).
 GPU readback cannot affect the timed samples. It exits after capture.
 `PASS` means capture completed, not a promise that
 the measured FPS or cadence meets the target. Judge the printed measurements
