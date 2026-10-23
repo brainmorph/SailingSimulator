@@ -112,3 +112,36 @@ public sealed class WakeTrail
         samples.Enqueue(new(stern, side, state.TimeSeconds, Math.Clamp(speed / 2.5, 0, 1)));
     }
 }
+
+public readonly record struct CenterOfMassSample(Vector3d PositionWorldM, double TimeSeconds);
+
+/// <summary>
+/// Bounded, simulation-time history of the world center of mass (the rigid-body position).
+/// Records while hidden so enabling the trace shows recent history immediately.
+/// </summary>
+public sealed class CenterOfMassTrail
+{
+    public const double IntervalSeconds = 0.05;
+    public const double LifetimeSeconds = 60;
+    public const int Capacity = 1201;
+    private readonly Queue<CenterOfMassSample> samples = new(Capacity);
+    private double lastTime = double.NegativeInfinity;
+    public IReadOnlyCollection<CenterOfMassSample> Samples => samples;
+
+    public void Clear()
+    {
+        samples.Clear();
+        lastTime = double.NegativeInfinity;
+    }
+
+    public void Update(SimulationState state)
+    {
+        // Time running backwards means a new simulation; stale history would draw a false jump.
+        if (state.TimeSeconds < lastTime) Clear();
+        while (samples.TryPeek(out var first) && state.TimeSeconds - first.TimeSeconds > LifetimeSeconds) samples.Dequeue();
+        if (state.TimeSeconds - lastTime < IntervalSeconds - 1e-9) return; // Tolerate step-time rounding.
+        lastTime = state.TimeSeconds;
+        if (samples.Count == Capacity) samples.Dequeue();
+        samples.Enqueue(new(state.Boat.PositionWorldM, state.TimeSeconds));
+    }
+}

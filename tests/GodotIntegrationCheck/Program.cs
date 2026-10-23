@@ -323,6 +323,25 @@ var tests = new (string Name, Action Run)[]
         trail.Update(state with { TimeSeconds = 18 });
         Require(trail.Samples.Count == 0, "Stopped wake must decay completely");
     }),
+    ("Center-of-mass trail samples simulation time with bounded history", () =>
+    {
+        var trail = new CenterOfMassTrail();
+        var input = new SimulationInput(new(), PresentationConversions.EnvironmentFromSettings(wavePreset: WavePreset.Calm, waveSeed: 123));
+        var state = new SimulationState(0, 0, RigidBodyState.AtRest, input) { Mass = new IlcaMassModel().Evaluate(input.Controls) };
+        SimulationState At(int step) => state with { StepIndex = step, TimeSeconds = step / 60.0,
+            Boat = state.Boat with { PositionWorldM = new(step * 0.1, 0, -0.2) } };
+        for (var i = 0; i <= 600; i++) trail.Update(At(i));
+        Require(trail.Samples.Count == 201, "Samples every 0.05 s of simulation time");
+        Require(trail.Samples.Last().PositionWorldM == At(600).Boat.PositionWorldM, "Trail records the rigid-body center of mass");
+        var count = trail.Samples.Count;
+        trail.Update(At(600));
+        Require(trail.Samples.Count == count, "Repeated rendering cannot add samples");
+        for (var i = 601; i <= 6000; i++) trail.Update(At(i));
+        Require(trail.Samples.Count <= CenterOfMassTrail.Capacity &&
+            trail.Samples.All(x => 100 - x.TimeSeconds <= CenterOfMassTrail.LifetimeSeconds), "Trail lifetime bound");
+        trail.Update(At(0));
+        Require(trail.Samples.Count == 1 && trail.Samples.First().TimeSeconds == 0, "Restarted simulation clears trail");
+    }),
     ("Ten-second ILCA wall-clock cadence without render reads", () =>
     {
         var input = new SimulationInput(new SailingControls(mainsheet: 0.6, traveler: 0.8, vang: 0.6,

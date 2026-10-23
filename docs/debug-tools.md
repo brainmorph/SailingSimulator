@@ -52,6 +52,12 @@ retain history while F1 is hidden. Text and graph drawing refresh at up to
 Graphs reuse a 600-point drawing buffer and a preallocated bounded queue.
 Graph scales expand to the observed range; step time marks the 16.667 ms budget.
 
+The **Center of mass trace** toggle at the top of the Telemetry tab draws a red
+world-space line through the combined centre of mass (the rigid-body position)
+over the last 60 simulation seconds, sampled every 0.05 s. It is off by default
+but records while hidden, so enabling it shows recent history at once. The line
+ignores depth so it remains visible inside the hull. A simulation restart clears it.
+
 ## Performance measurements
 
 The worker always collects diagnostics, independently of panel visibility.

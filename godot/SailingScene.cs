@@ -9,6 +9,7 @@ public partial class SailingScene : Node3D
     private SimulationRunner? runner;
     private BoatPresentation boat = null!;
     private WaterPresentation water = null!;
+    private CenterOfMassTrace centerOfMass = null!;
     private Camera3D camera = null!;
     private DebugOverlay debug = null!;
     private Control controlsHelp = null!;
@@ -101,6 +102,8 @@ public partial class SailingScene : Node3D
         {
             boat.Render(state);
             water.Render(state, boat.Position);
+            centerOfMass.Visible = debug.CenterOfMassTrace.ButtonPressed;
+            centerOfMass.Render(state);
             visualStep = state.StepIndex;
         }
         UpdateCamera();
@@ -219,6 +222,9 @@ public partial class SailingScene : Node3D
         water = new WaterPresentation { Name = "Water" };
         AddChild(water);
         water.Build();
+        centerOfMass = new CenterOfMassTrace { Name = "CenterOfMassTrace" };
+        AddChild(centerOfMass);
+        centerOfMass.Build();
         camera = new Camera3D { Current = true, Far = 1800 };
         AddChild(camera);
         var canvas = new CanvasLayer();
@@ -287,6 +293,14 @@ public partial class SailingScene : Node3D
                 var samples = debug.GraphSamples;
                 debug.Observe(snapshot, 0.2);
                 Require(debug.GraphSamples == samples && samples > 2, "graphs sample each completed state once");
+                Require(!debug.CenterOfMassTrace.ButtonPressed && !centerOfMass.Visible && centerOfMass.VertexCount == 0 &&
+                    centerOfMass.Trail.Samples.Count > 2, "center-of-mass trace hidden by default but recording");
+                debug.CenterOfMassTrace.ButtonPressed = true;
+                visualStep = -1;
+                Render(snapshot.State);
+                Require(centerOfMass.Visible && centerOfMass.VertexCount == centerOfMass.Trail.Samples.Count + 1 &&
+                    centerOfMass.Trail.Samples.Last().TimeSeconds <= snapshot.State.TimeSeconds, "F1 shows center-of-mass trace");
+                debug.CenterOfMassTrace.ButtonPressed = false;
                 foreach (var (count, name) in new[] { (2, "None"), (3, "Soft"), (5, "Hard"), (0, "None") })
                 {
                     debug.Observe(snapshot with { Timing = snapshot.Timing with { ConsecutiveLateSteps = count } }, 0.2);

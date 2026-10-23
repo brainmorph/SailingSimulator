@@ -21,6 +21,7 @@ internal partial class DebugOverlay : PanelContainer
     internal HSlider WaveDirection { get; private set; } = null!;
     internal OptionButton Strength { get; private set; } = null!;
     internal CheckButton Align { get; private set; } = null!;
+    internal CheckButton CenterOfMassTrace { get; private set; } = null!;
     internal SpinBox Seed { get; private set; } = null!;
     internal DebugEnvironmentSettings Settings { get; private set; } = new();
     internal long DisplayedStep { get; private set; } = -1;
@@ -61,6 +62,8 @@ internal partial class DebugOverlay : PanelContainer
         Tabs = tabs;
         column.AddChild(tabs);
         var values = Page(tabs, "Telemetry");
+        CenterOfMassTrace = new CheckButton { Text = "Center of mass trace (red, last 60 s)", FocusMode = FocusModeEnum.None };
+        values.AddChild(CenterOfMassTrace);
         values.AddChild(telemetry);
         values.AddChild(speed);
         values.AddChild(heel);
