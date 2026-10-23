@@ -65,6 +65,11 @@ sample the current physical surface, and vanish after stopping. Wake marks
 are visual estimates and exert no force. Repeated render reads of a snapshot
 cannot spawn extra marks. Restarting a scene clears the history.
 
+Thirteen simple islands (sand shelf, grassy or rocky hill, some palms) sit at
+fixed positions about 200–1,050 m from the origin start as visual landmarks for
+judging speed and heading. They are presentation only: the boat sails through
+them, and they do not shelter wind or block waves.
+
 ## Cameras and input
 
 **C** switches views. Right drag and the wheel affect only the active camera.

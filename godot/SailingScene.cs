@@ -10,6 +10,7 @@ public partial class SailingScene : Node3D
     private BoatPresentation boat = null!;
     private WaterPresentation water = null!;
     private CenterOfMassTrace centerOfMass = null!;
+    private IslandPresentation islands = null!;
     private Camera3D camera = null!;
     private DebugOverlay debug = null!;
     private Control controlsHelp = null!;
@@ -225,6 +226,9 @@ public partial class SailingScene : Node3D
         centerOfMass = new CenterOfMassTrace { Name = "CenterOfMassTrace" };
         AddChild(centerOfMass);
         centerOfMass.Build();
+        islands = new IslandPresentation { Name = "Islands" };
+        AddChild(islands);
+        islands.Build();
         camera = new Camera3D { Current = true, Far = 1800 };
         AddChild(camera);
         var canvas = new CanvasLayer();
@@ -301,6 +305,7 @@ public partial class SailingScene : Node3D
                 Require(centerOfMass.Visible && centerOfMass.VertexCount == centerOfMass.Trail.Samples.Count + 1 &&
                     centerOfMass.Trail.Samples.Last().TimeSeconds <= snapshot.State.TimeSeconds, "F1 shows center-of-mass trace");
                 debug.CenterOfMassTrace.ButtonPressed = false;
+                Require(islands.GetChildCount() == IslandPresentation.Layout.Length, "landmark islands present");
                 foreach (var (count, name) in new[] { (2, "None"), (3, "Soft"), (5, "Hard"), (0, "None") })
                 {
                     debug.Observe(snapshot with { Timing = snapshot.Timing with { ConsecutiveLateSteps = count } }, 0.2);
