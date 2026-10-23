@@ -21,7 +21,7 @@ to all RK4 stages. Holding a key adjusts controls at the same rate regardless
 of render frequency. A render stall leaves the last published keys held;
 focus loss explicitly publishes released keys immediately. No input queue
 replays old events after a slow frame. Keep the environment's seed when
-adding settings controls in Phase 7.
+editing settings through F1.
 
 The worker atomically publishes one immutable `RunnerSnapshot` after each
 completed step. It contains the `SimulationState` and timing for that step.
@@ -70,9 +70,10 @@ not an operating-system real-time guarantee.
 `StepTiming` reports step duration (input adjustment plus integration and
 diagnostics), elapsed wall time, deadline lateness, consecutive misses and
 total misses. A successful deadline resets the consecutive count. Three
-misses mean Soft; five mean Hard. The temporary status label displays those
-warnings and worker faults. Phase 7 will place them in F1 and extend these
-metrics with rolling percentiles, subsystem costs, allocations and GC.
+misses mean Soft; five mean Hard. F1 displays those warnings and worker faults,
+with rolling compute percentiles, subsystem costs, worker allocations and
+process GC/heap observations. See [debug tools](debug-tools.md) for measurement
+boundaries and desktop render verification.
 
 ## Lifecycle and failure
 
@@ -99,5 +100,5 @@ see [launch and controls](../godot/README.md).
 
 Headless checks verify scene execution and transforms. Phase 6 also provides
 rendered fixtures and a visual review checklist; these do not establish
-desktop render FPS or sailor validation. Phase 7 owns full performance
-diagnostics; Phase 8 owns physics calibration.
+desktop render FPS or sailor validation. The Phase 7 performance review
+measures desktop frames separately; Phase 8 owns physics calibration.

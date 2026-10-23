@@ -13,7 +13,7 @@ public readonly record struct ForceMoment(Vector3d ForceWorldN, Vector3d MomentB
 }
 
 public readonly record struct ForceEvaluation(double TimeSeconds, RigidBodyState Boat, MassProperties Mass, SimulationInput Input,
-    RigState Rig = default);
+    RigState Rig = default, StepProfiler? Profiler = null);
 
 public readonly record struct RigDerivative(double AngleRate, double AngularAcceleration);
 

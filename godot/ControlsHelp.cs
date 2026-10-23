@@ -42,6 +42,7 @@ internal static class ControlsHelp
             ("C", "Switch onboard / third-person camera"),
             ("Right mouse drag", "Look around / orbit camera"),
             ("Mouse wheel", "Zoom"),
+            ("F1", "Environment settings and diagnostics"),
             ("F2", "Show / hide this window")
         };
         foreach (var (keys, action) in rows)

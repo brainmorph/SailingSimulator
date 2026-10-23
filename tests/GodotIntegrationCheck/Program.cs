@@ -129,6 +129,92 @@ var tests = new (string Name, Action Run)[]
         Require(snapshot.Timing.ElapsedSeconds - snapshot.State.TimeSeconds > 0.06, "Clock dropped simulation time");
         Require(snapshot.Timing.DeadlineLatenessMilliseconds > 60, "Deadlines reset after overload");
     }),
+    ("Rolling performance percentiles, allocation rates and eviction", () =>
+    {
+        var window = new StepPerformanceWindow();
+        PerformanceSnapshot? last = null;
+        for (var i = 1; i <= 300; i++) last = window.Add(i, 100, 0.02);
+        Near(last!.P50Ms, 150); Near(last.P95Ms, 285); Near(last.P99Ms, 297); Near(last.MaxMs, 300);
+        Require(last.Samples == 300 && last.AllocatedBytes == 100, "Window count and current allocation");
+        Near(last.AllocationBytesPerSecond, 5000);
+        var retained = last;
+        for (var i = 0; i < 300; i++) last = window.Add(1, 20, 0.01, 1, 2, 3, 4096);
+        Near(last.P50Ms, 1); Near(last.P99Ms, 1); Near(last.MaxMs, 1);
+        Require(Math.Abs(last.AllocationBytesPerSecond - 2000) < 1e-7, "Evict old allocations and elapsed time");
+        Require(last.Gen0Collections == 1 && last.Gen1Collections == 2 && last.Gen2Collections == 3 &&
+            last.ManagedHeapBytes == 4096 && retained.MaxMs == 300, "Immutable GC/heap observations");
+        Throws<ArgumentOutOfRangeException>(() => window.Add(double.NaN, 1, 1));
+        Throws<ArgumentOutOfRangeException>(() => window.Add(1, -1, 1));
+        Throws<ArgumentOutOfRangeException>(() => window.Add(1, 0, 0));
+    }),
+    ("Profiling observes subsystems without changing physical trajectories", () =>
+    {
+        var input = new SimulationInput(new(mainsheet: 0.6, hiking: -0.3), Environment(123));
+        var model = new IlcaBoatModel();
+        var initial = model.CreateInitialState(input, Math.PI / 2);
+        var measured = new Simulation(initial, new IlcaMassModel(), model, input);
+        var plain = new Simulation(initial, new IlcaMassModel(), model, input);
+        var profiler = new StepProfiler();
+        for (var i = 0; i < 120; i++)
+        {
+            if (i == 60) input = new(new(mainsheet: 0.5, hiking: -0.5, tiller: 0.1), Environment(321));
+            profiler.Reset();
+            var a = measured.Step(input, profiler);
+            var b = plain.Step(input);
+            Require(a.Boat == b.Boat && a.Rig == b.Rig && a.Mass == b.Mass &&
+                a.Diagnostics!.Total == b.Diagnostics!.Total &&
+                a.Diagnostics.SailShape.Sections.SequenceEqual(b.Diagnostics.SailShape.Sections), "Profiling changed physics");
+            var p = profiler.Snapshot();
+            Require(p.MassMs > 0 && p.Rk4Ms > 0 && p.DiagnosticsMs > 0 && p.HullMs > 0 &&
+                p.CenterboardMs > 0 && p.RudderMs > 0 && p.SailMs > 0, "Missing subsystem timing");
+            Require(p.HullMs + p.CenterboardMs + p.RudderMs + p.SailMs <= p.Rk4Ms + p.DiagnosticsMs,
+                "Nested subsystem accounting");
+        }
+        profiler.Reset();
+        Require(profiler.Snapshot() == default, "Profile carries over between steps");
+    }),
+    ("Worker publishes allocation and process GC observations with completed states", () =>
+    {
+        using var runner = Make(new AllocatingModel());
+        runner.Start();
+        WaitFor(() => runner.Latest.State.StepIndex >= 10);
+        runner.Stop();
+        var s = runner.Latest;
+        var p = s.Performance!;
+        Require(p is not null && p.Samples == s.State.StepIndex, "Performance/state mismatch");
+        Require(p!.AllocatedBytes >= 4 * 4096 && p.AllocationBytesPerSecond > 0, "Worker allocations missing");
+        Require(p.ManagedHeapBytes > 0 && p.Gen0Collections >= 0 && p.Gen1Collections >= 0 && p.Gen2Collections >= 0,
+            "GC/heap observations missing");
+        Require(p.P50Ms >= 0 && p.P50Ms <= p.P95Ms && p.P95Ms <= p.P99Ms && p.P99Ms <= p.MaxMs,
+            "Percentiles not ordered");
+    }),
+    ("Debug settings preserve seeds, zero-wind bearings and independent waves", () =>
+    {
+        var defaults = new DebugEnvironmentSettings(WaveSeed: -123);
+        var e = defaults.Build();
+        Near(MetersPerSecondToKnots(e.TrueWindVelocityWorldMps.Length), 10);
+        Require(e.WavePreset == WavePreset.Gentle && e.WaveDirectionMode == WaveDirectionMode.AlignedWithWind, "Defaults");
+        foreach (var bearing in new[] { 0.0, 90, 180, 270, 360 })
+        {
+            var settings = defaults with { WindSpeedKnots = 0, WindFromDegrees = bearing };
+            var calmWind = settings.Build();
+            Near(DebugEnvironmentSettings.FromBearing(calmWind.WaveTravelDirectionWorld), bearing % 360);
+            var independent = (settings with { WindSpeedKnots = 30, AlignWaves = false, WaveFromDegrees = 45 }).Build();
+            Near(DebugEnvironmentSettings.FromBearing(independent.WaveTravelDirectionWorld), 45);
+            Require(independent.WaveSeed == -123 && calmWind.WaveSeed == -123, "Edit reshuffled seed");
+        }
+        foreach (var seed in new[] { int.MinValue, 0, int.MaxValue })
+        {
+            var settings = defaults with { WaveSeed = seed, AlignWaves = false, WindFromDegrees = 90, WaveFromDegrees = 270 };
+            var a = settings.Build();
+            var b = DebugEnvironmentSettings.FromEnvironment(a).Build();
+            Require(a.WaveSeed == seed && a.TrueWindVelocityWorldMps == b.TrueWindVelocityWorldMps &&
+                a.Water.SampleSurface(new(3, 4, 0), 5) == b.Water.SampleSurface(new(3, 4, 0), 5), "Condition round trip");
+        }
+        Throws<ArgumentOutOfRangeException>(() => (defaults with { WindSpeedKnots = 30.1 }).Build());
+        Throws<ArgumentOutOfRangeException>(() => (defaults with { WindFromDegrees = -1 }).Build());
+        Throws<ArgumentOutOfRangeException>(() => (defaults with { AlignWaves = false, WaveFromDegrees = 361 }).Build());
+    }),
     ("Visual sail uses aerodynamic section geometry, trim and luffing", () =>
     {
         var model = new SectionalSailModel();
@@ -247,10 +333,13 @@ var tests = new (string Name, Action Run)[]
         var expected = snapshot.Timing.ElapsedSeconds * 60;
         Require(Math.Abs(snapshot.State.StepIndex - expected) <= 2, "Cadence deviated by more than two steps");
         Require(snapshot.State.StepIndex >= 590 && !snapshot.Running, "Sustained cadence or shutdown");
-        Require(snapshot.Timing.Warning == DeadlineWarning.None, "Sustained deadline misses are a performance defect");
         Console.WriteLine($"  Cadence: {snapshot.State.StepIndex} steps / {snapshot.Timing.ElapsedSeconds:F4}s; " +
             $"last step {snapshot.Timing.StepMilliseconds:F3}ms; late {snapshot.Timing.TotalLateSteps}; " +
             $"consecutive {snapshot.Timing.ConsecutiveLateSteps}");
+        var p = snapshot.Performance!;
+        Console.WriteLine($"  Compute p50/p95/p99/max {p.P50Ms:F3}/{p.P95Ms:F3}/{p.P99Ms:F3}/{p.MaxMs:F3} ms; " +
+            $"allocation {p.AllocationBytesPerSecond / 1024:F1} KiB/s; GC {p.Gen0Collections}/{p.Gen1Collections}/{p.Gen2Collections}");
+        Require(snapshot.Timing.Warning == DeadlineWarning.None, "Sustained deadline misses are a performance defect");
     })
 };
 
@@ -262,6 +351,7 @@ foreach (var (name, run) in tests)
 Console.WriteLine($"All {tests.Length} integration groups passed.");
 
 static EnvironmentConfig Environment(int seed) => PresentationConversions.EnvironmentFromSettings(waveSeed: seed);
+static double MetersPerSecondToKnots(double value) => PresentationConversions.MetersPerSecondToKnots(value);
 static SimulationRunner Make(IForceModel model, SailingControls? controls = null, EnvironmentConfig? environment = null) =>
     new(new Simulation(RigidBodyState.AtRest, new MassProperties(1, new(1, 1, 1)), model,
         new(controls ?? new(), environment ?? Environment(1))));
@@ -300,6 +390,12 @@ sealed class FaultModel : IForceModel
 sealed class SlowModel : IForceModel
 {
     public ForceMoment Evaluate(in ForceEvaluation e) { Thread.Sleep(8); return default; }
+}
+
+sealed class AllocatingModel : IForceModel
+{
+    public ForceMoment Evaluate(in ForceEvaluation e)
+    { GC.KeepAlive(new byte[4096]); return default; }
 }
 
 static class Check

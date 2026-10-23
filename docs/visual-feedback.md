@@ -78,8 +78,8 @@ mouse dragging and sailing keys. Camera code never publishes sailing input.
 F2 shows/hides a controls reference window. It starts hidden, ignores key
 repeat and leaves sailing/camera input active while open. The normal view
 has a small controls/camera hint and no numeric instruments.
-The temporary Phase 5 deadline/fault label remains until Phase 7 integrates
-it into F1 diagnostics.
+F1 contains deadline/fault messages along with [telemetry, environment
+settings and performance diagnostics](debug-tools.md).
 
 ## Short review checklist
 

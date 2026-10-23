@@ -12,13 +12,13 @@ This folder turns [PLAN.md](../PLAN.md) into independently actionable work for f
 | 4 | ~~[Wind and wave environment](04-wind-and-wave-environment.md)~~ | Configurable, repeatable wind and handling-affecting waves | 2, 3 |
 | 5 | ~~[Godot integration and controls](05-godot-integration-and-controls.md)~~ | Playable Godot scene with threaded simulation and sailing controls | 2, 3, 4 |
 | 6 | ~~[Visual sailing feedback and cameras](06-visual-sailing-feedback-and-cameras.md)~~ | Readable boat, sail, water, telltales, and camera views | 5 |
-| 7 | [Debug tools and performance](07-debug-tools-and-performance.md) | F1 environment controls, telemetry, and 60 Hz diagnostics | 5; may overlap 6 after scene integration |
+| 7 | ~~[Debug tools and performance](07-debug-tools-and-performance.md)~~ | F1 environment controls, telemetry, and 60 Hz diagnostics | 5; may overlap 6 after scene integration |
 | 8 | [Calibration and first playable](08-calibration-and-first-playable.md) | Calibrated open-practice milestone meeting `PLAN.md` scope | 1–7 |
 
 ## Handoff rules
 
-Phase 6 evidence and debug-tools handoff: [completion record](06-completion.md).
-The next active phase is [Debug tools and performance](07-debug-tools-and-performance.md).
+Phase 7 evidence and remaining desktop timing defect: [completion record](07-completion.md).
+The next active phase is [Calibration and first playable](08-calibration-and-first-playable.md).
 
 - Treat `PLAN.md` as the source of truth. Preserve its confirmed decisions; flag conflicts instead of silently changing them.
 - Keep each change within the active phase. Update `PLAN.md` when a confirmed decision, assumption, source, or open question changes.

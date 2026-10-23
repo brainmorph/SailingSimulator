@@ -158,7 +158,7 @@ equal state/force/section values on the same runtime/platform with identical
 inputs and pure models. Cross-platform floating-point bit identity is not
 promised. Each successful step allocates an immutable output snapshot; the
 boat model also allocates completed sail-section diagnostics. Allocation and
-performance instrumentation belong to Phase 7.
+performance observations are documented in [debug tools](debug-tools.md).
 
 ## Verification
 

@@ -91,6 +91,7 @@ public sealed class SampledHullModel : IForceModel
 
     public HullForces EvaluateHull(in ForceEvaluation e)
     {
+        using var measurement = e.Profiler?.Measure(SimulationSubsystem.Hull);
         var buoyancy = default(ForceMoment);
         var drag = default(ForceMoment);
         foreach (var sample in Samples)
@@ -120,6 +121,8 @@ public sealed class FoilModel(FoilKind kind) : IForceModel
 {
     public ForceMoment Evaluate(in ForceEvaluation e)
     {
+        using var measurement = e.Profiler?.Measure(kind == FoilKind.Centerboard
+            ? SimulationSubsystem.Centerboard : SimulationSubsystem.Rudder);
         var lowering = kind == FoilKind.Centerboard ? e.Input.Controls.Centerboard : 1;
         if (lowering == 0) return default;
         var span = (kind == FoilKind.Centerboard ? 0.75 : 0.48) * lowering;
@@ -160,6 +163,7 @@ public sealed class SectionalSailModel : IForceModel
 
     public (ForceMoment Force, double BoomTorqueNm) EvaluateSail(in ForceEvaluation e, SailSectionState[]? sections)
     {
+        using var measurement = e.Profiler?.Measure(SimulationSubsystem.Sail);
         var total = default(ForceMoment);
         var boomTorque = 0.0;
         var c = e.Input.Controls;

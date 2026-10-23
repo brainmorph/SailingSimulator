@@ -8,6 +8,12 @@ Calibrate and review the complete open-practice experience against compatible pu
 
 Phases 1–7.
 
+Read the [Phase 7 completion record](07-completion.md) before performance work.
+Its isolated worker check passes, but the desktop run develops persistent
+absolute-deadline misses after opening telemetry and shows first-open frame
+stalls. Diagnose this defect before claiming the first-playable performance
+criterion; do not hide it by changing the scheduling policy.
+
 ## Work
 
 1. Establish repeatable baseline conditions and document wind, waves/seed, controls, and simulation build for every comparison.

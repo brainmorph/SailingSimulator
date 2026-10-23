@@ -9,8 +9,9 @@ coefficients, component masses and wave presets are provisional. A Godot
 scene connects keyboard controls to the simulation on a dedicated 60 Hz
 thread. Sectional sail shape, luffing, airflow telltales, sailor/foil positions,
 waves and a fading wake provide visual feedback, with switchable onboard and
-third-person cameras. Debug tools and performance calibration follow in later
-phases.
+third-person cameras. F1 provides environment controls, live telemetry/graphs,
+deadline warnings, subsystem timing, allocation and GC diagnostics. Physics
+calibration remains the next phase.
 
 Launch the game directly without opening the Godot editor:
 
@@ -31,6 +32,10 @@ active while the window is open. Hold sailing keys to adjust gradually;
 releasing steering centres the tiller, while trim, board and sailor position
 stay where you leave them. See [launch and controls](godot/README.md) for
 the full key list.
+
+Press **F1** for wind/wave sliders, repeatable seeds and detailed development
+diagnostics. Both panels leave sailing active. See [debug tools and
+performance](docs/debug-tools.md) for units, measurement boundaries and review.
 
 Use a .NET 8 SDK. No third-party packages or Godot installation are needed to
 build the foundation. `global.json` selects the latest installed .NET 8 SDK

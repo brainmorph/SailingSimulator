@@ -13,7 +13,10 @@ public sealed record StepTiming(long CompletedSteps, double ElapsedSeconds, doub
 }
 
 /// <summary>State and timing always describe the same completed step. A fault retains that state.</summary>
-public sealed record RunnerSnapshot(SimulationState State, StepTiming Timing, bool Running, Exception? Fault = null);
+public sealed record RunnerSnapshot(SimulationState State, StepTiming Timing, bool Running, Exception? Fault = null)
+{
+    public PerformanceSnapshot? Performance { get; init; }
+}
 
 /// <summary>
 /// Absolute 60 Hz deadlines, with a minimum period between actual starts to prevent catch-up bursts.
@@ -116,6 +119,13 @@ public sealed class SimulationRunner : IDisposable
         var schedule = new FixedStepSchedule(epoch, Stopwatch.Frequency);
         var consecutiveLate = 0;
         long totalLate = 0, completed = 0;
+        var profile = new StepProfiler();
+        var performance = new StepPerformanceWindow();
+        var previousSample = epoch;
+        var previousAllocation = GC.GetAllocatedBytesForCurrentThread();
+        var gen0 = GC.CollectionCount(0);
+        var gen1 = GC.CollectionCount(1);
+        var gen2 = GC.CollectionCount(2);
         try
         {
             while (WaitUntil(schedule.NextStart))
@@ -124,7 +134,16 @@ public sealed class SimulationRunner : IDisposable
                 var deadline = schedule.BeginStep(started);
                 var current = input.Read(); // Exactly one coherent held-key/environment sample per step.
                 var controls = current.Held.Advance(simulation.Latest.Input.Controls);
-                var state = simulation.Step(new(controls, current.Environment));
+                profile.Reset();
+                var state = simulation.Step(new(controls, current.Environment), profile);
+                var computeFinished = Stopwatch.GetTimestamp();
+                var allocation = GC.GetAllocatedBytesForCurrentThread();
+                var metrics = performance.Add((computeFinished - started) * 1000.0 / Stopwatch.Frequency,
+                    allocation - previousAllocation, (computeFinished - previousSample) / (double)Stopwatch.Frequency,
+                    GC.CollectionCount(0) - gen0, GC.CollectionCount(1) - gen1, GC.CollectionCount(2) - gen2,
+                    GC.GetTotalMemory(false), profile.Snapshot());
+                previousSample = computeFinished;
+                previousAllocation = allocation;
                 var finished = Stopwatch.GetTimestamp();
                 var lateness = Math.Max(0, finished - deadline);
                 consecutiveLate = lateness > 0 ? consecutiveLate + 1 : 0;
@@ -132,7 +151,7 @@ public sealed class SimulationRunner : IDisposable
                 var timing = new StepTiming(++completed, (finished - epoch) / (double)Stopwatch.Frequency,
                     (finished - started) * 1000.0 / Stopwatch.Frequency,
                     lateness * 1000.0 / Stopwatch.Frequency, consecutiveLate, totalLate);
-                output.Publish(new(state, timing, true));
+                output.Publish(new(state, timing, true) { Performance = metrics });
             }
         }
         catch (Exception exception)

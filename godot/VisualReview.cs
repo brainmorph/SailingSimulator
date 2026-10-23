@@ -60,7 +60,7 @@ public partial class SailingScene
         }
         water.Render(state, boat.Position);
         UpdateCamera();
-        status.Text = "";
+        debug.Visible = false;
     }
 
     private async void ProcessVisualReview()

@@ -10,7 +10,7 @@ public partial class SailingScene : Node3D
     private BoatPresentation boat = null!;
     private WaterPresentation water = null!;
     private Camera3D camera = null!;
-    private Label status = null!;
+    private DebugOverlay debug = null!;
     private Control controlsHelp = null!;
     private EnvironmentConfig environment = null!;
     private bool focused = true;
@@ -24,15 +24,18 @@ public partial class SailingScene : Node3D
     private float onboardFov = 80;
     private long visualStep = -1;
     private bool smokeTest;
+    private bool performanceReview;
     private bool stalled;
     private bool released;
     private long smokeStart;
     private long previousRenderedStep;
+    private long previousFrameTimestamp;
 
     public override void _Ready()
     {
         SailingKeyMap.Register();
         smokeTest = OS.GetCmdlineUserArgs().Contains("--smoke-test");
+        performanceReview = OS.GetCmdlineUserArgs().Contains("--performance-review");
         if (smokeTest)
         {
             try { VerifyKeyBindings(); }
@@ -49,7 +52,8 @@ public partial class SailingScene : Node3D
             StartVisualReview();
             return;
         }
-        environment = PresentationConversions.EnvironmentFromSettings(waveSeed: smokeTest ? 123 : null);
+        environment = PresentationConversions.EnvironmentFromSettings(waveSeed: smokeTest || performanceReview ? 123 : null);
+        debug.Initialize(environment, changed => environment = changed);
         var controls = new SailingControls(mainsheet: 0.6, traveler: 0.8, vang: 0.6,
             outhaul: 0.5, cunningham: 0.3, hiking: -0.3);
         var input = new SimulationInput(controls, environment);
@@ -71,12 +75,16 @@ public partial class SailingScene : Node3D
     {
         if (visualReview) { ProcessVisualReview(); return; }
         if (runner is null) return;
+        var frameTimestamp = Stopwatch.GetTimestamp();
+        var frameSeconds = previousFrameTimestamp == 0 ? delta
+            : Stopwatch.GetElapsedTime(previousFrameTimestamp, frameTimestamp).TotalSeconds;
+        previousFrameTimestamp = frameTimestamp;
         runner.PublishInput(new(focused ? SailingKeyMap.Read() : HeldSailingInput.Released, environment));
         var snapshot = runner.Latest; // One completed snapshot drives the whole render frame.
         Render(snapshot.State);
-        status.Text = snapshot.Fault is not null ? $"Simulation stopped: {snapshot.Fault.Message}"
-            : snapshot.Timing.Warning == DeadlineWarning.None ? "" : $"Simulation deadline: {snapshot.Timing.Warning}";
+        debug.Observe(snapshot, frameSeconds);
         if (smokeTest) SmokeCheck(snapshot);
+        if (performanceReview) ProcessPerformanceReview(snapshot, frameSeconds);
     }
 
     private void Render(SimulationState state)
@@ -118,6 +126,16 @@ public partial class SailingScene : Node3D
 
     public override void _Input(InputEvent @event)
     {
+        if (@event is InputEventKey diagnosticKey && (diagnosticKey.PhysicalKeycode == Key.F1 || diagnosticKey.Keycode == Key.F1) && focused)
+        {
+            if (diagnosticKey.Pressed && !diagnosticKey.Echo)
+            {
+                debug.Visible = !debug.Visible;
+                orbiting = false;
+                if (!debug.Visible) GetViewport().GuiGetFocusOwner()?.ReleaseFocus();
+            }
+            GetViewport().SetInputAsHandled();
+        }
         if (@event is InputEventKey key && (key.PhysicalKeycode == Key.F2 || key.Keycode == Key.F2) && focused)
         {
             if (key.Pressed && !key.Echo) controlsHelp.Visible = !controlsHelp.Visible;
@@ -197,13 +215,14 @@ public partial class SailingScene : Node3D
         AddChild(camera);
         var canvas = new CanvasLayer();
         AddChild(canvas);
-        status = new Label { Position = new(16, 16) };
-        canvas.AddChild(status);
         canvas.AddChild(new Label
         {
-            Text = "F2  Controls    ·    C  Camera    ·    Right drag  Look    ·    Wheel  Zoom",
+            Text = "F1  Debug    ·    F2  Controls    ·    C  Camera    ·    Right drag  Look    ·    Wheel  Zoom",
             Position = new(16, 680), Modulate = new(0.9f, 0.94f, 0.96f, 0.8f)
         });
+        debug = new DebugOverlay();
+        debug.Build();
+        canvas.AddChild(debug);
         controlsHelp = ControlsHelp.Create();
         canvas.AddChild(controlsHelp);
         controlsHelp.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
@@ -224,6 +243,7 @@ public partial class SailingScene : Node3D
             {
                 Require(snapshot.State.Input.Controls.Tiller > 0.1 && snapshot.State.Input.Controls.Mainsheet > 0.6, "held physical key input");
                 var keys = SailingKeyMap.Read();
+                VerifyDebugControls(keys);
                 Require(!controlsHelp.Visible, "controls help starts hidden");
                 SendKey(Key.F2, true);
                 Require(controlsHelp.Visible, "F2 opens controls help");
@@ -244,6 +264,29 @@ public partial class SailingScene : Node3D
             }
             if (released && elapsed > 1.5)
             {
+                Require(snapshot.State.Input.Environment.WaveSeed == -456 &&
+                    snapshot.State.Input.Environment.WavePreset == WavePreset.Moderate &&
+                    snapshot.State.Input.Environment.WaveDirectionMode == WaveDirectionMode.Independent,
+                    "F1 settings reach the completed physics snapshot");
+                Require(snapshot.State.Input.Environment.TrueWindVelocityWorldMps == environment.TrueWindVelocityWorldMps,
+                    "active wind matches F1 input");
+                Require(snapshot.Performance is { Samples: > 0 } && snapshot.Performance.Subsystems.HullMs > 0,
+                    "performance and subsystem metrics published");
+                debug.Visible = true;
+                debug.Observe(snapshot, 0.2);
+                Require(debug.DisplayedStep == snapshot.State.StepIndex && debug.ActiveText.Contains("-456"),
+                    "overlay uses the completed snapshot");
+                var samples = debug.GraphSamples;
+                debug.Observe(snapshot, 0.2);
+                Require(debug.GraphSamples == samples && samples > 2, "graphs sample each completed state once");
+                foreach (var (count, name) in new[] { (2, "None"), (3, "Soft"), (5, "Hard"), (0, "None") })
+                {
+                    debug.Observe(snapshot with { Timing = snapshot.Timing with { ConsecutiveLateSteps = count } }, 0.2);
+                    Require(debug.WarningText.Contains($"Deadline: {name}"), "visible deadline warning thresholds and reset");
+                }
+                debug.Observe(snapshot with { Fault = new InvalidOperationException("test fault") }, 0.2);
+                Require(debug.WarningText.Contains("STOPPED: test fault"), "worker fault visible in F1");
+                debug.Visible = false;
                 Require(snapshot.State.Input.Controls.Tiller == 0, "focus loss releases and centres tiller");
                 _Notification((int)NotificationApplicationFocusIn);
                 var beforeMouse = SailingKeyMap.Read();
@@ -255,7 +298,7 @@ public partial class SailingScene : Node3D
                 VerifyPresentation(snapshot.State);
                 runner!.Stop();
                 Require(!runner.Latest.Running, "shutdown joins worker");
-                GD.Print($"PASS Godot scene: keys, F2 controls help, transforms, focus, render stall, both cameras, sectional sail, foils/body, waves, camera isolation, shutdown; steps={runner.Latest.State.StepIndex}");
+                GD.Print($"PASS Godot scene: F1 settings/telemetry/graphs/performance, keys, F2 controls help, transforms, focus, render stall, both cameras, sectional sail, foils/body, waves, camera isolation, shutdown; steps={runner.Latest.State.StepIndex}");
                 GetTree().Quit();
             }
         }
@@ -264,6 +307,45 @@ public partial class SailingScene : Node3D
             GD.PushError($"FAIL Godot smoke: {exception.Message}");
             GetTree().Quit(1);
         }
+    }
+
+    private void VerifyDebugControls(HeldSailingInput keys)
+    {
+        Require(!debug.Visible && debug.Settings.WindSpeedKnots == 10 && debug.Settings.AlignWaves &&
+            debug.Settings.WavePreset == WavePreset.Gentle && debug.Settings.WaveSeed == 123, "F1 defaults");
+        SendKey(Key.F1, true);
+        Require(debug.Visible, "F1 opens diagnostics");
+        Input.ParseInputEvent(new InputEventKey { PhysicalKeycode = Key.F1, Pressed = true, Echo = true });
+        Input.FlushBufferedEvents();
+        Require(debug.Visible, "F1 repeat ignored");
+        SendKey(Key.F1, false);
+        Require(debug.WindSpeed.MinValue == 0 && debug.WindSpeed.MaxValue == 30 &&
+            debug.WindDirection.MaxValue == 360 && !debug.WaveDirection.Editable, "slider ranges and aligned mode");
+        debug.WindSpeed.Value = 30;
+        debug.WindDirection.Value = 90;
+        Require(environment.WaveSeed == 123 && environment.TrueWindVelocityWorldMps.Y < -15 &&
+            environment.WaveTravelDirectionWorld.Y < -0.99, "compass wind and aligned waves retain seed");
+        debug.WindSpeed.Value = 0;
+        debug.WindDirection.Value = 270;
+        Require(environment.TrueWindVelocityWorldMps.Length == 0 && environment.WaveTravelDirectionWorld.Y > 0.99,
+            "zero wind retains direction");
+        debug.Align.ButtonPressed = false;
+        Require(debug.WaveDirection.Editable, "independent direction enabled");
+        debug.WaveDirection.Value = 180;
+        debug.WindSpeed.Value = 10;
+        debug.Strength.Select((int)WavePreset.Moderate);
+        debug.Strength.EmitSignal(OptionButton.SignalName.ItemSelected, (long)WavePreset.Moderate);
+        debug.Seed.GetLineEdit().Text = "-456";
+        var buttons = debug.FindChildren("*", "Button", true, false).OfType<Button>().ToArray();
+        buttons.Single(b => b.Text == "Apply seed").EmitSignal(Button.SignalName.Pressed);
+        buttons.Single(b => b.Text == "Save these conditions").EmitSignal(Button.SignalName.Pressed);
+        debug.WindSpeed.Value = 5;
+        buttons.Single(b => b.Text == "Restore saved conditions").EmitSignal(Button.SignalName.Pressed);
+        Require(debug.Settings.WindSpeedKnots == 10 && environment.WaveTravelDirectionWorld.X > 0.99 &&
+            environment.WaveSeed == -456, $"seed application and saved conditions: {debug.Settings}, wave {environment.WaveTravelDirectionWorld}");
+        SendKey(Key.F1, true);
+        SendKey(Key.F1, false);
+        Require(!debug.Visible && SailingKeyMap.Read() == keys, "F1 closes and preserves held sailing keys");
     }
 
     private void VerifyPresentation(SimulationState state)

@@ -28,7 +28,7 @@ public sealed class Simulation
         => this.massModel = massModel;
 
     /// <summary>Advance exactly 1/60 s. The caller owns wall-clock scheduling; never call concurrently.</summary>
-    public SimulationState Step(SimulationInput input)
+    public SimulationState Step(SimulationInput input, StepProfiler? profiler = null)
     {
         ArgumentNullException.ThrowIfNull(input);
         var before = Latest;
@@ -38,6 +38,7 @@ public sealed class Simulation
         MassProperties stepMass;
         try
         {
+            using var measurement = profiler?.Measure(SimulationSubsystem.Mass);
             stepMass = massModel is null ? mass : input.Controls == before.Input.Controls
                 ? before.Mass! : massModel.Evaluate(input.Controls);
             if (stepMass.MassKg != mass.MassKg) throw new ArgumentException("Internal mass motion cannot change total mass.");
@@ -48,10 +49,14 @@ public sealed class Simulation
         }
         catch (Exception exception) when (exception is ArgumentException or ArithmeticException)
         { throw new SimulationStepException(index, "mass", exception); }
-        var k1 = Derivative(y, t, input, stepMass, index, "k1");
-        var k2 = Derivative(Advance(y, k1, StepSeconds / 2), t + StepSeconds / 2, input, stepMass, index, "k2");
-        var k3 = Derivative(Advance(y, k2, StepSeconds / 2), t + StepSeconds / 2, input, stepMass, index, "k3");
-        var k4 = Derivative(Advance(y, k3, StepSeconds), t + StepSeconds, input, stepMass, index, "k4");
+        StateDerivative k1, k2, k3, k4;
+        using (profiler?.Measure(SimulationSubsystem.Rk4))
+        {
+            k1 = Derivative(y, t, input, stepMass, index, "k1", profiler);
+            k2 = Derivative(Advance(y, k1, StepSeconds / 2), t + StepSeconds / 2, input, stepMass, index, "k2", profiler);
+            k3 = Derivative(Advance(y, k2, StepSeconds / 2), t + StepSeconds / 2, input, stepMass, index, "k3", profiler);
+            k4 = Derivative(Advance(y, k3, StepSeconds), t + StepSeconds, input, stepMass, index, "k4", profiler);
+        }
         RigidBodyState completed;
         RigState completedRig;
         BoatDiagnostics? diagnostics;
@@ -61,7 +66,8 @@ public sealed class Simulation
             completed = result.Boat.ValidatedAndNormalized();
             completedRig = result.Rig;
             ValidateRig(completedRig);
-            diagnostics = Diagnostics(index * StepSeconds, completed, stepMass, input, completedRig);
+            using var measurement = profiler?.Measure(SimulationSubsystem.Diagnostics);
+            diagnostics = Diagnostics(index * StepSeconds, completed, stepMass, input, completedRig, profiler);
         }
         catch (Exception exception) when (exception is ArgumentException or ArithmeticException)
         {
@@ -73,16 +79,18 @@ public sealed class Simulation
         return snapshot;
     }
 
-    private BoatDiagnostics? Diagnostics(double time, RigidBodyState boat, MassProperties currentMass, SimulationInput input, RigState rig) =>
-        forceModel is IBoatDiagnosticsModel model ? model.Inspect(new(time, boat, currentMass, input, rig)) : null;
+    private BoatDiagnostics? Diagnostics(double time, RigidBodyState boat, MassProperties currentMass, SimulationInput input, RigState rig,
+        StepProfiler? profiler = null) =>
+        forceModel is IBoatDiagnosticsModel model ? model.Inspect(new(time, boat, currentMass, input, rig, profiler)) : null;
 
-    private StateDerivative Derivative(IntegratedState raw, double time, SimulationInput input, MassProperties currentMass, long index, string stage)
+    private StateDerivative Derivative(IntegratedState raw, double time, SimulationInput input, MassProperties currentMass, long index, string stage,
+        StepProfiler? profiler)
     {
         try
         {
             var boat = raw.Boat.ValidatedAndNormalized();
             ValidateRig(raw.Rig);
-            var evaluation = new ForceEvaluation(time, boat, currentMass, input, raw.Rig);
+            var evaluation = new ForceEvaluation(time, boat, currentMass, input, raw.Rig, profiler);
             var dynamics = forceModel is IRigDynamicsModel rigModel ? rigModel.EvaluateDynamics(in evaluation)
                 : (forceModel.Evaluate(in evaluation), default(RigDerivative));
             var (forces, rigRate) = dynamics;

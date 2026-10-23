@@ -24,7 +24,8 @@ physics coefficients are provisional. Low-fidelity hull, rig, sailor and foil
 meshes follow the simulation. Sail strips show its aerodynamic camber, twist
 and luffing; paired red/green telltales respond to local airflow. Water uses
 the same seeded wave spectrum and time as physics, with a fading motion-based
-wake. F1 settings, graphs and detailed diagnostics are Phase 7 work.
+wake. F1 opens environment settings, live telemetry/graphs and performance
+diagnostics; see [measurement details](../docs/debug-tools.md).
 
 ## Fixed controls
 
@@ -46,6 +47,7 @@ it. Sailing and camera controls continue working while it is open.
 | C | Switch third-person / onboard camera | — |
 | Right mouse drag | Orbit in third-person; look around onboard | — |
 | Mouse wheel | Third-person distance; onboard field of view | — |
+| F1 | Show / hide debug telemetry, environment and performance | — |
 | F2 | Show / hide controls window | — |
 
 Tiller returns to centre at 1.5 units/second when released. Other settings,
@@ -86,6 +88,20 @@ positions, verifies F2 show/hide and key-repeat handling, and joins the
 worker before exiting. A pass prints `PASS Godot
 scene` and exits 0. See [the integration contract](../docs/godot-integration.md)
 for ownership, cadence and failure behavior.
+
+The scene smoke also exercises F1 events, repeat suppression, environment
+sliders, independent waves, seed application and saved conditions, completed
+snapshot telemetry, graph sampling and performance/warning/fault display.
+F1 settings retain the seed while editing wind or waves. Apply seed and
+New random seed explicitly select another realization. Save/Restore conditions
+stores one session-local environment; it does not rewind the boat or time.
+
+For a 22-second live desktop frame/worker measurement with F1 hidden and each
+tab visible, including screenshots in `/tmp/SailingSimulator-debug-*.png`:
+
+```sh
+/home/purple-eden/Desktop/Godot_v4.7-stable_mono_linux_x86_64/Godot_v4.7-stable_mono_linux.x86_64 --path godot -- --performance-review
+```
 
 For repeatable rendered review (requires a display), run:
 

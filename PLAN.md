@@ -148,6 +148,7 @@ Build a sailing simulator in C# with Godot, aiming for physics fidelity comparab
 - Godot will render the state produced by the C# simulation.
 - Phase 5 implements the [Godot host and thread boundary](docs/godot-integration.md): immutable held-key/environment publication, fixed-step control ramps, completed state/timing snapshots, absolute 60 Hz deadlines, visible misses/faults, and joined shutdown. The root solution stays engine-independent; build the Godot 4.7 .NET project separately. Render meshes use the hull datum, offset from the published combined centre of mass.
 - Phase 6 implements [visual feedback and cameras](docs/visual-feedback.md): sectional sail camber/twist and wind-gated luffing from aerodynamic diagnostics; paired airflow telltales; mass-following sailor/board and rudder meshes; shared-spectrum wave rendering and a bounded, fading wake. C switches a heading-following third-person orbit and a body-following onboard view; mouse look/zoom never changes sailing input. Ribbon separation thresholds and wake/cloth animation are presentation estimates pending sailor review. Water geometry approximates the continuous field between vertices.
+- Phase 7 implements [F1 debug tools and performance](docs/debug-tools.md): environment sliders/presets, signed seeds and session-local saved conditions; completed-state telemetry, force/moment breakdowns and bounded live graphs; 300-step compute percentiles, nested subsystem timing, worker allocations, process GC/heap and render FPS. Full current-step/deadline timing includes metrics collection. The original absolute 60 Hz schedule and 3/5-miss warnings remain unchanged. Environment edits retain the seed; restoring conditions does not rewind boat state or time.
 - The simulation will calculate all six degrees of boat motion.
 - Centerboard and rudder forces will be modeled separately from hull drag.
 - Sample buoyancy and drag along the hull so waves can affect all six degrees of motion.
@@ -219,7 +220,7 @@ ILCA Australia gives an ideal ILCA 7 sailor weight range of 75–85 kg and a typ
 - Extract numeric VPP polar targets from the 2022 downwind study and/or 2016 Laser-dinghy study; record their exact conditions and model assumptions before calibration.
 - Verify whether the 80 kg reference sailor mass is compatible with the crew assumptions in the selected velocity-prediction data. A separate 2017 Laser VPP uses 80 kg as its baseline crew, but that does not establish compatibility with the 2022 ILCA 7 model.
 - Verify the working interpretation of the handbook's 58 kg nominal weight (with fittings) against class measurement rules and the selected VPP assumptions; avoid double-counting the rig or removable gear.
-- Wind speed/direction ranges are resolved: 0–30 knots (10 default), 0–360° from-bearing. Phase 4 verifies their existing adapter conversion; Phase 7 supplies F1 controls.
+- Wind speed/direction ranges are resolved: 0–30 knots (10 default), 0–360° from-bearing. Phase 4 verifies their adapter conversion; Phase 7 supplies F1 controls.
 - Expected boat-speed and pointing targets at representative upwind, reaching, and downwind angles, with source conditions recorded. The identified 2022 VPP source is downwind-focused; locate or extract suitable upwind/reaching data.
 - Phase 4 selects provisional wave height, wavelength and spread ranges in [the environment model](docs/wind-and-waves.md). Calibrate these estimates against desired practice conditions and sailor feedback; they are not measured sea states.
 - Water current model and settings (deferred from the initial environment).
@@ -231,7 +232,7 @@ Record values with units and source or rationale. Keep experimental conditions a
 
 - The initial sectional sail, centerboard, rudder and hull equations and provisional coefficients are recorded in [the Phase 3 model](docs/boat-physics.md), extended with [Phase 4 waves](docs/wind-and-waves.md). Which measured coefficients should replace or calibrate them?
 - Extract and verify numeric ILCA 7/Laser VPP polar values, conditions, and crew/rig assumptions before calibration; current sources do not yet provide a verified numeric target table.
-- Wind and wave settings use the confirmed knots/compass angles and calm/gentle/moderate presets. F1 presentation remains Phase 7 work.
+- Wind and wave settings use the confirmed knots/compass angles and calm/gentle/moderate presets. Phase 7 implements F1 editing, seed selection and session-local saved conditions; usability remains subject to Phase 8 review.
 - The initial fixed keys and adjustment rates are documented in [the host controls](godot/README.md). Assess their usability during visual review and calibration.
 - Phase 6's low-fidelity renderer now shows shared sail shape, telltales, heel, wake and waves; assess cue readability and camera usability with sailor feedback during calibration. Presentation heuristics and the reproducible review checklist are recorded in [visual feedback](docs/visual-feedback.md).
 
