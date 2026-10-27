@@ -9,6 +9,29 @@ var calm = Input(controls, 0);
 var windy = Input(controls, 10);
 var tests = new (string Name, Action Run)[]
 {
+    ("Hunter snapshots publish completed sail evaluations", () =>
+    {
+        var model = new Hunter235BoatModel();
+        var simulation = new Hunter235BoatDefinition().CreateSimulation(windy);
+        var initial = simulation.Latest;
+        var initialRig = initial.HunterRig ?? throw new Exception("Initial Hunter sail state missing.");
+        var initialSection = initialRig.Jib.Sections[0];
+        var changed = Input(new SailingControls(mainsheet: 0.8, portJibSheet: 0.9, starboardJibSheet: 0.2), 10);
+        var completed = simulation.Step(changed);
+        var published = completed.HunterRig ?? throw new Exception("Completed Hunter sail state missing.");
+        var expected = model.Rig.Inspect(new(completed.TimeSeconds, completed.Boat, completed.Mass!, changed, completed.Rig));
+        Require(published.Main.Id == "main" && published.Jib.Id == "jib", "Sail identities are missing.");
+        Require(published.Main.Sections.SequenceEqual(expected.Main.Sections) &&
+            published.Jib.Sections.SequenceEqual(expected.Jib.Sections), "Sail sections must match the completed state.");
+        Require(published.Total == expected.Total && published.Derivative == expected.Derivative,
+            "Sail forces must match the completed state.");
+        Require(published.Jib.StarboardLimitRad != initialRig.Jib.StarboardLimitRad,
+            "Published sheet limit must use the sampled input.");
+        Require(initialRig.Jib.Sections[0] == initialSection && initialRig.Jib.Sections is not SailSectionState[],
+            "Earlier snapshots must retain their own immutable sections.");
+        Require(new IlcaBoatDefinition().CreateSimulation(windy).Latest.HunterRig is null,
+            "Other boats must not publish Hunter state.");
+    }),
     ("Experimental Hunter composes forces and replays deterministically", () =>
     {
         var model = new Hunter235BoatModel();

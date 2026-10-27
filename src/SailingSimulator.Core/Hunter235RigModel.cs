@@ -1,5 +1,11 @@
 namespace SailingSimulator.Core;
 
+/// <summary>Provides a Hunter sail evaluation for a completed simulation snapshot.</summary>
+public interface IHunterRigInspectionModel : IForceModel
+{
+    HunterRigEvaluation InspectHunterRig(in ForceEvaluation evaluation);
+}
+
 /// <summary>A completed evaluation of one Hunter sail. Sections are immutable and owned by the result.</summary>
 public sealed record HunterSailState(string Id, double PortLimitRad, double StarboardLimitRad,
     IReadOnlyList<SailSectionState> Sections, ForceMoment Force, double TorqueNm);

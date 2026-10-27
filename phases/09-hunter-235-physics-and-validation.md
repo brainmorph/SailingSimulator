@@ -141,8 +141,9 @@ An independent [two-sail force experiment](../docs/hunter-235-model.md) now
 evaluates main and forestay-mounted jib sections, their airflow, summed forces
 and compliant manual sheet limits. Tests cover zero wind, mirrored loads,
 section sums and independent sheet constraints. Force composition and a short
-deterministic replay are checked; the sail states are not yet published in
-completed simulation snapshots. Backwinding and maneuvers,
+deterministic replay are checked. Completed Hunter snapshots publish sectional
+airflow, forces and sheet limits for each sail; full presentation geometry and
+boat diagnostics remain to be published. Backwinding and maneuvers,
 main/jib interaction, geometry and real-time stability remain to be verified;
 the rig is not an engineering-complete model.
 

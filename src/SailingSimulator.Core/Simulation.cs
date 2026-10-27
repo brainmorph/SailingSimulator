@@ -19,7 +19,8 @@ public sealed class Simulation
         var rig = forceModel is IRigDynamicsModel rigModel ? rigModel.InitialRig : default;
         ValidateRig(rig);
         output = new(new SimulationState(0, 0, boat, initialInput)
-        { Mass = mass, Rig = rig, Diagnostics = Diagnostics(0, boat, mass, initialInput, rig) });
+        { Mass = mass, Rig = rig, Diagnostics = Diagnostics(0, boat, mass, initialInput, rig),
+            HunterRig = HunterDiagnostics(0, boat, mass, initialInput, rig) });
     }
 
     public Simulation(RigidBodyState initial, IMassModel massModel, IForceModel forceModel, SimulationInput initialInput)
@@ -60,6 +61,7 @@ public sealed class Simulation
         RigidBodyState completed;
         RigState completedRig;
         BoatDiagnostics? diagnostics;
+        HunterRigEvaluation? hunterRig;
         try
         {
             var result = Advance(y, (k1 + k2 * 2 + k3 * 2 + k4) * (1.0 / 6), StepSeconds);
@@ -68,13 +70,14 @@ public sealed class Simulation
             ValidateRig(completedRig);
             using var measurement = profiler?.Measure(SimulationSubsystem.Diagnostics);
             diagnostics = Diagnostics(index * StepSeconds, completed, stepMass, input, completedRig, profiler);
+            hunterRig = HunterDiagnostics(index * StepSeconds, completed, stepMass, input, completedRig, profiler);
         }
         catch (Exception exception) when (exception is ArgumentException or ArithmeticException)
         {
             throw new SimulationStepException(index, "completion", exception);
         }
         var snapshot = new SimulationState(index, index * StepSeconds, completed, input)
-        { Mass = stepMass, Rig = completedRig, Diagnostics = diagnostics };
+        { Mass = stepMass, Rig = completedRig, Diagnostics = diagnostics, HunterRig = hunterRig };
         output.Publish(snapshot);
         return snapshot;
     }
@@ -82,6 +85,10 @@ public sealed class Simulation
     private BoatDiagnostics? Diagnostics(double time, RigidBodyState boat, MassProperties currentMass, SimulationInput input, RigState rig,
         StepProfiler? profiler = null) =>
         forceModel is IBoatDiagnosticsModel model ? model.Inspect(new(time, boat, currentMass, input, rig, profiler)) : null;
+
+    private HunterRigEvaluation? HunterDiagnostics(double time, RigidBodyState boat, MassProperties currentMass, SimulationInput input, RigState rig,
+        StepProfiler? profiler = null) =>
+        forceModel is IHunterRigInspectionModel model ? model.InspectHunterRig(new(time, boat, currentMass, input, rig, profiler)) : null;
 
     private StateDerivative Derivative(IntegratedState raw, double time, SimulationInput input, MassProperties currentMass, long index, string stage,
         StepProfiler? profiler)

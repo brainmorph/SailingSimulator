@@ -1,7 +1,7 @@
 namespace SailingSimulator.Core;
 
 /// <summary>Experimental Hunter force composition; not yet a player-ready or validated boat.</summary>
-public sealed class Hunter235BoatModel : IRigDynamicsModel
+public sealed class Hunter235BoatModel : IRigDynamicsModel, IHunterRigInspectionModel
 {
     public GravityModel Gravity { get; } = new();
     public Hunter235HullModel Hull { get; } = new();
@@ -10,6 +10,7 @@ public sealed class Hunter235BoatModel : IRigDynamicsModel
     public RigState InitialRig => Rig.InitialRig;
 
     public ForceMoment Evaluate(in ForceEvaluation evaluation) => EvaluateDynamics(in evaluation).Forces;
+    public HunterRigEvaluation InspectHunterRig(in ForceEvaluation evaluation) => Rig.Inspect(in evaluation);
 
     public (ForceMoment Forces, RigDerivative Rig) EvaluateDynamics(in ForceEvaluation evaluation)
     {
@@ -19,7 +20,7 @@ public sealed class Hunter235BoatModel : IRigDynamicsModel
     }
 }
 
-/// <summary>Creates an experimental Hunter simulation; presentation diagnostics are not yet available.</summary>
+/// <summary>Creates an experimental Hunter simulation with provisional sail diagnostics.</summary>
 public sealed class Hunter235BoatDefinition : IBoatDefinition
 {
     public string Id => "hunter-235";
