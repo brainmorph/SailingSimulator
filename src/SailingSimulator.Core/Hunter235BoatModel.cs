@@ -1,7 +1,19 @@
 namespace SailingSimulator.Core;
 
+/// <summary>Completed-state force components; rig reaction is zero without experimental coupling.</summary>
+public sealed record HunterBoatDiagnostics(ForceMoment Gravity, ForceMoment Buoyancy, ForceMoment HullDrag,
+    ForceMoment Centerboard, ForceMoment Rudder, ForceMoment Main, ForceMoment Jib, ForceMoment RigReaction)
+{
+    public ForceMoment Total => Gravity + Buoyancy + HullDrag + Centerboard + Rudder + Main + Jib + RigReaction;
+}
+
+public interface IHunterBoatDiagnosticsModel
+{
+    HunterBoatDiagnostics InspectHunterBoat(in ForceEvaluation evaluation, HunterRigEvaluation sail);
+}
+
 /// <summary>Experimental Hunter force composition; not yet a player-ready or validated boat.</summary>
-public sealed class Hunter235BoatModel : IRigDynamicsModel, IHunterRigInspectionModel
+public sealed class Hunter235BoatModel : IRigDynamicsModel, IHunterRigInspectionModel, IHunterBoatDiagnosticsModel
 {
     private readonly bool experimentalRigMomentum;
     public GravityModel Gravity { get; } = new();
@@ -25,6 +37,28 @@ public sealed class Hunter235BoatModel : IRigDynamicsModel, IHunterRigInspection
         return rig with { Derivative = derivative, ExperimentalRigMomentum = true };
     }
     public HunterBoatGeometry InspectHunterGeometry(SailingControls controls) => Hunter235Geometry.ForControls(controls);
+
+    public HunterBoatDiagnostics InspectHunterBoat(in ForceEvaluation evaluation, HunterRigEvaluation sail)
+    {
+        var hull = Hull.EvaluateHull(in evaluation);
+        var gravity = Gravity.Evaluate(in evaluation);
+        var board = Foils.Centerboard.Evaluate(in evaluation);
+        var rudder = Foils.Rudder.Evaluate(in evaluation);
+        var external = gravity + hull.Buoyancy + hull.Drag + board + rudder + sail.Total;
+        var reaction = default(ForceMoment);
+        if (experimentalRigMomentum)
+        {
+            // Inspection already returns a coupled derivative. Obtain the uncoupled
+            // derivative for the reaction calculation rather than coupling it twice.
+            var uncoupled = Rig.EvaluateDynamics(in evaluation).Rig;
+            var coupled = CoupleRig(in evaluation, external, uncoupled).Forces;
+            reaction = new(coupled.ForceWorldN - external.ForceWorldN, coupled.MomentBodyNm - external.MomentBodyNm);
+        }
+        var result = new HunterBoatDiagnostics(gravity, hull.Buoyancy, hull.Drag, board, rudder,
+            sail.Main.Force, sail.Jib.Force, reaction);
+        if (!result.Total.IsFinite) throw new ArithmeticException("Non-finite Hunter boat diagnostics.");
+        return result;
+    }
 
     public (ForceMoment Forces, RigDerivative Rig) EvaluateDynamics(in ForceEvaluation evaluation)
     {

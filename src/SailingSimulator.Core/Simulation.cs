@@ -18,9 +18,11 @@ public sealed class Simulation
         var boat = initial.ValidatedAndNormalized();
         var rig = forceModel is IRigDynamicsModel rigModel ? rigModel.InitialRig : default;
         ValidateRig(rig);
+        var initialHunterRig = HunterDiagnostics(0, boat, mass, initialInput, rig);
         output = new(new SimulationState(0, 0, boat, initialInput)
         { Mass = mass, Rig = rig, Diagnostics = Diagnostics(0, boat, mass, initialInput, rig),
-            HunterRig = HunterDiagnostics(0, boat, mass, initialInput, rig),
+            HunterRig = initialHunterRig,
+            HunterDiagnostics = HunterBoatDiagnostics(0, boat, mass, initialInput, rig, initialHunterRig),
             HunterGeometry = HunterGeometry(initialInput.Controls) });
     }
 
@@ -63,6 +65,7 @@ public sealed class Simulation
         RigState completedRig;
         BoatDiagnostics? diagnostics;
         HunterRigEvaluation? hunterRig;
+        HunterBoatDiagnostics? hunterDiagnostics;
         HunterBoatGeometry? hunterGeometry;
         try
         {
@@ -73,6 +76,7 @@ public sealed class Simulation
             using var measurement = profiler?.Measure(SimulationSubsystem.Diagnostics);
             diagnostics = Diagnostics(index * StepSeconds, completed, stepMass, input, completedRig, profiler);
             hunterRig = HunterDiagnostics(index * StepSeconds, completed, stepMass, input, completedRig, profiler);
+            hunterDiagnostics = HunterBoatDiagnostics(index * StepSeconds, completed, stepMass, input, completedRig, hunterRig, profiler);
             hunterGeometry = HunterGeometry(input.Controls);
         }
         catch (Exception exception) when (exception is ArgumentException or ArithmeticException)
@@ -80,7 +84,7 @@ public sealed class Simulation
             throw new SimulationStepException(index, "completion", exception);
         }
         var snapshot = new SimulationState(index, index * StepSeconds, completed, input)
-        { Mass = stepMass, Rig = completedRig, Diagnostics = diagnostics, HunterRig = hunterRig, HunterGeometry = hunterGeometry };
+        { Mass = stepMass, Rig = completedRig, Diagnostics = diagnostics, HunterRig = hunterRig, HunterDiagnostics = hunterDiagnostics, HunterGeometry = hunterGeometry };
         output.Publish(snapshot);
         return snapshot;
     }
@@ -95,6 +99,10 @@ public sealed class Simulation
 
     private HunterBoatGeometry? HunterGeometry(SailingControls controls) =>
         forceModel is IHunterRigInspectionModel model ? model.InspectHunterGeometry(controls) : null;
+
+    private HunterBoatDiagnostics? HunterBoatDiagnostics(double time, RigidBodyState boat, MassProperties currentMass, SimulationInput input, RigState rig, HunterRigEvaluation? sail,
+        StepProfiler? profiler = null) =>
+        forceModel is IHunterBoatDiagnosticsModel model && sail is not null ? model.InspectHunterBoat(new(time, boat, currentMass, input, rig, profiler), sail) : null;
 
     private StateDerivative Derivative(IntegratedState raw, double time, SimulationInput input, MassProperties currentMass, long index, string stage,
         StepProfiler? profiler)

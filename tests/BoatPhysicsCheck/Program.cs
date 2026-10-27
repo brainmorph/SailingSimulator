@@ -615,6 +615,26 @@ var tests = new (string Name, Action Run)[]
         Require(new IlcaBoatDefinition().CreateSimulation(windy).Latest.HunterGeometry is null,
             "Other boats must not publish Hunter geometry.");
     }),
+    ("Hunter completed boat diagnostics match dynamics", () =>
+    {
+        foreach (var coupled in new[] { false, true })
+        {
+            var model = new Hunter235BoatModel(new Hunter235RigModel(coupled), experimentalRigMomentum: coupled);
+            var simulation = new Simulation(model.Hull.CreateInitialState(windy), new Hunter235MassModel(), model, windy);
+            for (var i = 0; i < 30; i++) simulation.Step(windy);
+            var state = simulation.Latest;
+            var evaluation = new ForceEvaluation(state.TimeSeconds, state.Boat, state.Mass!, state.Input, state.Rig);
+            var diagnostics = state.HunterDiagnostics!;
+            var forces = model.EvaluateDynamics(evaluation).Forces;
+            Near(diagnostics.Total.ForceWorldN, forces.ForceWorldN, 1e-9);
+            Near(diagnostics.Total.MomentBodyNm, forces.MomentBodyNm, 1e-9);
+            Require(diagnostics.Main == state.HunterRig!.Main.Force && diagnostics.Jib == state.HunterRig.Jib.Force,
+                "Boat and sail diagnostics must use the same completed state.");
+            Require(coupled || diagnostics.RigReaction == default, "Uncoupled model must have no rig reaction.");
+        }
+        Require(new IlcaBoatDefinition().CreateSimulation(windy).Latest.HunterDiagnostics is null,
+            "Other boats must not publish Hunter boat diagnostics.");
+    }),
     ("Experimental Hunter composes forces and replays deterministically", () =>
     {
         var model = new Hunter235BoatModel();

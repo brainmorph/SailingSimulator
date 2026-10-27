@@ -340,6 +340,13 @@ turn on the port side, comparing reflected boat motion, sail angles and jib
 torque at every step. With experimental momentum coupling it observes 331
 consecutive opposing-load steps.
 
+Completed Hunter snapshots now include a boat force breakdown for gravity,
+buoyancy, hull drag, centerboard, rudder, each sail and the optional experimental
+rig reaction. The development telemetry displays hull drag, foil and net force
+magnitudes. The breakdown is evaluated at the completed state; its additional
+diagnostic cost has not yet been measured in the desktop performance gate.
+The production sheet model and remaining rig and performance work are unchanged.
+
 ### 9.1 Reference boat and model contract
 
 1. Identify a consistent Hunter 23.5 configuration from manufacturer sailplan,

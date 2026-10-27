@@ -96,12 +96,14 @@ public partial class HunterDevelopmentScene : Node3D
         if (snapshot.State.StepIndex != lastStep) Render(snapshot.State);
         var telemetryStart = performanceReview ? Stopwatch.GetTimestamp() : 0;
         var rig = snapshot.State.HunterRig!;
+        var boatForces = snapshot.State.HunterDiagnostics!;
         var controls = snapshot.State.Input.Controls;
         if (scenario) UpdateScenario(snapshot.State);
         if (steadyCheck) UpdateSteady(snapshot.State);
         if (telemetry.Visible) telemetry.Text = $"HUNTER DEVELOPMENT · provisional physics\n" +
             $"step {snapshot.State.StepIndex}  time {snapshot.State.TimeSeconds:F2} s  worker {snapshot.Timing.StepMilliseconds:F2} ms  late {snapshot.Timing.TotalLateSteps}\n" +
             $"main {rig.Main.Force.ForceWorldN.Length:F1} N  jib {rig.Jib.Force.ForceWorldN.Length:F1} N  total sail {rig.Total.ForceWorldN.Length:F1} N\n" +
+            $"hull drag {boatForces.HullDrag.ForceWorldN.Length:F1} N  board {boatForces.Centerboard.ForceWorldN.Length:F1} N  rudder {boatForces.Rudder.ForceWorldN.Length:F1} N  net {boatForces.Total.ForceWorldN.Length:F1} N\n" +
             $"jib sheets port {controls.PortJibSheet:F2}  starboard {controls.StarboardJibSheet:F2}  board {controls.Centerboard:F2}  crew {controls.Hiking:F2}\n" +
             $"frame {delta * 1000:F1} ms · {(scenario ? $"script stage {scenarioStage}" : "fixed development inputs")}";
         if (performanceReview && reviewStage is 0 or 1)
