@@ -148,9 +148,8 @@ The generated report was also checked for seven exact replays, 1,800 steps,
 
 ## Next work
 
-1. Extend review tooling with a documented deterministic course/balance
-   controller, ordinary gradual inputs and a retained control history. Check
-   longer-window speed, force and attitude convergence before comparing polars.
+1. Investigate the gentle-wave speed range and the limits of the convergence
+   screen below before using controlled runs for comparison.
 2. Profile native drawing/layout, rendering and worker scheduling to explain
    the remaining first-open frames and sustained deadline misses. Preserve
    scheduling policy and repeat desktop measurements before closing the criterion.
@@ -162,3 +161,76 @@ The generated report was also checked for seven exact replays, 1,800 steps,
    are Phase 11 work. Large thesis/dataset retrieval still needs user direction
    under the plan; none was undertaken in this pass. Do not wait for those
    targets to close Phase 8 once its engineering criteria actually pass.
+
+## Controlled-course review — 2026-10-27
+
+The initial `--course-review` added an offline test sailor, separate from the force model.
+It starts from the existing north-wind, 10-knot conditions and fixed trim, runs
+120 seconds at 60 Hz, and evaluates every step of the final 30 seconds. Heading
+error wraps at 360 degrees. The controller requests tiller
+`clamp(1.2 * heading_error_rad - 0.8 * yaw_rate, -0.7, 0.7)` and hiking
+`clamp(-0.7 * heel_rad - 0.3 * roll_rate, -0.8, 0.8)`. It holds directional
+keys toward those requests using the actual host ramp and release rules. These
+are provisional feedback gains, not a sailor model or autopilot for the game.
+
+The [compressed results](08-course-results.json.gz) retain all per-step held
+keys and applied controls, one-second observations, conditions, runtime and
+assembly hashes. Each run independently replays the recorded inputs and compares
+complete states and diagnostics at every step. The command now uses the revised
+controller described below:
+
+```sh
+dotnet run -c Release --project tools/SimulationHarness -- --course-review > course-results.json
+```
+
+The screen requires final-window speed range at most 0.1 m/s, speed half-window
+mean change at most 0.05 m/s, heel and pitch mean changes at most 2 degrees,
+heading error at most 3 degrees, absolute heel below 45 degrees, and changes in
+mean net force and moment magnitudes at most 10 N and 10 Nm respectively. These
+are engineering screening estimates, not measured accuracy limits; force and
+moment mean changes alone cannot rule out oscillation or prove equilibrium.
+
+| Case | Max heading error | Max heel | Screen |
+| --- | ---: | ---: | --- |
+| 45° calm | 6.56° | 2.29° | Fail: heading |
+| 90° calm | 0.58° | 2.25° | Pass |
+| 135° calm | 6.59° | 0.39° | Fail: heading |
+| 90° gentle, seed 123 | 1.24° | 8.64° | Fail: speed range |
+
+All four replays matched. These observations are model and controller behavior,
+not real-boat calibration. Tests check repeatability, held-key control rates and
+the force-change screen. Desktop timing, dynamic visual reviews and the other
+engineering checks remain open; this work does not complete Phase 8.
+
+### Bounded integral steering follow-up — 2026-10-27
+
+The original controller settled with a heading error because a proportional
+request needs a nonzero error to maintain a steady tiller offset. The revised
+test sailor adds `0.08 * error_rad * dt` to an integral contribution clamped to
+±0.4, then adds it to the previous heading/yaw feedback before the ±0.7 tiller
+clamp. The sailor still issues ordinary held keys. An independent sailor is
+also replayed alongside the simulation at every step. These gains are review
+tool estimates; no boat physics changed.
+
+In the [new results](08-course-integral-results.json.gz), the three calm cases
+pass the unchanged screen. Maximum heading errors in their final windows are
+0.016°, 0.008° and 0.025° respectively. The seeded gentle reach has a 0.122 m/s
+speed range and still fails the unchanged 0.1 m/s threshold; wave-driven variation and the suitability
+of applying a flat-water threshold to waves require further investigation.
+The regression suite now includes the full 120-second upwind course and checks
+the controller and state replay. Neither passing the provisional screen nor
+adjusting the test sailor establishes empirical performance.
+
+### Scheduling observation
+
+The existing `FixedStepSchedule` anchors deadlines to the original epoch and
+requires at least one full period between actual starts. Consequently a delayed
+start shifts the earliest subsequent start by that delay; further delayed starts
+accumulate. Completion still has the remainder of each period before the
+deadline, so a start delay is not itself a missed deadline. Once accumulated
+start delay and compute time exceed a period, later steps can remain late even
+after the original stall ends. This is an implication of the currently specified
+no-catch-up policy, demonstrated by the existing schedule regression; it is not
+evidence identifying the source of the initial desktop stalls. The policy and
+warnings are unchanged. Desktop profiling and any decision to revisit the
+schedule remain open.

@@ -132,7 +132,7 @@ public static class CalibrationReview
             b.OrientationBodyToWorld.Conjugate().Rotate(state.Diagnostics.Sail.ForceWorldN).X);
     }
 
-    private static void RequireSame(SimulationState a, SimulationState b)
+    public static void RequireSame(SimulationState a, SimulationState b)
     {
         var x = a.Diagnostics!;
         var y = b.Diagnostics!;

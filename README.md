@@ -74,6 +74,7 @@ dotnet run --project tools/SimulationHarness -- --steps 600
 dotnet run --project tools/SimulationHarness -- --boat --steps 600
 dotnet run --project tools/SimulationHarness -- --waves --wave-seed 123 --steps 600
 dotnet run -c Release --project tools/SimulationHarness -- --calibration-review
+dotnet run -c Release --project tools/SimulationHarness -- --course-review
 ```
 
 The harness runs two identical trajectories, compares every completed boat,
