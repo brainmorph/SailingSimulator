@@ -100,7 +100,7 @@ public sealed class Hunter235MassModel : IMassModel
         new MassContributor("Centerboard", 25, new(0.15, 0, 0.55 - 0.45 * (1 - controls.Centerboard)), new(6, 7, 2, 0, 0, 0)),
         new MassContributor("Rudder", 10, new(-3.35, 0, 0.25), new(2, 2.5, 0.8, 0, 0, 0)),
         new MassContributor("Water ballast", 453.59237, new(0, 0, 0.35), new(110, 360, 430, 0, 0, 0)),
-        new MassContributor("Skipper", 80, new(-1.8, 0.55 * controls.Hiking, -0.65), default)
+        new MassContributor("Skipper", 80, Hunter235Geometry.SkipperPosition(controls), default)
     });
 
     public MassProperties Evaluate(SailingControls controls) => MassAggregation.Combine(Contributors(controls));

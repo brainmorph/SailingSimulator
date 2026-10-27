@@ -113,6 +113,8 @@ public sealed record SimulationState(long StepIndex, double TimeSeconds, RigidBo
     public BoatDiagnostics? Diagnostics { get; init; }
     /// <summary>Provisional Hunter sail evaluation at this completed state; null for other models.</summary>
     public HunterRigEvaluation? HunterRig { get; init; }
+    /// <summary>Provisional Hunter geometry for the controls sampled in this snapshot.</summary>
+    public HunterBoatGeometry? HunterGeometry { get; init; }
     public RigState Rig { get; init; }
 }
 

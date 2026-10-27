@@ -32,6 +32,35 @@ var tests = new (string Name, Action Run)[]
         Require(new IlcaBoatDefinition().CreateSimulation(windy).Latest.HunterRig is null,
             "Other boats must not publish Hunter state.");
     }),
+    ("Hunter presentation geometry matches physics and sampled controls", () =>
+    {
+        var simulation = new Hunter235BoatDefinition().CreateSimulation(windy);
+        var initial = simulation.Latest;
+        var initialGeometry = initial.HunterGeometry ?? throw new Exception("Hunter geometry missing.");
+        var controls = new SailingControls(centerboard: 0.25, hiking: -0.8, portJibSheet: 0.7);
+        var snapshot = simulation.Step(Input(controls, 10));
+        var boat = snapshot.HunterGeometry ?? throw new Exception("Completed geometry missing.");
+        var sails = snapshot.HunterRig ?? throw new Exception("Completed sail geometry missing.");
+        var skipper = new Hunter235MassModel().Contributors(controls).Single(c => c.Name == "Skipper");
+        Near(boat.SkipperBodyM, skipper.CenterBodyM, 0);
+        Near((boat.CenterboardTipBodyM - boat.CenterboardTopBodyM).Length, 1.25 * controls.Centerboard, 1e-12);
+        Near((initialGeometry.CenterboardTipBodyM - initialGeometry.CenterboardTopBodyM).Length, 1.25, 1e-12);
+        foreach (var sail in new[] { sails.Main, sails.Jib })
+        {
+            Require(sail.Geometry.Count == sail.Sections.Count && sail.Geometry is not HunterSailSectionGeometry[],
+                "Sail section geometry must be immutable and match the force sections.");
+            for (var i = 0; i < sail.Sections.Count; i++)
+            {
+                var chord = sail.Geometry[i].TrailingEdgeBodyM - sail.Geometry[i].LeadingEdgeBodyM;
+                Near(chord.Length, sail.Sections[i].ChordM, 1e-12);
+                Near(sail.Geometry[i].LeadingEdgeBodyM + chord * 0.4, sail.Sections[i].CenterBodyM, 1e-12);
+            }
+        }
+        Require(initial.HunterGeometry == initialGeometry && initialGeometry.SkipperBodyM != boat.SkipperBodyM,
+            "Earlier geometry must remain unchanged after controls move.");
+        Require(new IlcaBoatDefinition().CreateSimulation(windy).Latest.HunterGeometry is null,
+            "Other boats must not publish Hunter geometry.");
+    }),
     ("Experimental Hunter composes forces and replays deterministically", () =>
     {
         var model = new Hunter235BoatModel();

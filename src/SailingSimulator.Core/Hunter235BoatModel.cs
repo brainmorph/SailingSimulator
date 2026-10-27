@@ -11,6 +11,7 @@ public sealed class Hunter235BoatModel : IRigDynamicsModel, IHunterRigInspection
 
     public ForceMoment Evaluate(in ForceEvaluation evaluation) => EvaluateDynamics(in evaluation).Forces;
     public HunterRigEvaluation InspectHunterRig(in ForceEvaluation evaluation) => Rig.Inspect(in evaluation);
+    public HunterBoatGeometry InspectHunterGeometry(SailingControls controls) => Hunter235Geometry.ForControls(controls);
 
     public (ForceMoment Forces, RigDerivative Rig) EvaluateDynamics(in ForceEvaluation evaluation)
     {

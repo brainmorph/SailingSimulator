@@ -9,7 +9,7 @@ public sealed class Hunter235HullModel : IForceModel
     public Hunter235HullModel()
     {
         const int longitudinal = 16, transverse = 6;
-        const double waterline = 6.5278, length = 7.2136, beam = 2.54;
+        const double waterline = 6.5278, length = Hunter235Geometry.HullLengthM, beam = Hunter235Geometry.HullBeamM;
         const double dx = waterline / longitudinal;
         var samples = new List<HullSample>(longitudinal * transverse);
         for (var i = 0; i < longitudinal; i++)
@@ -22,7 +22,7 @@ public sealed class Hunter235HullModel : IForceModel
                 var y = -halfBeam + (j + 0.5) * dy;
                 var bottom = 0.48 - 0.28 * Math.Pow(x / (waterline / 2), 2)
                     - 0.18 * Math.Pow(y / halfBeam, 2);
-                samples.Add(new(new(x, y, bottom), 0.95, dx * dy));
+                samples.Add(new(new(x, y, bottom), Hunter235Geometry.HullHeightM, dx * dy));
             }
         }
         hull = new SampledHullModel(samples, new(0.016, 0.12, 0.85), new(0.6, 8, 40));

@@ -4,11 +4,16 @@ namespace SailingSimulator.Core;
 public interface IHunterRigInspectionModel : IForceModel
 {
     HunterRigEvaluation InspectHunterRig(in ForceEvaluation evaluation);
+    HunterBoatGeometry InspectHunterGeometry(SailingControls controls);
 }
+
+/// <summary>One aerodynamic section's hull-datum leading and trailing points, in metres.</summary>
+public readonly record struct HunterSailSectionGeometry(Vector3d LeadingEdgeBodyM, Vector3d TrailingEdgeBodyM);
 
 /// <summary>A completed evaluation of one Hunter sail. Sections are immutable and owned by the result.</summary>
 public sealed record HunterSailState(string Id, double PortLimitRad, double StarboardLimitRad,
-    IReadOnlyList<SailSectionState> Sections, ForceMoment Force, double TorqueNm);
+    IReadOnlyList<SailSectionState> Sections, IReadOnlyList<HunterSailSectionGeometry> Geometry,
+    Vector3d TackBodyM, Vector3d HeadBodyM, Vector3d ClewBodyM, ForceMoment Force, double TorqueNm);
 
 public sealed record HunterRigEvaluation(HunterSailState Main, HunterSailState Jib, RigDerivative Derivative)
 {
@@ -53,6 +58,7 @@ public sealed class Hunter235RigModel : IRigDynamicsModel
     private static HunterSailState Sail(in ForceEvaluation e, bool jib, double portLimit, double starboardLimit)
     {
         var sections = new SailSectionState[SectionCount];
+        var geometry = new HunterSailSectionGeometry[SectionCount];
         var total = default(ForceMoment);
         var torque = 0.0;
         var c = e.Input.Controls;
@@ -71,6 +77,7 @@ public sealed class Hunter235RigModel : IRigDynamicsModel
             var chord = Quaterniond.FromAxisAngle(axis, sectionAngle).Rotate(new(-1, 0, 0));
             var offset = chord * (0.4 * chordLength);
             var center = pivot + offset;
+            geometry[i] = new(pivot, pivot + chord * chordLength);
             var wind = e.Boat.OrientationBodyToWorld.Conjugate().Rotate(e.Input.Environment.TrueWindVelocityWorldMps)
                 - BoatGeometry.PointVelocityBody(in e, center) - Vector3d.Cross(axis, offset) * rate;
             var horizontalChord = new Vector3d(chord.X, chord.Y, 0);
@@ -93,6 +100,11 @@ public sealed class Hunter235RigModel : IRigDynamicsModel
             torque += Vector3d.Dot(Vector3d.Cross(offset, force), axis);
             sections[i] = new(height * f, area, chordLength, sectionAngle, camber, twist * f, luff, center, wind, contribution);
         }
-        return new(jib ? "jib" : "main", portLimit, starboardLimit, Array.AsReadOnly(sections), total, torque);
+        var tack = jib ? JibTack : new Vector3d(0.5, 0, -0.65);
+        var head = jib ? JibHead : new Vector3d(0.5, 0, -0.65 - height);
+        var foot = jib ? 2.1679 : 3.048;
+        var clew = tack + Quaterniond.FromAxisAngle(axis, angle).Rotate(new(-foot, 0, 0));
+        return new(jib ? "jib" : "main", portLimit, starboardLimit, Array.AsReadOnly(sections),
+            Array.AsReadOnly(geometry), tack, head, clew, total, torque);
     }
 }

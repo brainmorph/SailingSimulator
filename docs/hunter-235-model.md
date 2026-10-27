@@ -110,6 +110,17 @@ sail-constraint checks.
 
 ## Initial two-sail force experiment
 
+Completed Hunter snapshots publish provisional hull dimensions, stern, foil
+endpoints and skipper position in hull-datum body coordinates (X forward, Y
+starboard, Z down). The board endpoint follows the force model's linearly
+scaled vertical span, not a rotating board; the skipper position is shared with
+the mass model. The hull height is the sampled-column height, not surveyed
+freeboard. Each sail publishes tack, head, clew and leading/trailing endpoints
+for its six aerodynamic sections, calculated from the same state and chord
+geometry as their force and airflow diagnostics. These are engineering markers,
+not surveyed sail shapes. Full boat-force diagnostics and scene validation
+remain outstanding.
+
 The `Hunter235RigModel` is a provisional reduced-order experiment. It uses six horizontal-force
 sections per sail and the same smooth coefficient and luffing functions as the
 ILCA sail. Main section chord follows the triangular P/E outline plus the

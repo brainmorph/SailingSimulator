@@ -142,8 +142,9 @@ evaluates main and forestay-mounted jib sections, their airflow, summed forces
 and compliant manual sheet limits. Tests cover zero wind, mirrored loads,
 section sums and independent sheet constraints. Force composition and a short
 deterministic replay are checked. Completed Hunter snapshots publish sectional
-airflow, forces and sheet limits for each sail; full presentation geometry and
-boat diagnostics remain to be published. Backwinding and maneuvers,
+airflow, forces, sheet limits and section-edge geometry for each sail, plus
+provisional hull, foil and skipper markers. Boat force diagnostics remain to be
+published. Backwinding and maneuvers,
 main/jib interaction, geometry and real-time stability remain to be verified;
 the rig is not an engineering-complete model.
 
