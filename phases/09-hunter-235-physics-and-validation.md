@@ -148,6 +148,13 @@ published. Backwinding and maneuvers,
 main/jib interaction, geometry and real-time stability remain to be verified;
 the rig is not an engineering-complete model.
 
+The initial `--hunter-dev` Godot host renders the provisional hull, sail
+sections, foils and skipper from worker snapshots and displays sail forces,
+sheet positions and timing. It uses fixed initial controls, calm water and a
+simple placeholder scene. The headless `--hunter-smoke` checks the worker and
+rendered geometry; scripted maneuver/crew/board scenarios, visual review and
+desktop performance evidence remain outstanding.
+
 ### 9.1 Reference boat and model contract
 
 1. Identify a consistent Hunter 23.5 configuration from manufacturer sailplan,

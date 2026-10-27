@@ -18,6 +18,14 @@ The Godot SDK and bindings are the only engine dependencies; no third-party
 packages are added. The root solution deliberately remains buildable with
 only .NET 8; build the Godot project separately as shown above.
 
+For the provisional Hunter development host, launch `./scripts/run-game.sh -- --hunter-dev`.
+It runs the dedicated simulation worker with fixed initial controls, 10-knot
+wind and calm water, and renders simple geometry from completed snapshots.
+F1 toggles development telemetry, including sail forces, sheet positions and
+worker timing. The flat water and block hull are placeholders; this is not the
+playable Hunter interface or a performance acceptance measurement. For an
+automated headless worker and geometry check, use `-- --hunter-smoke` instead.
+
 The test scene starts an ILCA 7 on a beam reach in the default 10-knot
 northerly wind and gentle waves. Each session chooses a wave seed. The
 physics coefficients are provisional. Low-fidelity hull, rig, sailor and foil

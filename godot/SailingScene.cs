@@ -33,6 +33,11 @@ public partial class SailingScene : Node3D
 
     public override void _Ready()
     {
+        if (OS.GetCmdlineUserArgs().Contains("--hunter-dev") || OS.GetCmdlineUserArgs().Contains("--hunter-smoke"))
+        {
+            AddChild(new HunterDevelopmentScene());
+            return;
+        }
         SailingKeyMap.Register();
         smokeTest = OS.GetCmdlineUserArgs().Contains("--smoke-test");
         performanceReview = OS.GetCmdlineUserArgs().Contains("--performance-review");
