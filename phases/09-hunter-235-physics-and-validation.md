@@ -76,11 +76,19 @@ a compatible speed polar is not a Phase 9 completion requirement.
 
 ## Work packages
 
-### Immediate priority: integrated Hunter milestone
+### Immediate priority: Hunter physics and verification
 
-At the user's direction, prioritize an end-to-end development scene now, using
+On 2026-10-27 the user directed us to temporarily pause the focus on
+performance issues. Prioritize the remaining rig behavior, boat diagnostics,
+and reproducible engineering and regression checks. Resume investigation and
+the full real-time performance scenarios later; the existing 60 Hz/60 FPS
+completion gate and unresolved desktop stalls remain open.
+
+#### Integrated Hunter milestone and progress
+
+The earlier priority was an end-to-end development scene, using
 the existing provisional model and documented estimates. Work packages below
-may overlap; their numbering does not prescribe implementation order. The next
+may overlap; their numbering does not prescribe implementation order. The
 milestone is a visible Hunter sailing in Godot with enough telemetry to inspect
 its behavior, using the real simulation worker and completed snapshots.
 
@@ -92,13 +100,14 @@ its behavior, using the real simulation worker and completed snapshots.
 3. Run repeatable initial scenarios for steady sailing, a tack with manual sheet
    changes, and board and crew movement. Record inputs and conditions, and fix
    integration and numerical stability problems revealed by these runs.
-4. Measure real-time simulation and presentation performance early, including
+4. Measure real-time simulation and presentation performance, including
    telemetry overhead. Investigate misses, including any relationship to the
    existing Phase 8 desktop timing defect, and record findings and headroom.
-   Early measurements inform development; the full gate still applies at completion.
+   Initial measurements are recorded below; further investigation is temporarily deferred.
 5. Finish and verify the remaining rig behavior, including luffing, backwinding,
    both-tight and both-eased sheets, maneuvers and main/jib interaction, then
-   complete the broader verification and performance scenarios below.
+   complete the broader engineering verification below. The performance scenarios
+   remain required later.
 
 Use explicit estimates for unresolved dimensions rather than holding this
 milestone for more reference searches. This sequence changes priority, not the
@@ -271,6 +280,36 @@ and 17.13/17.90/89.83 ms. The longest frames included 81.26/89.43 ms between
 the sampled callbacks, with no measured GC pause or JIT advance over either
 interval. This focused run confirms that the long-frame issue is not solely
 an artifact of lost focus; the source and performance gate remain open.
+
+An isolated rig check now verifies that both tight jib sheets restore openings
+on either side, while both eased sheets exert no constraint at ±0.5 rad.
+It also checks that reversing lateral airflow reverses the load on a centered
+jib without changing a held sheet's limits, and that chord-aligned airflow
+luffs both centered sails. These are static model checks, not a demonstrated
+backwinded maneuver; dynamic old-sheet retention, both-direction maneuvers and
+main/jib interaction remain to be verified.
+
+A 54-second offline comparison uses the scripted 10-knot, calm-water steering
+schedule with the starboard sheet initially at 0.65. The jib is at +0.478 rad
+when the sheet change begins, on the starboard side. The port sheet is trimmed
+in both runs; the starboard sheet is eased in one and held in the other. Both
+jibs reach approximately -0.603 rad at 54 s, and the held run's average jib
+luffing is 0.950. The prior comparison called the port sheet the old sheet
+even though the initial jib was on the starboard side; this corrected setup
+supersedes it. The current one-sided opening limit does not hold the clew on
+the old side. The comparison checks the input schedule and records behavior;
+it is not a passing backwind acceptance test. A suitable sheet-geometry
+constraint and dynamic backwind verification remain open. An initial
+geometry-based constraint experiment changed the steady reach enough to fail
+its existing settling check, so it was not retained; the interaction with
+trim, rig dynamics and the existing scenarios needs further investigation.
+An isolated [sheet-geometry experiment](../docs/hunter-235-model.md#isolated-sheet-geometry-experiment)
+now checks clew-to-lead tension, slack, symmetry and torque against spring
+energy. A fixed-hull prescribed-wind exercise also shows the held sheet
+retaining the jib on its starting side in both mirrored cases, while easing it
+allows crossing; a stronger-wind case crosses slightly even with the sheet
+held. It is not connected to the simulation; force accounting and full-boat
+behavior still need verification before it can replace the current constraint.
 
 ### 9.1 Reference boat and model contract
 

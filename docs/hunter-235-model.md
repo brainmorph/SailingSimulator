@@ -133,10 +133,44 @@ addressed before Phase 9 is complete.
 
 Positive opening is to starboard. The port sheet limits starboard opening and
 the starboard sheet limits port opening. Each limit is `0.15 + 1.3 (1 - sheet)`
-radians; a linear spring acts only beyond the corresponding limit, so an
-old tight sheet can restrain the sail across a maneuver. Both tight constrains
+radians; a linear spring acts only beyond the corresponding limit. This
+restricts opening away from the centerline but does not hold the clew on the
+old side during a tack. A held old sheet can therefore fail to backwind the jib;
+the dynamic tack comparison in the Phase 9 record exposes this limitation.
+Both tight constrains
 both sides; both eased permits larger openings. The limits are compliant and
 are not a geometric calculation of sheet length through the estimated leads.
-Neither sheet is automatically released. Rig inertia, stiffness and damping are
+Neither sheet input is automatically released. Rig inertia, stiffness and damping are
 provisional; these equations have not been validated for maneuvers, backwinding,
 real sail shapes or running stability.
+
+## Isolated sheet geometry experiment
+
+`Hunter235SheetExperiment` evaluates a straight line from the jib clew to each
+estimated lead. It uses the same tack, forestay axis and foot as the current
+jib geometry. The sheet is a 1,000 N/m extension-only spring: below its chosen
+slack length it applies no force; above it, it pulls the clew toward the lead.
+The torque is the clew force's moment about the forestay. For the port sheet,
+the slack length is the distance at a nominal +1.45 rad opening when eased,
+varying to the distance at -0.30 rad when fully trimmed; the starboard values
+are mirrored. These endpoints and stiffness are engineering estimates, not
+measured sheet lengths or a claim of correct trim response. Distance is not
+monotonic over all angles, so those nominal angles are not universal opening
+limits. The experiment excludes sheet damping and does not resolve hull reaction
+loads or moving lead hardware.
+
+Checks cover tension direction, mirrored forces, slack, opposing tight sheets
+and agreement between torque and the spring energy gradient. A separate
+fixed-hull RK4 exercise combines the experimental old-sheet torque with the
+current jib aerodynamic torque, 40 kg m² inertia and 80 N m s/rad damping.
+Starting at ±0.4 rad with zero rate and imposing body-frame wind (2, ∓2, 0)
+m/s for 10 s, a fully held old sheet kept the jib on its starting side (minimum
+opening 0.003 rad); an eased old sheet let it cross and reach ∓1.460 rad.
+Only that one sheet is included. With wind (3, -4, 0) m/s in the positive-side
+case the held sail crossed slightly, ending at -0.034 rad: this compliant model
+does not guarantee retention under arbitrary loading.
+
+The experiment is not connected to the boat or published snapshots. This
+prescribed-flow exercise is not a full-boat tack or a validation of backwinded
+aerodynamics. Integrating it requires an explicit force/reaction accounting and
+reverification of numerical stability, the reach and maneuver scenarios.

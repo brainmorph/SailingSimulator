@@ -32,7 +32,7 @@ Phase 10 and must pass performance checks again. Phase 8's engineering
 completion was previously required; the user has directed
 work to proceed while skipping Phase 8 for now. The [preliminary Hunter reference register](09-reference-progress.md)
 records initial sources and gaps; it is not a completed model contract.
-The immediate Phase 9 priority is the [integrated Hunter milestone](09-hunter-235-physics-and-validation.md#immediate-priority-integrated-hunter-milestone): publish state, connect the minimal scene, run initial scenarios and measure performance early before completing the remaining rig verification.
+The immediate Phase 9 priority is [Hunter physics and verification](09-hunter-235-physics-and-validation.md#immediate-priority-hunter-physics-and-verification). Performance investigation is temporarily paused at the user's direction; the performance gate remains open for later.
 
 The roadmap was revised on 2026-10-27 to separate playable prototypes from
 empirical realism. Objective-data calibration for both boats belongs to

@@ -224,13 +224,11 @@ not require empirical calibration. Reference research and phase planning may
 proceed while Phase 8 remains active. At the user's direction Phase 9 work has
 started while Phase 8 remains open, including its unresolved desktop timing defect.
 
-The immediate Phase 9 priority is an integrated Hunter development milestone:
-publish boat and sail state, connect a minimal Godot scene, exercise repeatable
-steady sailing, manual-sheet tack and crew/board scenarios, and measure real-time
-performance early. Then finish the remaining rig behavior and broad verification.
-Use documented estimates where dimensions remain uncertain; the full Phase 9
-engineering and performance completion gates still apply. See the
-[prioritized sequence](phases/09-hunter-235-physics-and-validation.md#immediate-priority-integrated-hunter-milestone).
+The immediate Phase 9 priority is remaining Hunter rig behavior, boat diagnostics
+and engineering verification. At the user's direction, performance investigation
+is temporarily paused; the unresolved desktop stalls and full performance gate
+remain open for later. Use documented estimates where dimensions remain uncertain.
+See the [prioritized sequence](phases/09-hunter-235-physics-and-validation.md#immediate-priority-hunter-physics-and-verification).
 
 Confirmed planning decisions:
 
