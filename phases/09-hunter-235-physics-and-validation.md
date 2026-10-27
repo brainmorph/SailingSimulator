@@ -101,8 +101,13 @@ The existing component mass and parallel-axis calculation is also available as
 `MassAggregation.Combine`, retaining the ILCA calculation and checking invalid
 input and a symmetric component example. A provisional Hunter mass model and
 budget are recorded in [Hunter model work](../docs/hunter-235-model.md), with
-tests for ballast, board and skipper accounting. The model is not yet connected
-to Hunter forces; the remaining geometry and sail contract is incomplete.
+tests for ballast, board and skipper accounting. A separately parameterized
+sampled Hunter hull now has calm-water heave initialization and checks for
+flotation, small-angle restoring and dissipative drag. Separate estimated
+centerboard and rudder components reuse the provisional foil curves and have
+deployment and steering checks. These components are not yet connected to a
+complete Hunter simulation; sail constraints and remaining geometry contracts
+are incomplete.
 
 ### 9.1 Reference boat and model contract
 

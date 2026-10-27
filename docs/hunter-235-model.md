@@ -13,8 +13,8 @@ measurement agreement.
 
 ## Mass accounting
 
-The new `Hunter235MassModel` is independent of the force model and is not yet
-connected to a runnable Hunter. Coordinates use the existing hull datum and
+`Hunter235MassModel` and `Hunter235HullModel` are not yet connected to a
+runnable Hunter. Coordinates use the existing hull datum and
 nautical axes: X forward from the approximate waterline midpoint, Y starboard,
 Z down from the nominal waterline. All allocations, centers and intrinsic
 inertias below are estimates, not measurements. The dry allocations sum to
@@ -44,13 +44,10 @@ The mass values and inertia do not establish flotation or stability.
 
 The manufacturer drawing gives I = 25 ft 6 in, J = 8 ft 6 in, P = 25 ft 8 in
 and E = 10 ft, but does not dimension the individual sail outlines. A
-contemporary trial describes a full-batten main and 110% jib. Their areas and
-corner coordinates must be chosen as explicit estimates consistent with the
-selected total and checked against feasible rig geometry before forces are
-implemented. Foretriangle area is not the installed jib area. Hull lines,
-tank dimensions, board pivot/outline, rudder and sheet lead coordinates also
-remain estimates to be specified and verified. The mass centers above are not a
-substitute for a complete geometry or sail contract.
+contemporary trial describes a full-batten main and 110% jib. Foretriangle area
+is not the installed jib area. The initial geometry below is estimated and
+requires further checks; the mass centers above are not a substitute for a
+complete geometry or sail contract.
 
 The port and starboard jib inputs remain independent and no automatic sheet
 release is authorized. A subsequent model must define both-tight, both-eased,
@@ -58,3 +55,54 @@ slack and backwind behavior, and publish geometry and airflow from the same
 completed state used for force diagnostics. The existing performance research
 found no condition-complete numerical polar; further reference comparison and
 calibration are Phase 11 work.
+
+## Initial geometry for engineering implementation
+
+The following values are provisional design choices, not digitized lines. The
+hull waterplane spans X = ±3.2639 m. At each X its half-width is
+`1.27 sqrt(1 - (2 X / 7.2136)²)`. The bottom of each column is at
+`Z = 0.48 - 0.28 (X / 3.2639)² - 0.18 (Y / halfWidth)²` m; its sealed
+height is 0.95 m. A 16 by 6 midpoint quadrature samples the hull. This geometry
+is a flotation approximation, not a surveyed Hunter hull or a freeboard claim.
+
+For future sail implementation, the starting allocation is 13.5 m² main and
+8.425118 m² jib, totaling the drawing's 236 ft² after conversion and rounding.
+Neither area is measured. P and E give a triangular main area of 11.923 m²;
+the larger assumed main includes roach. The exact outlines, corner coordinates
+and jib lead constraints still need to be defined consistently with these areas;
+these tentative values alone are not an implementation-ready rig contract.
+
+Hull resistance uses the existing local wet-column algorithm but independent,
+estimated quadratic coefficients (0.016, 0.12, 0.85) and linear coefficients
+(0.6, 8, 40) in body X/Y/Z. They are not towing measurements and do not model
+wave-making resistance. The hydrostatic and drag checks test internal signs and
+consistency only; they do not validate actual Hunter stability or performance.
+
+Proposed sail corners in the datum above, at zero opening, are main tack
+(0.5, 0, -0.65), head (0.5, 0, -8.4732), clew (-2.548, 0, -0.65);
+jib tack (3.0908, 0, -0.45), head (0.5, 0, -8.2224), clew
+(0.9229, 0, -0.45), all metres. The main triangular outline uses P and E;
+adding a parabolic roach to the chord, `0.3024 * 4 f (1-f)` m at
+fractional height f, yields approximately 13.5 m². The triangular jib's
+horizontal foot and vertical height yield approximately 8.425 m². These corner
+positions and outlines are inferred design geometry, not extracted drawings.
+This jib is about 84% of the I × J foretriangle area, inconsistent with the
+trial's reported 110% jib. Conversely, 110% of that foretriangle plus the
+P × E main triangle exceeds the reported 236 ft² total before adding roach.
+The quoted inventory, area convention, or dimensions therefore cannot all be
+accepted as this simple geometry without further evidence. The proposed areas
+are placeholders, not a verified 110% configuration.
+The jib rotates around its sloping tack-to-head forestay; estimated sheet leads
+are (-1.0, ±0.85, -0.35) m. The fixed leads, sheet lengths and compliance still
+need an explicit dynamic constraint model before implementing sail forces.
+
+The tentative board pivot is (0.15, 0, 0.15) m, with 1.25 m deployed span and
+0.9 m² deployed area; a rudder top at (-3.35, 0, 0.10) m, 0.8 m span and
+0.45 m² area is assumed. Both are rough engineering estimates and do not
+reconstruct the centerboard drawing. `Hunter235Foils` uses these as vertical
+wet segments with the shared provisional foil curves. Board deployment scales
+span and area linearly; it does not resolve a rotating board or reproduce its
+mass center's path. Tank and cockpit centers are those in the
+mass table; no physical tank boundary has been established. These assumptions
+provide an initial geometry envelope, subject to revision after flotation and
+sail-constraint checks.

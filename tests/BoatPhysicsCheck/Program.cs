@@ -9,6 +9,45 @@ var calm = Input(controls, 0);
 var windy = Input(controls, 10);
 var tests = new (string Name, Action Run)[]
 {
+    ("Hunter foils respond to deployment and steering", () =>
+    {
+        var foils = new Hunter235Foils();
+        var hull = new Hunter235HullModel();
+        var mass = new Hunter235MassModel();
+        var boat = hull.CreateInitialState(calm) with { LinearVelocityWorldMps = new(2, 0.3, 0) };
+        var lowered = new ForceEvaluation(0, boat, mass.Evaluate(calm.Controls), calm);
+        var raisedInput = Input(new(centerboard: 0), 0);
+        var raised = new ForceEvaluation(0, boat, mass.Evaluate(raisedInput.Controls), raisedInput);
+        Require(foils.Centerboard.Evaluate(lowered).ForceWorldN.Length > 1, "Lowered board must resist leeway.");
+        Near(foils.Centerboard.Evaluate(raised).ForceWorldN, Vector3d.Zero, 0);
+        var leftInput = Input(new(tiller: -0.2), 0);
+        var rightInput = Input(new(tiller: 0.2), 0);
+        var straight = boat with { LinearVelocityWorldMps = new(2, 0, 0) };
+        var left = foils.Rudder.Evaluate(new(0, straight, mass.Evaluate(leftInput.Controls), leftInput));
+        var right = foils.Rudder.Evaluate(new(0, straight, mass.Evaluate(rightInput.Controls), rightInput));
+        Require(left.MomentBodyNm.Z < 0 && right.MomentBodyNm.Z > 0, "Tiller must steer in both directions.");
+    }),
+    ("Hunter hull balances and restores in calm water", () =>
+    {
+        var hull = new Hunter235HullModel();
+        var hunterMass = new Hunter235MassModel().Evaluate(calm.Controls);
+        var boat = hull.CreateInitialState(calm);
+        var evaluation = new ForceEvaluation(0, boat, hunterMass, calm);
+        var buoyancy = hull.EvaluateHull(evaluation).Buoyancy;
+        Near(buoyancy.ForceWorldN.Z + hunterMass.MassKg * 9.80665, 0, 1e-8);
+        var deeper = evaluation with { Boat = boat with { PositionWorldM = boat.PositionWorldM + new Vector3d(0, 0, 0.03) } };
+        Require(hull.EvaluateHull(deeper).Buoyancy.ForceWorldN.Z < buoyancy.ForceWorldN.Z, "Heave must restore upward.");
+        foreach (var axis in new[] { Vector3d.UnitX, Vector3d.UnitY })
+        {
+            var tilted = evaluation with { Boat = boat with { OrientationBodyToWorld = Quaterniond.FromAxisAngle(axis, 0.03) } };
+            var change = hull.EvaluateHull(tilted).Buoyancy.MomentBodyNm - buoyancy.MomentBodyNm;
+            Require(Vector3d.Dot(change, axis) < 0, "Hull must restore a small tilt.");
+        }
+        var moving = evaluation with { Boat = boat with { LinearVelocityWorldMps = new(1, -0.5, 0.2), AngularVelocityBodyRadPerSec = new(0.1, -0.2, 0.3) } };
+        var drag = hull.EvaluateHull(moving).Drag;
+        Require(Vector3d.Dot(drag.ForceWorldN, moving.Boat.LinearVelocityWorldMps) + Vector3d.Dot(drag.MomentBodyNm, moving.Boat.AngularVelocityBodyRadPerSec) <= 0, "Hull drag must dissipate energy.");
+        Require(hull.Samples.Count == 96, "Unexpected Hunter hull quadrature.");
+    }),
     ("Hunter full ballast and cockpit mass budget", () =>
     {
         var hunter = new Hunter235MassModel();
