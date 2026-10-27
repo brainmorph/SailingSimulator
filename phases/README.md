@@ -29,7 +29,8 @@ recorded in `PLAN.md`. Hunter physics, internal verification and early real-time
 performance belong to Phase 9; the completed playable integration follows in
 Phase 10 and must pass performance checks again. Implementation follows
 Phase 8's engineering completion, while reference research and planning can
-proceed now.
+proceed now. The [preliminary Hunter reference register](09-reference-progress.md)
+records initial sources and gaps; it is not a completed model contract.
 
 The roadmap was revised on 2026-10-27 to separate playable prototypes from
 empirical realism. Objective-data calibration for both boats belongs to

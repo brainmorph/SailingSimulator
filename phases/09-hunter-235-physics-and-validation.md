@@ -1,6 +1,8 @@
 # Phase 9: Hunter 23.5 Physics, Verification and Performance
 
 Status: upcoming planning draft. Implementation has not started.
+See the [preliminary reference register](09-reference-progress.md) for the
+initial configuration and performance-source research and unresolved gaps.
 
 Read this with [PLAN.md](../PLAN.md) and the [phase index](README.md).
 Phase 8 remains active. This phase follows its engineering-verified
