@@ -27,13 +27,17 @@ playable Hunter interface or a performance acceptance measurement. For an
 automated headless worker and geometry check, use `-- --hunter-smoke` instead.
 
 Run `./scripts/run-game.sh -- --hunter-scenario` for a scripted worker exercise:
-four seconds of fixed controls, four seconds of steering, three seconds of
-manual jib sheet changes, then four seconds each raising and lowering the board
-while moving the crew. Stage transitions and heading are printed to the console.
+four seconds of fixed controls followed by steering toward the wind. After 20 s,
+the port jib sheet eases and the starboard sheet trims for three seconds while
+steering continues until 44 s. After ten seconds with the tiller released, the
+board and crew move in opposite directions for four seconds each. Stage
+transitions and heading are printed to the console.
 `-- --hunter-scenario-check` exits after the sequence and checks that the sheet,
 board and crew controls moved. The script is driven by completed simulation
 time, but input handoffs occur on render frames, so exact step boundaries can
-vary. It is an initial steering attempt, not yet a verified tack.
+vary. The shared sequence also has an exact-step offline replay that checks
+crossing the upwind heading, both sails crossing and subsequent filling and
+speed recovery; the host check does not independently verify a tack.
 
 The test scene starts an ILCA 7 on a beam reach in the default 10-knot
 northerly wind and gentle waves. Each session chooses a wave seed. The

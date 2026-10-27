@@ -168,6 +168,27 @@ but this does not establish a completed tack, steady sailing, visual quality,
 or performance. Input changes are published on render frames, so exact
 boundaries can vary; a step-exact replay and verified tack remain outstanding.
 
+The follow-up script corrects the steering direction and holds it from 4 to
+30 s, with the manual port-ease/starboard-trim sheet change from 20 to 23 s.
+Board/crew movements follow from 30 to 38 s. The same input schedule is shared
+with an offline, step-exact replay that compares two simulations and checks
+crossing the upwind heading upright. This establishes a heading crossing in
+one provisional scenario, not a verified complete sail transition or a
+calibrated maneuver. The real-time host samples the schedule on render frames;
+its exact input boundaries can differ from the offline replay.
+In one headless host run the heading was 21.1° at 20 s, 9.1° at 23 s and
+-13.3° at 30 s; the final sheet, board and crew checks passed at 38 s without
+a worker fault. This headless run is not desktop frame or cadence evidence.
+
+The latest script continues steering until 44 s, then releases the tiller for
+10 s before the board/crew movements at 54–62 s. Offline checks require both
+sails to cross after the upwind heading, then have average sectional luffing
+below 0.1 and boat speed above 1 m/s at 54 s. These are scenario-specific
+engineering checks, not empirical validation or proof of steady sailing.
+The exact-step run observed boom/jib angles of about -0.74/-0.57 rad and
+speed 1.46 m/s at 54 s; the headless worker run reached -87.0° heading at
+54 s and completed the control sequence at 62 s without a worker fault.
+
 ### 9.1 Reference boat and model contract
 
 1. Identify a consistent Hunter 23.5 configuration from manufacturer sailplan,

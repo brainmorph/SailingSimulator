@@ -37,9 +37,8 @@ public partial class HunterDevelopmentScene : Node3D
         } });
         boat = new Node3D();
         AddChild(boat);
-        environment = PresentationConversions.EnvironmentFromSettings(wavePreset: WavePreset.Calm, waveSeed: 123);
-        var controls = new SailingControls(mainsheet: 0.6, traveler: 0.8, vang: 0.6,
-            outhaul: 0.5, cunningham: 0.3, portJibSheet: 0.65);
+        environment = HunterDevelopmentScenario.Environment();
+        var controls = HunterDevelopmentScenario.InitialControls;
         var simulation = new Hunter235BoatDefinition().CreateSimulation(new(controls, environment), Math.PI / 2);
         var geometry = simulation.Latest.HunterGeometry!;
         BoatPresentation.AddMesh(boat, new BoxMesh { Size = new((float)geometry.HullBeamM, (float)geometry.HullHeightM, (float)geometry.HullLengthM) },
@@ -112,15 +111,8 @@ public partial class HunterDevelopmentScene : Node3D
     private void UpdateScenario(SimulationState state)
     {
         var t = state.TimeSeconds;
-        var stage = t < 4 ? 0 : t < 8 ? 1 : t < 11 ? 2 : t < 15 ? 3 : t < 19 ? 4 : 5;
-        var held = stage switch
-        {
-            1 => new HeldSailingInput(tiller: 0.6),
-            2 => new HeldSailingInput(portJibSheet: -1, starboardJibSheet: 1),
-            3 => new HeldSailingInput(centerboard: -1, hiking: 1),
-            4 => new HeldSailingInput(centerboard: 1, hiking: -1),
-            _ => HeldSailingInput.Released
-        };
+        var stage = HunterDevelopmentScenario.Stage(state.StepIndex);
+        var held = HunterDevelopmentScenario.Input(state.StepIndex);
         runner.PublishInput(new(held, environment));
         if (stage == scenarioStage) return;
         scenarioStage = stage;
@@ -128,7 +120,7 @@ public partial class HunterDevelopmentScene : Node3D
         var forward = state.Boat.OrientationBodyToWorld.Rotate(Vector3d.UnitX);
         GD.Print($"Hunter scenario stage {stage}: step={state.StepIndex} t={t:F2} heading={Math.Atan2(forward.Y, forward.X) * 180 / Math.PI:F1} " +
             $"port={c.PortJibSheet:F2} starboard={c.StarboardJibSheet:F2} board={c.Centerboard:F2} crew={c.Hiking:F2}");
-        if (stage == 5 && scenarioCheck)
+        if (stage == 7 && scenarioCheck)
         {
             if (c.PortJibSheet > 0.1 || c.StarboardJibSheet < 0.6 || c.Centerboard < 0.9 || c.Hiking > -0.9)
             {

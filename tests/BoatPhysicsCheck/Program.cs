@@ -9,6 +9,42 @@ var calm = Input(controls, 0);
 var windy = Input(controls, 10);
 var tests = new (string Name, Action Run)[]
 {
+    ("Hunter scripted tack and control movements replay exactly", () =>
+    {
+        var env = HunterDevelopmentScenario.Environment();
+        var controls = HunterDevelopmentScenario.InitialControls;
+        var first = new Hunter235BoatDefinition().CreateSimulation(new(controls, env), Math.PI / 2);
+        var second = new Hunter235BoatDefinition().CreateSimulation(new(controls, env), Math.PI / 2);
+        var crossedWind = false;
+        var crossedSails = false;
+        for (long step = 0; step < HunterDevelopmentScenario.EndStep; step++)
+        {
+            controls = HunterDevelopmentScenario.Input(step).Advance(controls);
+            var input = new SimulationInput(controls, env);
+            var a = first.Step(input);
+            var b = second.Step(input);
+            Require(a.Boat == b.Boat && a.Rig == b.Rig && a.Mass == b.Mass &&
+                a.HunterRig!.Total == b.HunterRig!.Total, $"Replay differs at step {step + 1}.");
+            var attitude = PresentationConversions.GetAttitude(a.Boat.OrientationBodyToWorld);
+            if (HunterDevelopmentScenario.Stage(step) == 3 && attitude.Heading > Math.PI &&
+                Math.Abs(attitude.Heel) < Math.PI / 2)
+                crossedWind = true;
+            if (crossedWind && a.Rig.BoomAngleRad < -0.1 && a.Rig.JibAngleRad < -0.1)
+                crossedSails = true;
+            if (step == 3239)
+            {
+                var rig = a.HunterRig!;
+                Require(rig.Main.Sections.Average(s => s.Luffing) < 0.1 &&
+                    rig.Jib.Sections.Average(s => s.Luffing) < 0.1 &&
+                    a.Boat.LinearVelocityWorldMps.Length > 1.0,
+                    "Both sails must fill and the boat regain speed after the turn.");
+            }
+        }
+        Require(crossedWind, "Hunter did not cross the upwind heading while upright.");
+        Require(crossedSails, "Both sails did not cross after the boat crossed the wind.");
+        Require(controls.PortJibSheet < 0.01 && controls.StarboardJibSheet > 0.7 &&
+            controls.Centerboard > 0.99 && controls.Hiking < -0.99, "Scripted controls did not reach expected positions.");
+    }),
     ("Hunter snapshots publish completed sail evaluations", () =>
     {
         var model = new Hunter235BoatModel();
