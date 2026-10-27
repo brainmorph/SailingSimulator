@@ -360,6 +360,18 @@ Main/jib aerodynamic interaction, wider maneuver verification and the
 desktop cost of the promoted model remain open; see
 [default Hunter rig selection](../docs/hunter-235-model.md#default-hunter-rig-selection).
 
+A bounded reduced-order [main/jib interaction](../docs/hunter-235-model.md#mainjib-interaction)
+is now part of the Hunter definition. Isolated section circulation induces 2D
+strip flow at the paired section of the other sail, in one explicit pass with
+an estimated vortex core. Static checks verify jib upwash and main downwash
+in every section, bounded and mirrored induced flow, and increased main
+luffing with harder jib trim. Independent sails remain available for
+comparison. The standard reach becomes faster and bears away more, settling
+within 0.93° of heading over 40–60 s against a 1° limit; it converges slowly.
+The held-sheet turn, wave runs and headless host checks still pass. The
+interaction is an estimate, not measured aerodynamic data. Its desktop cost
+is unmeasured; poor-trim and both-direction maneuver verification remain open.
+
 ### 9.1 Reference boat and model contract
 
 1. Identify a consistent Hunter 23.5 configuration from manufacturer sailplan,

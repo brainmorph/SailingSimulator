@@ -508,7 +508,61 @@ var tests = new (string Name, Action Run)[]
             maxHeel < Math.PI / 4 && maxLuff < 0.1,
             "Experimental reach failed the settling, upright or sail-filling criteria.");
     }),
-    ("Experimental coupled Hunter stays bounded with waves and moving controls", () =>
+    ("Hunter sail interaction changes a full-boat reach and keeps a held-sheet turn", () =>
+    {
+        var env = HunterDevelopmentScenario.Environment();
+        Simulation Create(SailingControls c, bool interaction)
+        {
+            var model = new Hunter235BoatModel(new Hunter235RigModel(experimentalSheetGeometry: true, sailInteraction: interaction),
+                experimentalRigMomentum: true);
+            var input = new SimulationInput(c, env);
+            return new Simulation(model.Hull.CreateInitialState(input, Math.PI / 2), new Hunter235MassModel(), model, input);
+        }
+        var reach = new SailingControls(tiller: -0.1, mainsheet: 0.6, traveler: 0.8, vang: 0.6,
+            outhaul: 0.5, cunningham: 0.3, starboardJibSheet: 0.65);
+        var separate = Create(reach, false);
+        var combined = Create(reach, true);
+        var definition = new Hunter235BoatDefinition().CreateSimulation(new(reach, env), Math.PI / 2);
+        for (var step = 0; step < 3600; step++)
+        {
+            separate.Step(new(reach, env));
+            var a = combined.Step(new(reach, env));
+            var b = definition.Step(new(reach, env));
+            Require(a.Boat == b.Boat && a.Rig == b.Rig, "The Hunter definition must use the interacting rig.");
+        }
+        var s = separate.Latest;
+        var c = combined.Latest;
+        var sHeading = PresentationConversions.GetAttitude(s.Boat.OrientationBodyToWorld).Heading;
+        var cHeading = PresentationConversions.GetAttitude(c.Boat.OrientationBodyToWorld).Heading;
+        Console.WriteLine($"  Reach at 60 s: independent {s.Boat.LinearVelocityWorldMps.Length:F3} m/s {sHeading * 180 / Math.PI:F2} deg, interacting {c.Boat.LinearVelocityWorldMps.Length:F3} m/s {cHeading * 180 / Math.PI:F2} deg; max induced main/jib {c.HunterRig!.Main.InducedAirflowBodyMps.Max(v => v.Length):F3}/{c.HunterRig.Jib.InducedAirflowBodyMps.Max(v => v.Length):F3} m/s");
+        Require(c.HunterRig.Main.InducedAirflowBodyMps.Any(v => v.Length > 0.01) &&
+            c.HunterRig.Jib.InducedAirflowBodyMps.Any(v => v.Length > 0.01),
+            "Both sails must receive induced airflow on the reach.");
+
+        var held = new SailingControls(mainsheet: 0.6, traveler: 0.8, vang: 0.6,
+            outhaul: 0.5, cunningham: 0.3, starboardJibSheet: 1);
+        var released = held;
+        var heldBoat = new Hunter235BoatDefinition().CreateSimulation(new(held, env), Math.PI / 2);
+        var releasedBoat = new Hunter235BoatDefinition().CreateSimulation(new(released, env), Math.PI / 2);
+        var run = 0; var longest = 0;
+        for (long step = 0; step < 3240; step++)
+        {
+            var steer = step >= 240 && step < 2640 ? -0.6 : 0;
+            held = new HeldSailingInput(tiller: steer).Advance(held);
+            released = new HeldSailingInput(tiller: steer, starboardJibSheet: step >= 1200 && step < 1440 ? -1 : 0).Advance(released);
+            var x = heldBoat.Step(new(held, env));
+            releasedBoat.Step(new(released, env));
+            var attitude = PresentationConversions.GetAttitude(x.Boat.OrientationBodyToWorld);
+            if (attitude.Heading > Math.PI && Math.Abs(attitude.Heel) < Math.PI / 2 &&
+                x.Rig.JibAngleRad > 0 && x.HunterRig!.Jib.TorqueNm < -1)
+                longest = Math.Max(longest, ++run);
+            else run = 0;
+        }
+        Console.WriteLine($"  Interacting held-sheet turn: longest opposing-load run {longest} steps; held/released jib {heldBoat.Latest.Rig.JibAngleRad:F3}/{releasedBoat.Latest.Rig.JibAngleRad:F3} rad; heading {PresentationConversions.GetAttitude(heldBoat.Latest.Boat.OrientationBodyToWorld).Heading * 180 / Math.PI:F1} deg");
+        Require(longest >= 60 && heldBoat.Latest.Rig.JibAngleRad - releasedBoat.Latest.Rig.JibAngleRad > 0.2,
+            "With interaction, the held old sheet must still retain the jib under opposing load and respond to easing.");
+    }),
+    ("Hunter definition stays bounded with waves and moving controls", () =>
     {
         foreach (var preset in new[] { WavePreset.Calm, WavePreset.Gentle, WavePreset.Moderate })
         {
@@ -516,8 +570,7 @@ var tests = new (string Name, Action Run)[]
             var controls = new SailingControls(mainsheet: 0.6, traveler: 0.8, vang: 0.6,
                 outhaul: 0.5, cunningham: 0.3, starboardJibSheet: 0.65);
             var input = new SimulationInput(controls, env);
-            var model = new Hunter235BoatModel(new Hunter235RigModel(true), experimentalRigMomentum: true);
-            var sim = new Simulation(model.Hull.CreateInitialState(input, Math.PI / 2), new Hunter235MassModel(), model, input);
+            var sim = new Hunter235BoatDefinition().CreateSimulation(input, Math.PI / 2);
             var maxSpeed = 0.0; var maxAngularSpeed = 0.0;
             for (var step = 0; step < 1800; step++)
             {
@@ -529,16 +582,17 @@ var tests = new (string Name, Action Run)[]
                 maxSpeed = Math.Max(maxSpeed, state.Boat.LinearVelocityWorldMps.Length);
                 maxAngularSpeed = Math.Max(maxAngularSpeed, state.Boat.AngularVelocityBodyRadPerSec.Length);
                 Require(maxSpeed < 30 && maxAngularSpeed < 20 && Math.Abs(state.Boat.PositionWorldM.Z) < 3,
-                    $"Experimental Hunter motion became unbounded in {preset} at step {step + 1}.");
+                    $"Hunter motion became unbounded in {preset} at step {step + 1}.");
             }
             Require(controls.Centerboard > 0.99 && controls.Hiking < -0.99 && controls.PortJibSheet > 0.99 && controls.StarboardJibSheet < 0.01,
                 "The wave scenario must complete its board, crew and sheet movements.");
-            Console.WriteLine($"  Experimental {preset}: max speed {maxSpeed:F3} m/s, max angular speed {maxAngularSpeed:F3} rad/s");
+            Console.WriteLine($"  {preset}: max speed {maxSpeed:F3} m/s, max angular speed {maxAngularSpeed:F3} rad/s");
         }
     }),
     ("Hunter snapshots publish completed sail evaluations", () =>
     {
-        var model = new Hunter235BoatModel(new Hunter235RigModel(experimentalSheetGeometry: true), experimentalRigMomentum: true);
+        var model = new Hunter235BoatModel(new Hunter235RigModel(experimentalSheetGeometry: true, sailInteraction: true),
+            experimentalRigMomentum: true);
         var simulation = new Hunter235BoatDefinition().CreateSimulation(windy);
         var initial = simulation.Latest;
         var initialRig = initial.HunterRig ?? throw new Exception("Initial Hunter sail state missing.");
@@ -656,6 +710,78 @@ var tests = new (string Name, Action Run)[]
             var a = first.Step(windy);
             var b = second.Step(windy);
             Require(a.Boat == b.Boat && a.Rig == b.Rig && a.Mass == b.Mass, "Hunter replay differs.");
+        }
+    }),
+    ("Hunter main/jib interaction produces jib upwash and main downwash", () =>
+    {
+        var independent = new Hunter235RigModel();
+        var coupled = new Hunter235RigModel(sailInteraction: true);
+        var mass = new Hunter235MassModel().Evaluate(calm.Controls);
+        var rest = new ForceEvaluation(0, RigidBodyState.AtRest, mass, calm);
+        static double Attack(SailSectionState s, HunterSailSectionGeometry g)
+        {
+            var chord = g.TrailingEdgeBodyM - g.LeadingEdgeBodyM;
+            var along = new Vector3d(chord.X, chord.Y, 0);
+            along /= along.Length;
+            var normal = new Vector3d(along.Y, -along.X, 0);
+            return Math.Atan2(Vector3d.Dot(s.ApparentWindBodyMps, normal), Vector3d.Dot(s.ApparentWindBodyMps, along));
+        }
+        EnvironmentConfig Air(Vector3d velocity) => new(velocity, WavePreset.Calm, WaveDirectionMode.Independent, Vector3d.UnitX, 1);
+        // Air moving aft and to port: close-hauled on starboard tack with both sails to port.
+        const double windSpeed = 6;
+        var wind = new Vector3d(-windSpeed * Math.Cos(0.7), -windSpeed * Math.Sin(0.7), 0);
+        var mainDownwash = new List<double>();
+        var mainLuff = new List<double>();
+        foreach (var jibAngle in new[] { -0.15, -0.3, -0.45 })
+        {
+            var e = rest with { Input = new(calm.Controls, Air(wind)), Rig = new(-0.25, 0, jibAngle, 0) };
+            var a = independent.Inspect(e);
+            var b = coupled.Inspect(e);
+            for (var i = 0; i < 6; i++)
+            {
+                Near(a.Main.InducedAirflowBodyMps[i], Vector3d.Zero, 0);
+                Near(a.Jib.InducedAirflowBodyMps[i], Vector3d.Zero, 0);
+                // At rest, the other sail's induced flow is the only apparent-wind difference.
+                Near(b.Main.Sections[i].ApparentWindBodyMps - a.Main.Sections[i].ApparentWindBodyMps,
+                    b.Main.InducedAirflowBodyMps[i], 1e-12);
+                Near(b.Jib.Sections[i].ApparentWindBodyMps - a.Jib.Sections[i].ApparentWindBodyMps,
+                    b.Jib.InducedAirflowBodyMps[i], 1e-12);
+                Require(Math.Abs(Attack(b.Jib.Sections[i], b.Jib.Geometry[i])) > Math.Abs(Attack(a.Jib.Sections[i], a.Jib.Geometry[i])),
+                    "The main must induce upwash at every jib section.");
+                Require(Math.Abs(Attack(b.Main.Sections[i], b.Main.Geometry[i])) < Math.Abs(Attack(a.Main.Sections[i], a.Main.Geometry[i])),
+                    "The jib must induce downwash at every main section.");
+                Require(b.Main.InducedAirflowBodyMps[i].Length < 0.15 * windSpeed &&
+                    b.Jib.InducedAirflowBodyMps[i].Length < 0.15 * windSpeed, "Induced airflow must remain a bounded correction.");
+            }
+            Require(b.Jib.Force.ForceWorldN.Length > a.Jib.Force.ForceWorldN.Length &&
+                b.Main.Force.ForceWorldN.Length < a.Main.Force.ForceWorldN.Length,
+                "Interaction must load the jib and unload the main in this close-hauled case.");
+            mainDownwash.Add(b.Main.InducedAirflowBodyMps.Average(v => v.Length));
+            mainLuff.Add(b.Main.Sections.Average(s => s.Luffing));
+            Console.WriteLine($"  Jib {jibAngle:F2} rad: jib force {a.Jib.Force.ForceWorldN.Length:F1}->{b.Jib.Force.ForceWorldN.Length:F1} N, main {a.Main.Force.ForceWorldN.Length:F1}->{b.Main.Force.ForceWorldN.Length:F1} N, drive {a.Total.ForceWorldN.X:F1}->{b.Total.ForceWorldN.X:F1} N, main luff {a.Main.Sections.Average(s => s.Luffing):F3}->{mainLuff[^1]:F3}");
+
+            var mirrored = coupled.Inspect(rest with { Input = new(calm.Controls, Air(wind with { Y = -wind.Y })),
+                Rig = new(0.25, 0, -jibAngle, 0) });
+            for (var i = 0; i < 6; i++)
+            {
+                var v = b.Main.InducedAirflowBodyMps[i];
+                var w = b.Jib.InducedAirflowBodyMps[i];
+                Near(mirrored.Main.InducedAirflowBodyMps[i], v with { Y = -v.Y }, 1e-12);
+                Near(mirrored.Jib.InducedAirflowBodyMps[i], w with { Y = -w.Y }, 1e-12);
+            }
+        }
+        Require(mainDownwash[0] > mainDownwash[1] && mainDownwash[1] > mainDownwash[2] &&
+            mainLuff[0] > mainLuff[1] && mainLuff[1] > mainLuff[2],
+            "Trimming the jib harder must increase downwash and luffing on the main.");
+
+        foreach (var (air, rig) in new[] { (Vector3d.Zero, new RigState(-0.25, 0, -0.3, 0)),
+            (new Vector3d(-5, 0, 0), new RigState(0, 0, 0, 0)) })
+        {
+            // Without circulation on either sail, neither induces flow at the other.
+            var still = coupled.Inspect(rest with { Input = new(calm.Controls, Air(air)), Rig = rig });
+            Require(still.Main.InducedAirflowBodyMps.All(v => v == Vector3d.Zero) &&
+                still.Jib.InducedAirflowBodyMps.All(v => v == Vector3d.Zero),
+                "Unloaded sails must not induce airflow.");
         }
     }),
     ("Hunter independent sail forces and manual sheet limits", () =>

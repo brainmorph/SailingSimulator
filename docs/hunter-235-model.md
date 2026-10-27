@@ -128,8 +128,8 @@ parabolic roach above. Jib sections follow a straight sloping forestay, with a
 triangular horizontal chord taper. Jib opening rotates around the actual
 forestay axis, and the apparent wind includes local boat and sail motion. Main
 and jib loads and per-section airflow are returned separately and summed once.
-There is currently no main/jib aerodynamic interaction; that omission must be
-addressed before Phase 9 is complete.
+Independent sails have no aerodynamic interaction; the Hunter definition adds
+the reduced-order treatment in [Main/jib interaction](#mainjib-interaction).
 
 Positive opening is to starboard. The port sheet limits starboard opening and
 the starboard sheet limits port opening. Each limit is `0.15 + 1.3 (1 - sheet)`
@@ -295,3 +295,53 @@ runs pass; the steady host run observed the same speed, heading, heel and luff
 ranges. These are internal engineering results, not validation or desktop
 performance evidence. The additional per-stage sheet and coupling cost has not
 been measured on the desktop.
+
+## Main/jib interaction
+
+`Hunter235RigModel(sailInteraction: true)` adds a bounded strip treatment of
+the airflow between the sails; the Hunter definition selects it. Each of the
+six sections on one sail is paired with the section of the other sail that has
+the same index, and therefore approximately the same height. Each section is
+first evaluated without interaction. Its horizontal lift per unit span gives a
+2D bound circulation by the Kutta–Joukowski relation,
+`Γ = L' × W / (ρ|W|²)`, equal in magnitude to `½ cl c |W|`. The circulation is
+placed at the section's quarter chord. Its induced velocity at the paired
+section's force center is
+`Γ × d / (2π (|d|² + r²))`, using the horizontal separation `d`. The core
+radius `r` is an estimate: a quarter of the inducing chord, at least 0.1 m. It
+keeps the induced speed finite where the jib leech overlaps the main luff.
+
+The induced velocity is added to the paired section's apparent wind, and both
+sails are then evaluated once more. This single explicit pass is deterministic
+and does not iterate to a converged circulation. Each sail sees only the other
+sail's induced flow; its own bound vortex and all trailing vortices are omitted.
+Infinite 2D vortices over a 1.3 m strip overstate 3D interaction; no factor
+corrects this. The coefficients are not fitted to wind-tunnel or sail data.
+Completed snapshots publish each section's induced airflow, which is already
+included in its published apparent wind.
+
+A static check holds the boat at rest in 6 m/s of air moving aft and 0.7 rad to
+port, with the boom at -0.25 rad and the jib at -0.15, -0.30 and -0.45 rad. In
+every section the jib's angle of attack increases (upwash) and the main's
+decreases (downwash). Induced speed stays below 0.6 m/s, within the check's
+15% bound. Jib load rises and main load falls; for example, at -0.30 rad the
+jib changes from 177.2 to 215.9 N and the main from 241.7 to 205.3 N. A tighter
+jib produces more downwash and more luffing on the main, the trend associated
+with a backwinded main. Average main luffing rises from 0.021 to 0.062, 0.051
+and 0.039 for the three jib angles. Exactly mirrored inputs give mirrored
+induced flow. Unloaded sails, in zero air or chord-aligned air, induce none.
+
+With the full boat, 10-knot wind, calm water and seed 123, the standard reach
+with fixed -0.1 tiller and starboard sheet 0.65 is faster with interaction:
+1.962 m/s at 60 s compared with 1.892 m/s independently. It also bears away
+more: 107.46° compared with 97.70°. Over 40–60 s it stays within 1.959–1.962
+m/s, 106.53–107.46°, 1.24° heel and luff below 0.001. The heading spread of
+0.93° is close to the existing 1° settling limit. A longer offline run
+converges smoothly toward about 109.1° by 180 s, with a time constant of about
+50 s; the slow directional convergence warrants attention when the helm and
+balance are reviewed. The held-sheet turn retains its old-side jib under
+opposing load for 323 consecutive steps; at 54 s the held and released jibs
+are at -0.038 and -0.618 rad. Calm, gentle and moderate wave runs with moving
+controls remain bounded, and headless smoke, scenario and steady host checks
+pass. These are internal engineering comparisons, not evidence of measured
+Hunter aerodynamics or performance.
