@@ -562,6 +562,134 @@ var tests = new (string Name, Action Run)[]
         Require(longest >= 60 && heldBoat.Latest.Rig.JibAngleRad - releasedBoat.Latest.Rig.JibAngleRad > 0.2,
             "With interaction, the held old sheet must still retain the jib under opposing load and respond to easing.");
     }),
+    ("Hunter tacks and jibes in both directions with manual sheet handling", () =>
+    {
+        var env = HunterDevelopmentScenario.Environment();
+        foreach (var jibe in new[] { false, true })
+        {
+            // Mirrored starts: side +1 heads east with both sails to starboard.
+            var sides = new[] { 1.0, -1.0 };
+            var controls = sides.Select(side => new SailingControls(mainsheet: 0.6, traveler: 0.8, vang: 0.6, outhaul: 0.5,
+                cunningham: 0.3, portJibSheet: side < 0 ? 0.65 : 0, starboardJibSheet: side > 0 ? 0.65 : 0)).ToArray();
+            var boats = sides.Select((side, k) =>
+            {
+                var model = new Hunter235BoatModel(new Hunter235RigModel(experimentalSheetGeometry: true, sailInteraction: true),
+                    experimentalRigMomentum: true);
+                var input = new SimulationInput(controls[k], env);
+                return new Simulation(model.Hull.CreateInitialState(input, side * Math.PI / 2), new Hunter235MassModel(),
+                    new HunterInitialRig(model, side), input);
+            }).ToArray();
+            var crossed = new long[] { -1, -1 };
+            var completed = new long[] { -1, -1 };
+            var boomCrossed = new long[] { -1, -1 };
+            var maxHeel = 0.0;
+            for (long step = 0; step < 4200; step++)
+            {
+                for (var k = 0; k < 2; k++)
+                {
+                    var side = sides[k];
+                    var before = boats[k].Latest;
+                    var relative = WindRelativeHeading(before);
+                    // The helmsman releases the tiller once the boat reaches the new side's beam.
+                    if (completed[k] < 0 && crossed[k] >= 0 &&
+                        (jibe ? Math.Abs(relative) <= Math.PI / 2 : Math.Abs(relative) >= Math.PI / 2))
+                        completed[k] = step;
+                    if (boomCrossed[k] < 0 && crossed[k] >= 0 && side * before.Rig.BoomAngleRad < -0.1) boomCrossed[k] = step;
+                    var steer = step >= 240 && completed[k] < 0 ? (jibe ? 0.6 : -0.6) * side : 0;
+                    // Before a jibe, trim the main near dead downwind; ease it back after the boom crosses.
+                    var main = !jibe ? 0 : boomCrossed[k] < 0 && Math.Abs(relative) > 150 * Math.PI / 180 ? 1
+                        : boomCrossed[k] >= 0 && controls[k].Mainsheet > 0.6 ? -1 : 0;
+                    // On crossing the wind, ease the old jib sheet and trim the new one for three seconds.
+                    var change = crossed[k] >= 0 && step < crossed[k] + 180 ? 1 : 0;
+                    controls[k] = (side > 0
+                        ? new HeldSailingInput(tiller: steer, mainsheet: main, starboardJibSheet: -change, portJibSheet: change)
+                        : new HeldSailingInput(tiller: steer, mainsheet: main, portJibSheet: -change, starboardJibSheet: change))
+                        .Advance(controls[k]);
+                    var after = boats[k].Step(new(controls[k], env));
+                    var attitude = PresentationConversions.GetAttitude(after.Boat.OrientationBodyToWorld);
+                    maxHeel = Math.Max(maxHeel, Math.Abs(attitude.Heel));
+                    relative = WindRelativeHeading(after);
+                    if (crossed[k] < 0 && side * relative < 0 && Math.Abs(attitude.Heel) < Math.PI / 2 &&
+                        (jibe ? Math.Abs(relative) > Math.PI / 2 : Math.Abs(relative) < Math.PI / 2))
+                        crossed[k] = step;
+                }
+                var a = boats[0].Latest;
+                var b = boats[1].Latest;
+                Near(a.Boat.PositionWorldM.X, b.Boat.PositionWorldM.X, 1e-7);
+                Near(a.Boat.PositionWorldM.Y, -b.Boat.PositionWorldM.Y, 1e-7);
+                Near(a.Boat.LinearVelocityWorldMps.Y, -b.Boat.LinearVelocityWorldMps.Y, 1e-7);
+                Near(a.Rig.BoomAngleRad, -b.Rig.BoomAngleRad, 1e-7);
+                Near(a.Rig.JibAngleRad, -b.Rig.JibAngleRad, 1e-7);
+            }
+            var name = jibe ? "Jibe" : "Tack";
+            for (var k = 0; k < 2; k++)
+            {
+                var end = boats[k].Latest;
+                var rig = end.HunterRig!;
+                Console.WriteLine($"  {name} {sides[k]:+0;-0}: crossed wind {crossed[k] / 60.0:F2} s, boom crossed {boomCrossed[k] / 60.0:F2} s, turn complete {completed[k] / 60.0:F2} s; at 70 s {end.Boat.LinearVelocityWorldMps.Length:F3} m/s, heading {WindRelativeHeading(end) * 180 / Math.PI:F1} deg from wind, luff {rig.Main.Sections.Average(s => s.Luffing):F3}/{rig.Jib.Sections.Average(s => s.Luffing):F3}, max heel {maxHeel * 180 / Math.PI:F2} deg");
+                Require(crossed[k] >= 0 && boomCrossed[k] >= 0 && completed[k] >= 0 && completed[k] < 3600,
+                    $"{name} must cross the wind, cross the boom and reach the new beam within 60 s.");
+                Require(sides[k] * end.Rig.BoomAngleRad < -0.1 && sides[k] * end.Rig.JibAngleRad < -0.1,
+                    $"{name} must finish with both sails on the new side.");
+                Require(end.Boat.LinearVelocityWorldMps.Length > 1 && rig.Main.Sections.Average(s => s.Luffing) < 0.1 &&
+                    rig.Jib.Sections.Average(s => s.Luffing) < 0.1 && maxHeel < Math.PI / 4,
+                    $"{name} must recover speed with both sails filled while remaining upright.");
+            }
+        }
+    }),
+    ("Hunter poor trim trends on a held course", () =>
+    {
+        var env = HunterDevelopmentScenario.Environment();
+        var cases = new (string Name, SailingControls Trim)[]
+        {
+            ("reference", new(mainsheet: 0.6, traveler: 0.8, vang: 0.6, outhaul: 0.5, cunningham: 0.3, starboardJibSheet: 0.65)),
+            ("jib eased", new(mainsheet: 0.6, traveler: 0.8, vang: 0.6, outhaul: 0.5, cunningham: 0.3)),
+            ("jib fully trimmed", new(mainsheet: 0.6, traveler: 0.8, vang: 0.6, outhaul: 0.5, cunningham: 0.3, starboardJibSheet: 1)),
+            ("both jib sheets tight", new(mainsheet: 0.6, traveler: 0.8, vang: 0.6, outhaul: 0.5, cunningham: 0.3, portJibSheet: 1, starboardJibSheet: 1)),
+            ("main eased", new(mainsheet: 0, traveler: 0.8, vang: 0.6, outhaul: 0.5, cunningham: 0.3, starboardJibSheet: 0.65)),
+            ("main fully trimmed", new(mainsheet: 1, traveler: 1, vang: 0.6, outhaul: 0.5, cunningham: 0.3, starboardJibSheet: 0.65)),
+        };
+        foreach (var courseDegrees in new[] { 100.0, 60.0 })
+        {
+            var results = new Dictionary<string, (double Speed, double MainLuff, double JibLuff, double Heel, double HeadingError, double Jib)>();
+            foreach (var (name, trim) in cases)
+            {
+                var course = courseDegrees * Math.PI / 180;
+                var simulation = new Hunter235BoatDefinition().CreateSimulation(new(trim, env), course);
+                var integral = 0.0;
+                double speed = 0, mainLuff = 0, jibLuff = 0, heel = 0, headingError = 0;
+                for (var step = 0; step < 3600; step++)
+                {
+                    // Deterministic PID helm, so trims are compared on the same course.
+                    var state = simulation.Latest;
+                    var error = Math.IEEERemainder(PresentationConversions.GetAttitude(state.Boat.OrientationBodyToWorld).Heading - course, 2 * Math.PI);
+                    integral = Math.Clamp(integral + error * Simulation.StepSeconds, -1, 1);
+                    var tiller = Math.Clamp(-4 * error - integral - 3 * state.Boat.AngularVelocityBodyRadPerSec.Z, -1, 1);
+                    var s = simulation.Step(new(new SailingControls(tiller, trim.Mainsheet, trim.Traveler, trim.Vang, trim.Outhaul,
+                        trim.Cunningham, trim.Centerboard, trim.Hiking, trim.PortJibSheet, trim.StarboardJibSheet), env));
+                    Require(s.Boat.LinearVelocityWorldMps.Length < 10 && s.Boat.AngularVelocityBodyRadPerSec.Length < 5,
+                        $"{name} at {courseDegrees} deg became unbounded.");
+                    if (step < 2400) continue;
+                    speed += s.Boat.LinearVelocityWorldMps.Length / 1200;
+                    mainLuff += s.HunterRig!.Main.Sections.Average(x => x.Luffing) / 1200;
+                    jibLuff += s.HunterRig.Jib.Sections.Average(x => x.Luffing) / 1200;
+                    heel = Math.Max(heel, Math.Abs(PresentationConversions.GetAttitude(s.Boat.OrientationBodyToWorld).Heel));
+                    headingError = Math.Max(headingError, Math.Abs(error));
+                }
+                results[name] = (speed, mainLuff, jibLuff, heel, headingError, simulation.Latest.Rig.JibAngleRad);
+                Console.WriteLine($"  {courseDegrees:F0} deg {name}: {speed:F3} m/s, luff {mainLuff:F3}/{jibLuff:F3}, max heel {heel * 180 / Math.PI:F2} deg, max heading error {headingError * 180 / Math.PI:F2} deg, jib {simulation.Latest.Rig.JibAngleRad:F2} rad");
+            }
+            Require(results["jib eased"].JibLuff > 0.5 && results["main eased"].MainLuff > 0.5,
+                "Fully easing a sail must make it luff.");
+            if (courseDegrees != 100) continue;
+            var reference = results["reference"];
+            Require(results.All(r => r.Value.HeadingError < Math.PI / 180), "The helm must hold the beam-reach course for every trim.");
+            Require(results.Where(r => r.Key != "reference").All(r => r.Value.Speed < reference.Speed),
+                "Each poor trim must be slower than the reference on the beam reach.");
+            Require(results["main fully trimmed"].Heel > reference.Heel && Math.Abs(results["both jib sheets tight"].Jib) < 0.15,
+                "An over-trimmed main must heel more, and two tight jib sheets must center the jib.");
+        }
+    }),
     ("Hunter definition stays bounded with waves and moving controls", () =>
     {
         foreach (var preset in new[] { WavePreset.Calm, WavePreset.Gentle, WavePreset.Moderate })
@@ -1222,6 +1350,9 @@ Require(selected.Length > 0, "No matching regression group.");
 foreach (var (name, run) in selected) { run(); Console.WriteLine($"PASS {name}"); }
 Console.WriteLine($"Phase 3 boat physics: {selected.Length} regression groups passed.");
 
+// Signed heading relative to the scenario's north wind, in (-pi, pi]; positive with wind over port.
+static double WindRelativeHeading(SimulationState s) =>
+    Math.IEEERemainder(PresentationConversions.GetAttitude(s.Boat.OrientationBodyToWorld).Heading, 2 * Math.PI);
 SimulationInput Input(SailingControls c, double knots, double from = 270) => new(c,
     PresentationConversions.EnvironmentFromSettings(windSpeedKnots: knots, windFromDegrees: from, wavePreset: WavePreset.Calm, waveSeed: 1));
 ForceEvaluation Evaluation(RigidBodyState state, SimulationInput input) => new(0, state, masses.Evaluate(input.Controls), input);

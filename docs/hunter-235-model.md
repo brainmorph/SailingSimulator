@@ -345,3 +345,66 @@ are at -0.038 and -0.618 rad. Calm, gentle and moderate wave runs with moving
 controls remain bounded, and headless smoke, scenario and steady host checks
 pass. These are internal engineering comparisons, not evidence of measured
 Hunter aerodynamics or performance.
+
+## Maneuver and poor-trim checks
+
+These checks use the standard Hunter rig (sheet geometry, sail interaction and
+momentum coupling) in 10-knot north wind, calm water and seed 123. Inputs pass
+through the held-input ramps; the control logic below reacts to the completed
+state, so each run is deterministic.
+
+### Tacks and jibes in both directions
+
+Each maneuver starts beam-on with the sails on the leeward side: heading 90°
+with both sails to starboard, or its exact mirror at 270° with a mirrored
+initial rig. The leeward jib sheet starts at 0.65 and the mainsheet at 0.6.
+From 4 s the tiller is held toward the wind (tack) or away from it (jibe)
+until the boat reaches the new side's beam, then released. When the heading
+crosses the wind, the old jib sheet eases and the new one trims for 3 s. For a
+jibe, the mainsheet trims fully once the boat is within 30° of dead
+downwind and eases back to 0.6 after the boom crosses. Without that main
+trim, an exploratory jibe kept the boom on the old side until about 40° by
+the lee, where the airflow first reaches the back of a main eased to that
+angle.
+
+| Maneuver | Crosses wind | Boom crosses | Beam reached | At 70 s |
+| --- | --- | --- | --- | --- |
+| Tack | 25.05 s | 28.85 s | 51.07 s | 1.856 m/s, 125.5° from wind |
+| Jibe | 13.37 s | 16.22 s | 28.95 s | 1.523 m/s, 147.7° from wind |
+
+The mirrored runs agree to 1e-7 in position, lateral velocity and sail
+angles at every step. Both sails finish on the new side, filled (average luff
+below 0.001), and maximum heel is 2.97°. With the tiller released afterward,
+the boat continues to bear away, consistent with the existing need for about
+-0.1 tiller on the reach.
+
+The tack is slow: even at full tiller, the boat takes about 20 s to turn the
+last 90° to the wind and falls to about 0.28 m/s near head to wind. This is a
+handling observation about the provisional rudder, hull damping and balance,
+not a calibrated comparison. It should be reviewed with helm balance.
+
+### Poor trim on a held course
+
+A deterministic PID helm (4 per rad, integral 1 per rad s with ±1 clamp,
+yaw-rate damping 3 s) holds the starting course, so trim cases are compared
+at the same heading. Averages are over 40–60 s.
+
+| Trim, 100° from wind | Speed (m/s) | Luff main/jib | Max heel |
+| --- | --- | --- | --- |
+| Reference: main 0.6, leeward jib 0.65 | 1.922 | 0.000/0.000 | 1.28° |
+| Jib eased (both sheets 0) | 1.567 | 0.000/0.565 | 0.71° |
+| Leeward jib fully trimmed | 1.884 | 0.000/0.000 | 1.59° |
+| Both jib sheets fully trimmed | 1.614 | 0.000/0.000 | 1.82° |
+| Main eased (mainsheet 0) | 1.229 | 0.594/0.000 | 0.57° |
+| Main and traveler fully trimmed | 1.820 | 0.000/0.000 | 2.06° |
+
+On this beam reach the helm holds every case within 0.03°. Each poor trim is
+slower than the reference; fully easing a sail luffs it; the fully trimmed
+main heels more; two tight sheets hold the jib at 0.06 rad. At 60° from the
+wind the reference main luffs (0.618) and fully trimming the main is fastest
+(1.471 m/s), so these settings are not a good close-reach reference. With
+both jib sheets tight at 60°, the helm saturates at full tiller and leaves a
+6.73° heading error. The 60° case therefore checks only boundedness and
+luffing of fully eased sails. These trends are internal consistency checks;
+the absolute speeds and heel angles are provisional and not calibrated.
+

@@ -372,6 +372,18 @@ The held-sheet turn, wave runs and headless host checks still pass. The
 interaction is an estimate, not measured aerodynamic data. Its desktop cost
 is unmeasured; poor-trim and both-direction maneuver verification remain open.
 
+[Maneuver and poor-trim checks](../docs/hunter-235-model.md#maneuver-and-poor-trim-checks)
+now cover tacks and jibes in both directions, with manual sheet changes when
+the boat crosses the wind and main trim for the jibe. Port and starboard
+runs mirror exactly; each crosses both sails, reaches the new beam and
+recovers above 1 m/s with filled sails. On a helm-held beam reach, eased jib,
+fully trimmed jib, both sheets tight, eased main and fully trimmed main are
+all slower than the reference trim, with the expected luffing and heel
+trends. The tack is sluggish (about 25 s to cross the wind at full tiller),
+and a close reach with both jib sheets tight saturates the helm; both are
+provisional handling observations for helm and balance review. Desktop
+performance measurement remains open.
+
 ### 9.1 Reference boat and model contract
 
 1. Identify a consistent Hunter 23.5 configuration from manufacturer sailplan,
