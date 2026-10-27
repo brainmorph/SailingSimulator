@@ -185,6 +185,44 @@ These are starting points for discussion, not locked implementation decisions.
 
 Deliver the full initial scope as the first playable milestone: ILCA 7 open practice with the selected controls, visual feedback, steady wind defaulting to 10 knots, gentle irregular waves that affect boat motion, adjustable wind and wave settings, repeatable conditions for comparisons, and switchable onboard and third-person cameras.
 
+## Upcoming Phases 9 and 10: Hunter 23.5 and two-sail sailing
+
+The next boat expansion is split after the Phase 8 first-playable milestone:
+
+- [Phase 9: physics, validation and performance](phases/09-hunter-235-physics-and-validation.md)
+  owns online reference research, shared multi-sail simulation support, Hunter
+  hull/mass/rig physics and calibration. A minimal Godot test scene must show
+  fixed 60 Hz simulation cadence and stable 60 FPS rendering before completion.
+- [Phase 10: playable integration](phases/10-hunter-235-playable-integration.md)
+  adds boat selection, full player controls/help, sailing cues, cameras and
+  diagnostics. Repeat the 60 Hz/60 FPS checks with the completed experience.
+
+Accurate physics and realism at stable 60 FPS take priority over graphic detail.
+Keep physics/model validation and performance gates in Phase 9, rather than
+leaving them until integration. Reference research and phase planning may
+proceed while Phase 8 remains active.
+
+Confirmed planning decisions:
+
+| Area | Decision |
+| --- | --- |
+| Second boat | Hunter 23.5, selectable alongside the ILCA 7 |
+| Boat selection | Choose before sailing; also switch through F1, restarting the session |
+| Jib handling | Separate port and starboard sheets; the player releases and trims them during maneuvers |
+| Ballast | Full and fixed during sailing |
+| Centerboard | Player can raise and lower it during sailing |
+| Sail reduction | Full mainsail and jib; reefing and furling deferred |
+| Skipper movement | Player can shift between port and starboard cockpit seats, affecting mass balance and heel |
+| Hunter performance data | Research trustworthy online references before force tuning; no user-supplied dataset is assumed |
+| Expansion sequence | Phase 9 validates physics and early real-time performance; Phase 10 completes the playable experience and repeats performance validation |
+
+Crew mass, seating geometry, sail sizes, control bindings and aerodynamic
+coefficients need documented references or explicit modeling assumptions during
+phase preparation. Phase 9.1 must record performance-source quality, compatible
+numeric targets and remaining data gaps; measured results, VPP predictions and
+qualitative reports have different validation limits. These choices extend
+the initial ILCA scope; neither expansion phase has been implemented or validated.
+
 ## Calibration sequence
 
 Phase 8 is active. [Free-sailing baselines](docs/calibration.md) record exact
@@ -248,5 +286,7 @@ Record values with units and source or rationale. Keep experimental conditions a
 - Racing, starts, marks, and racing rules.
 - Capsize and recovery.
 - Variable wind, gusts, and shifts.
-- Additional boats and structured training drills.
+- The Hunter 23.5 is scheduled across upcoming Phases 9 and 10; further boats and
+  structured training drills remain deferred.
+- Hunter reefing, jib furling, and ballast filling/draining.
 - Tutorials, hints, and guided lessons.

@@ -15,6 +15,18 @@ calibration is active in Phase 8. [Repeatable baseline runs](docs/calibration.md
 and a [first-playable evidence checklist](phases/08-progress.md) are available;
 published polar calibration and the desktop performance milestone remain open.
 
+The upcoming Hunter 23.5 expansion is split into two phases after Phase 8:
+[Phase 9: physics, validation and performance](phases/09-hunter-235-physics-and-validation.md)
+researches trustworthy performance data, builds hull/two-sail physics and
+verifies realism and timing in a minimal Godot scene;
+[Phase 10: playable integration](phases/10-hunter-235-playable-integration.md)
+adds boat selection, controls, sailing cues and cameras. Accurate physics,
+fixed 60 Hz simulation cadence and stable 60 FPS presentation take priority
+in both phases. The agreed Hunter scope includes separate port/starboard jib
+sheets, full mainsail and jib, full fixed ballast, an adjustable centerboard,
+and a skipper who can move between cockpit seats. Players will choose a boat
+before sailing and can switch through F1, restarting the session.
+
 Launch the game directly without opening the Godot editor:
 
 ```sh
