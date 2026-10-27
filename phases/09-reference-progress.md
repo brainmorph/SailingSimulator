@@ -10,7 +10,8 @@ substitutes. Measurements below are reference leads, not calibrated parameters.
 
 | Source | Findings and intended use | Limits |
 | --- | --- | --- |
-| [Hunter Water Ballast Series owner's manual, H23.5 appendix](https://manualzz.com/doc/6336751/hunter-marine-h19--h23.5--h26-sailboats-owner-s-manual) | Manufacturer manual identifies H23.5 sail plan H23-A-2609, deck hardware layout, and centerboard control system H23-A-2616. Its sailing instructions describe a full, sealed ballast tank, lowered centerboard, main and jib. | The web transcription is badly corrupted, combines three model appendices, and loses drawings. Inspect the original H23.5 drawings before extracting measurements or positions; do not use garbled OCR as numeric evidence. |
+| [PacificSailors scan of the Hunter Water Ballast Series owner's manual](https://pacificsailors.com/www/wp-content/uploads/hunter/14-25/Hunter_235_Owners_Manual.pdf) | Original H23.5 sail plan H23-A-2609 (PDF page 67), rigging specifications (68), deck hardware H23-A-2621 (70), and centerboard control H23-A-2616 (78) inspected directly. The drawing states 2,000 lb dry weight (no ballast), 1,000 lb ballast (tank full), and 3,000 lb displacement. | Scanned drawings do not specify a complete component mass budget or separate mainsail and jib areas. Loading/equipment and crew inclusion remain unclear. The diagram supplies layout, not measured three-dimensional coordinates. |
+| [Hunter Water Ballast Series owner's manual, H23.5 appendix](https://manualzz.com/doc/6336751/hunter-marine-h19--h23.5--h26-sailboats-owner-s-manual) | Manufacturer manual identifies H23.5 sail plan H23-A-2609, deck hardware layout, and centerboard control system H23-A-2616. Its sailing instructions describe a full, sealed ballast tank, lowered centerboard, main and jib. | The web transcription is badly corrupted, combines three model appendices, and loses drawings. Use the inspected scan above for drawings and numbers instead of this OCR. |
 | [HunterOwners H23.5 specification page](https://hunter.sailboatowners.com/boats.php?mid=8) | Secondary model-specific listing: LOA 23 ft 8 in, LWL 21 ft 5 in, beam 8 ft 4 in, draft 18 in/5 ft 6 in, displacement 3,000 lb, ballast 1,000 lb, reported sail area 236 ft², I 25 ft 6 in, J 8 ft 6 in, P 25 ft 8 in, E 10 ft. | Editable listing, not an original drawing. Displacement loading, equipment and crew assumptions are unstated. Sail area is not a separate main/jib measurement. |
 | [Sailboatdata H23.5](https://sailboatdata.com/sailboat/hunter-235/) | Independent-looking secondary compilation reports essentially the same full-ballast figures. 3,000 lb ≈ 1,360.8 kg and 1,000 lb ≈ 453.6 kg; subtraction gives 907.2 kg as a provisional non-ballast remainder. | Shared underlying sources are possible. The remainder is arithmetic, not a component mass measurement; do not add ballast again to the 3,000 lb full-ballast displacement. Whether equipment and crew are included remains unresolved. |
 | [Good Old Boat H23.5 sail data](https://goodoldboat.com/saildata/boat/hunter-235/) | Illustrates candidate replacement-sail dimensions. | Its asterisked sail measurements and areas are calculated from rig dimensions. They do not establish actual factory main or jib outline or area. Its prose quotes 1,100 lb ballast, conflicting with the 1,000 lb secondary listings; do not reconcile by assumption. |
@@ -18,9 +19,31 @@ substitutes. Measurements below are reference leads, not calibrated parameters.
 
 A plausible working accounting hypothesis is 1,360.8 kg for the full-ballast
 boat plus a separate 80 kg skipper, but this is **not yet an auditable mass
-budget**. Crew/equipment inclusion, exact tank mass and location, board mass,
+budget**. The manufacturer's sail plan supports the 2,000 + 1,000 = 3,000 lb
+accounting; crew/equipment inclusion, tank location, board mass,
 component centers and inertia remain unverified. No numerical component
 allocations or sail attachment coordinates are adopted in this record.
+
+### Original H23.5 drawing review
+
+The scan became accessible from a separate owner archive on 2026-10-27. PDF
+page 67 explicitly identifies the H23.5 and lists LOA 23 ft 8 in, LWL 21 ft
+5 in, beam 8 ft 4 in, draft 18 in board up and 5 ft 6 in board down, and
+236 ft² total sail area. It lists I = 25 ft 6 in, J = 8 ft 6 in,
+P = 25 ft 8 in and E = 10 ft. The total area is not a separately measured
+main and jib breakdown. The drawing depicts a transom rudder, centerboard,
+and sloop rig, but does not dimension the sail corners or board outline.
+
+PDF page 68 lists a forestay of 27 ft 4½ in measured from inside the T-ball
+to the center of the pin, plus a mainsheet, genoa sheet, vang, outhaul and
+centerboard uphaul. PDF pages 70 and 78 show the deck hardware layout and
+centerboard lifting arrangement respectively. These are useful for topology;
+they do not give reliable exact positions or mass distributions. A
+[contemporary firsthand sea trial](https://www.practical-sailor.com/sailboat-reviews/hunter-23-5/)
+describes a full-batten main and 110% jib totaling 236 ft², but does not
+provide their separate areas or establish every boat's original inventory.
+Use explicit provisional estimates for missing coordinates and individual
+areas rather than treating a foretriangle calculation as a measured jib.
 
 ## Initial performance search
 
@@ -57,20 +80,18 @@ Another [replacement sail listing](https://southeastasiasails.com/hunter-sails/f
 quotes approximately 14.31 m² and says its dimensions are based on a database.
 Neither establishes the factory sail outline or actual installed jib; the differing
 areas illustrate why the calculated triangles cannot be treated as measured sails.
-The manufacturer archive listing timed out during this search and the original
-H23.5 drawings remain unreviewed.
+The manufacturer archive listing timed out during this search; the separate
+PacificSailors scan above subsequently provided the original drawings.
 
 On 2026-10-27 a direct manual PDF link was identified in an
 [owner discussion](https://forums.sailboatowners.com/threads/how-to-use-hunter-23-5-centerboard-uphaul-blocks.154049/),
 but the [PDF](https://sbo.sailboatowners.com/downloads/Hunter_23.5_50853939.pdf)
-timed out when fetched. The indexed manual text does identify the H23.5 sail
-plan and rigging list, but its drawing text remains too corrupted to extract
-dimensions reliably. No original drawing measurements are claimed from this attempt.
+timed out when fetched. The indexed manual text alone was too corrupted to
+extract drawing dimensions reliably; the subsequent scan review is recorded above.
 
-Inspect original H23.5 drawings, confirm boat displacement interpretation,
-main and jib areas separately, sail corners and sheet leads, centerboard and
+Complete the model contract using the inspected H23.5 drawings and document
+remaining assumptions: main and jib areas separately, sail corners and sheet leads, centerboard and
 rudder geometry, ballast tank and cockpit positions. Establish a traceable
 mass and inertia budget with explicit estimates, and record the selected
-configuration and control/geometry contracts. The existing archive lists a
-2,665 KB manual, but this pass did not retrieve the original PDF or review its
-drawings. Phase 8's handling, visual and desktop performance gates remain open.
+configuration and control/geometry contracts. Phase 8's handling, visual and
+desktop performance gates remain open.

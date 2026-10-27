@@ -245,6 +245,12 @@ compatible numeric targets and remaining data gaps; measured results, VPP predic
 qualitative reports have different validation limits. These choices extend
 the initial ILCA scope; the Hunter model and playable integration remain unimplemented.
 
+The [Hunter reference register](phases/09-reference-progress.md) now identifies an
+accessible scan of the original H23.5 sail plan, deck hardware and centerboard
+drawings. Its sail plan lists 2,000 lb dry, 1,000 lb full ballast and 3,000 lb
+displacement; crew and equipment inclusion and separate sail areas remain
+uncertain. Detailed model geometry and component mass allocations remain estimates.
+
 ## Engineering baselines and deferred calibration
 
 Roadmap revised 2026-10-27: Phase 8 remains active as ILCA engineering readiness;

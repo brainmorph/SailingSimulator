@@ -57,9 +57,8 @@ public partial class SailingScene : Node3D
         var controls = new SailingControls(mainsheet: 0.6, traveler: 0.8, vang: 0.6,
             outhaul: 0.5, cunningham: 0.3, hiking: -0.3);
         var input = new SimulationInput(controls, environment);
-        var model = new IlcaBoatModel();
         // Start on a beam reach in the default northerly wind.
-        var simulation = new Simulation(model.CreateInitialState(input, Math.PI / 2), new IlcaMassModel(), model, input);
+        var simulation = new IlcaBoatDefinition().CreateSimulation(input, Math.PI / 2);
         runner = new(simulation);
         Render(simulation.Latest);
         runner.Start();

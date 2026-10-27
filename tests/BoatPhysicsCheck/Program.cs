@@ -9,6 +9,21 @@ var calm = Input(controls, 0);
 var windy = Input(controls, 10);
 var tests = new (string Name, Action Run)[]
 {
+    ("Boat definition preserves ILCA simulation and creates independent instances", () =>
+    {
+        IBoatDefinition definition = new IlcaBoatDefinition();
+        Require(definition.Id == "ilca-7", "Unexpected boat identity.");
+        var first = definition.CreateSimulation(windy, Math.PI / 2);
+        var second = definition.CreateSimulation(windy, Math.PI / 2);
+        var direct = new Simulation(boatModel.CreateInitialState(windy, Math.PI / 2), masses, boatModel, windy);
+        for (var i = 0; i < 120; i++)
+        {
+            var a = first.Step(windy);
+            var b = direct.Step(windy);
+            Require(a.Boat == b.Boat && a.Rig == b.Rig && a.Mass == b.Mass, "Factory changed ILCA behavior.");
+        }
+        Require(second.Latest.StepIndex == 0, "Simulations must have independent state.");
+    }),
     ("Equipped budget, moving sailor/board and full inertia", () =>
     {
         var mass = masses.Evaluate(controls);
@@ -24,6 +39,17 @@ var tests = new (string Name, Action Run)[]
         Require(masses.Evaluate(new(centerboard: 0)).CenterOfMassBodyM.Z < mass.CenterOfMassBodyM.Z, "Raised board must move its mass up.");
         Throws<ArgumentException>(() => MassProperties.FromTensor(1, default, new(1, 1, 1, 2, 0, 0)));
         Throws<ArgumentException>(() => MassProperties.FromTensor(1, default, default));
+        Throws<ArgumentException>(() => MassAggregation.Combine(Array.Empty<MassContributor>()));
+        Throws<ArgumentException>(() => MassAggregation.Combine(new[] { new MassContributor("invalid", -1, default, default) }));
+        var pair = MassAggregation.Combine(new[] {
+            new MassContributor("port", 2, new(0, -1, 0), default),
+            new MassContributor("starboard", 2, new(0, 1, 0), default),
+            new MassContributor("center", 1, default, new(1, 1, 1, 0, 0, 0)) });
+        Near(pair.MassKg, 5, 0);
+        Near(pair.CenterOfMassBodyM, Vector3d.Zero, 0);
+        Near(pair.InertiaBodyKgM2.XX, 5, 0);
+        Near(pair.InertiaBodyKgM2.YY, 1, 0);
+        Near(pair.InertiaBodyKgM2.ZZ, 5, 0);
     }),
     ("Tensor RK4 conserves torque-free angular momentum and energy", () =>
     {

@@ -91,6 +91,16 @@ stage/atomic-publication check cover this infrastructure. This is a state
 contract only: it does not implement sail geometry, constraints or jib forces,
 and its suitability must be reviewed with the Hunter model contract.
 
+The core now has an `IBoatDefinition` creation boundary with an ILCA
+implementation, used by the Godot host. A regression check compares its
+simulation against direct ILCA construction and checks independent instances.
+Geometry, capabilities, per-sail output and a Hunter definition remain to be
+designed against the reference/model contract; this boundary does not complete
+work package 9.2.
+The existing component mass and parallel-axis calculation is also available as
+`MassAggregation.Combine`, retaining the ILCA calculation and checking invalid
+input and a symmetric component example. A Hunter mass budget is still needed.
+
 ### 9.1 Reference boat and model contract
 
 1. Identify a consistent Hunter 23.5 configuration from manufacturer sailplan,
@@ -256,10 +266,11 @@ conventions, and retain the 60 Hz RK4 and simulation-thread ownership contracts.
 ## Reference starting points
 
 - [Hunter 23.5 manufacturer-manual archive listing](https://hunter.sailboatowners.com/dl/downloads.php?mid=8&task=model).
-- [Hunter Marine water-ballast-series manual, including H23.5 appendix](https://manualzz.com/doc/6336751/hunter-marine-h19--h23.5--h26-sailboats-owner-s-manual).
-  Use the original drawings to verify geometry; indexed/OCR text can confuse
-  the different boat appendices. The archive listing was discoverable during
-  planning, but the original Hunter drawings have not yet been reviewed.
+- [Hunter Marine water-ballast-series manual scan](https://pacificsailors.com/www/wp-content/uploads/hunter/14-25/Hunter_235_Owners_Manual.pdf),
+  including the H23.5 appendix. The original sail plan, rigging, deck layout
+  and centerboard-control drawings have been inspected; see the reference
+  register for page numbers, values and remaining limitations. Indexed/OCR
+  text can confuse the different boat appendices.
 
 These are research leads, not an extracted numerical calibration baseline.
 
