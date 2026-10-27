@@ -84,8 +84,9 @@ settings and performance diagnostics](debug-tools.md).
 ## Short review checklist
 
 Build the Godot project, run normal sailing, and use the keys in
-[the host guide](../godot/README.md). Reproducible maneuver checks,
-published-data calibration and performance measurements remain Phase 8 work.
+[the host guide](../godot/README.md). Reproducible maneuver/visual checks and
+performance measurements remain Phase 8 work. Objective-data calibration
+belongs to Phase 11; repeat affected visual checks after calibration changes.
 
 - Reach on both tacks: orbit/zoom to see the full rig; change sheet/traveler
   to move the boom, then vang/outhaul/cunningham to see twist/belly change.

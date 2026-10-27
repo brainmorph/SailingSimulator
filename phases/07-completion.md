@@ -125,4 +125,9 @@ timed results for performance comparisons, not FPS shown during PNG capture.
   replay. Graphs show observed render snapshots, not every worker sample.
   Percentiles include warm-up and may be hardware/load dependent.
 
-Next active phase: [Calibration and first playable](08-calibration-and-first-playable.md).
+Roadmap update (2026-10-27): the original handoff above is retained as history.
+The active phase is now [ILCA engineering readiness](08-calibration-and-first-playable.md).
+Desktop timing fixes and reproducible handling/visual checks remain Phase 8
+work; objective-data calibration is deferred to
+[Phase 11](11-calibration-and-realism-validation.md) for both boats and no
+longer blocks the engineering milestones in Phases 8–10.

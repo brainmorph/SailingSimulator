@@ -1,22 +1,29 @@
-# Phase 9: Hunter 23.5 Physics, Validation and Performance
+# Phase 9: Hunter 23.5 Physics, Verification and Performance
 
 Status: upcoming planning draft. Implementation has not started.
 
 Read this with [PLAN.md](../PLAN.md) and the [phase index](README.md).
-Phase 8 remains active. This phase follows its first-playable milestone;
-reference research and planning may proceed beforehand.
+Phase 8 remains active. This phase follows its engineering-verified
+first-playable prototype; reference research and planning may proceed beforehand.
 
 ## Objective
 
-Establish the Hunter 23.5 physics model and the evidence supporting its realism
-before building the full player experience. Research trustworthy performance
-data, implement hull and two-sail dynamics, validate reproducible behavior and
-measure real-time performance in a minimal Godot test scene. Accurate physics
-and realism at 60 FPS take priority over presentation detail.
+Establish a provisional Hunter 23.5 physics model and verify its engineering
+behavior before building the full player experience. Research available
+references, implement hull and two-sail dynamics, check reproducible behavior
+and measure real-time performance in a minimal Godot test scene. Physics
+correctness and stable 60 FPS take priority over presentation detail.
+
+Scope revised 2026-10-27: objective-data comparisons, measurement-based tuning
+and calibrated-realism acceptance belong to
+[Phase 11](11-calibration-and-realism-validation.md). Missing compatible
+numerical targets do not block this phase or its handoff to Phase 10. Document
+estimates and data gaps; numerical stability, model consistency and performance
+are still required here.
 
 [Phase 10](10-hunter-235-playable-integration.md) adds boat selection, complete
-player controls, visual feedback and cameras using this validated model. Both
-phases require evidence for fixed 60 Hz simulation cadence and stable 60 FPS
+player controls, visual feedback and cameras using this engineering-verified
+provisional model. Both phases require evidence for fixed 60 Hz simulation cadence and stable 60 FPS
 presentation; performance work starts here rather than at the end of integration.
 
 ## Confirmed scope across Phases 9 and 10
@@ -35,8 +42,8 @@ presentation; performance work starts here rather than at the end of integration
 ## Phase boundary
 
 Phase 9 owns reference research, shared simulation contracts, Hunter forces,
-mass/rig dynamics, calibration, deterministic scenarios and a minimal real-time
-Godot test scene. Scripted inputs and a development launch option are sufficient
+mass/rig dynamics, internal verification, deterministic scenarios and a minimal
+real-time Godot test scene. Scripted inputs and a development launch option are sufficient
 to exercise the Hunter here. The test scene must use the real simulation worker
 and published states, with simple boat/sail geometry and development telemetry.
 
@@ -44,6 +51,10 @@ Phase 10 owns the player-facing boat picker, F1 boat switching, final keyboard
 bindings/help, full telltales and sail feedback, recognizable Hunter geometry,
 wake and both camera modes. Phase 9 publishes the geometry and per-sail state
 needed for that work; it does not need the completed player interface.
+
+Phase 11 owns objective-data calibration for both boats. Preserve any useful
+references and comparison candidates from this phase for that handoff; finding
+a compatible speed polar is not a Phase 9 completion requirement.
 
 ## Working assumptions to verify
 
@@ -76,7 +87,7 @@ needed for that work; it does not need the completed player interface.
    alone do not establish the installed jib's area or outline.
 4. Separate sourced values, calculated values and estimates. Record units,
    source page/drawing, configuration and uncertainty.
-5. Research Hunter 23.5 performance online before force tuning. Seek measured
+5. Conduct and record an initial Hunter 23.5 performance-reference search. Seek measured
    boat speeds versus wind speed/angle, pointing or tacking angles, heel and
    trim response, and stability data. Search manufacturer/designer archives,
    original instrumented sea trials, sailmaker/VPP publications and rating
@@ -88,7 +99,7 @@ needed for that work; it does not need the completed player interface.
    over ground, current/sea state, crew/loading, ballast/board position, sail
    inventory, reefing, units and source location wherever available. Unknown
    conditions limit a source's use; they must not become silent assumptions.
-7. Produce a source register, search log and usable target table, including
+7. Produce a source register, search log and any usable target table, including
    uncertainty and exclusions. Give measured data priority where available;
    label any VPP targets as predictions. Use qualitative reports as handling
    clues, and handicap ratings only as broad cross-checks, not speed polars.
@@ -96,9 +107,13 @@ needed for that work; it does not need the completed player interface.
    model parameters provisional. Do not substitute another Hunter model's
    polar, infer a polar from hull speed, or invent missing measurements.
 
-Deliver a Hunter reference record, performance-research findings and explicit
-model assumptions before tuning forces. No user-supplied data is required.
-Follow the plan's existing restrictions on bulk downloads.
+Deliver a Hunter reference record, initial performance-research findings and
+explicit model assumptions before implementing forces. Record sources checked,
+compatibility decisions and remaining gaps; unavailable numeric targets do not
+require an open-ended search or prevent provisional implementation/completion.
+Phase 11 owns further target extraction, comparisons and measurement-based tuning.
+No user-supplied data is required. Follow the plan's existing restrictions on
+bulk downloads.
 
 ### 9.2 Shared support for boat models and multiple sails
 
@@ -152,7 +167,7 @@ conventions, and retain the 60 Hz RK4 and simulation-thread ownership contracts.
    full telltales follow in Phase 10. Keep numerical stability checks separate
    from claims of aerodynamic or full-boat calibration.
 
-### 9.5 Physics verification and calibration
+### 9.5 Physics verification and calibration handoff
 
 1. Extend dependency-free checks for sheet input independence, snapshot ownership,
    complete rig-state integration, mass-repositioning invariants and deterministic
@@ -167,11 +182,13 @@ conventions, and retain the 60 Hz RK4 and simulation-thread ownership contracts.
    the combined force/moment total includes each contribution exactly once.
 5. Run existing ILCA checks after shared changes and compare repeatable baseline
    behavior. Make unexplained regressions part of this phase's remaining work.
-6. Define source-backed comparison cases and acceptance tolerances, accounting
-   for uncertainty, before tuning. Compare results against compatible references
-   and record error as well as parameter changes. Keep missing targets and
-   estimated parameters explicit; do not claim calibrated Hunter performance
-   from internal tests, qualitative reviews or a generic hull-speed formula.
+6. Retain reproducible scenarios, any compatible reference candidates and
+   parameter assumptions for Phase 11. Document internal engineering acceptance
+   criteria separately from future empirical comparison tolerances. Missing
+   numeric targets do not fail this phase; estimated parameters remain explicit.
+   Do not claim calibrated Hunter performance from internal tests, qualitative
+   reviews or a generic hull-speed formula. Objective-data comparisons and
+   tuning are Phase 11 work, not prerequisites for Phase 10.
 
 ### 9.6 Minimal Godot scene and real-time performance gate
 
@@ -199,23 +216,25 @@ conventions, and retain the 60 Hz RK4 and simulation-thread ownership contracts.
 ## Deliverables and completion criteria
 
 - Hunter reference/model record with an auditable mass budget and sail geometry.
-- Completed online performance-research record with source-quality assessments,
-  usable targets and their conditions, rejected/incompatible references, and
-  explicit remaining gaps. Missing numerical data limits calibration claims;
-  documenting a research gap does not establish measured performance.
+- Documented initial online performance-reference search with source-quality
+  assessments, any usable targets and their conditions, rejected/incompatible
+  references and explicit remaining gaps. Missing numeric targets do not block
+  completion; documenting a gap does not establish measured performance.
 - Hunter hull, ballast, adjustable board and movable cockpit skipper implemented.
 - Main and jib respond to independent manual sheets, with observable luffing,
   backwinding and maneuver behavior supported by reproducible checks.
-- Calibration comparisons report source compatibility, tolerances and errors;
-  unsupported behavior stays explicitly provisional. Any unmet agreed realism
-  criteria remain open instead of being silently moved to Phase 10.
+- Reproducible physics checks meet documented engineering criteria, including
+  numerical stability, mass/force consistency and handling. Unsupported realism
+  stays explicitly provisional. Objective-data comparisons and tuning are
+  explicitly handed to Phase 11; engineering defects must be resolved here.
 - Minimal Godot test scene and measured 60 Hz simulation/60 FPS rendering
   evidence, including telemetry overhead and remaining headroom. Unresolved
   performance defects keep this phase open.
 - Existing ILCA regressions pass, and reproducible Hunter scenarios and model
   documentation provide a concrete handoff for Phase 10.
-- A concise completion record identifies calibrated conditions, limitations,
-  provisional parameters and the exact build/scenarios used for the handoff.
+- A concise completion record identifies engineering-tested conditions,
+  limitations, provisional parameters, Phase 11 data gaps and the exact
+  build/scenarios used for the Phase 10 handoff.
 
 ## Reference starting points
 
@@ -242,5 +261,6 @@ These are research leads, not an extracted numerical calibration baseline.
   documentation is not Hunter performance data.
 
 The initial search has not established a trustworthy numerical Hunter 23.5
-polar. Continue the documented research in 9.1 before selecting calibration
-targets; this screening does not complete the research work package.
+polar. Record the initial search and configuration review in 9.1; this screening
+does not complete that work package. Further target extraction and calibration
+belong to Phase 11; failure to find a compatible polar does not block Phase 9.

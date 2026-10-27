@@ -10,22 +10,30 @@ scene connects keyboard controls to the simulation on a dedicated 60 Hz
 thread. Sectional sail shape, luffing, airflow telltales, sailor/foil positions,
 waves and a fading wake provide visual feedback, with switchable onboard and
 third-person cameras. F1 provides environment controls, live telemetry/graphs,
-deadline warnings, subsystem timing, allocation and GC diagnostics. Physics
-calibration is active in Phase 8. [Repeatable baseline runs](docs/calibration.md)
-and a [first-playable evidence checklist](phases/08-progress.md) are available;
-published polar calibration and the desktop performance milestone remain open.
+deadline warnings, subsystem timing, allocation and GC diagnostics. ILCA
+engineering readiness is active in Phase 8. [Repeatable baseline runs](docs/calibration.md)
+and a [first-playable evidence checklist](phases/08-progress.md) are available.
+Reproducible handling/visual checks and the desktop timing fix remain Phase 8
+work; suitable real-boat measurements are not required for this playable prototype.
 
 The upcoming Hunter 23.5 expansion is split into two phases after Phase 8:
-[Phase 9: physics, validation and performance](phases/09-hunter-235-physics-and-validation.md)
+[Phase 9: physics, verification and performance](phases/09-hunter-235-physics-and-validation.md)
 researches trustworthy performance data, builds hull/two-sail physics and
-verifies realism and timing in a minimal Godot scene;
+verifies internal behavior and timing in a minimal Godot scene;
 [Phase 10: playable integration](phases/10-hunter-235-playable-integration.md)
-adds boat selection, controls, sailing cues and cameras. Accurate physics,
+adds boat selection, controls, sailing cues and cameras. Physics correctness,
 fixed 60 Hz simulation cadence and stable 60 FPS presentation take priority
 in both phases. The agreed Hunter scope includes separate port/starboard jib
 sheets, full mainsail and jib, full fixed ballast, an adjustable centerboard,
 and a skipper who can move between cockpit seats. Players will choose a boat
 before sailing and can switch through F1, restarting the session.
+
+[Phase 11: calibration and realism validation](phases/11-calibration-and-realism-validation.md)
+is deferred until suitable objective data is available. It compares and tunes
+both boats against compatible references and repeats affected engineering and
+performance checks. Phases 8–10 deliver playable prototypes with provisional
+physics; missing calibration data does not block them. Their engineering and
+performance requirements still apply.
 
 Launch the game directly without opening the Godot editor:
 

@@ -91,6 +91,8 @@ Build a sailing simulator in C# with Godot, aiming for physics fidelity comparab
 | Performance target | Use published ILCA 7 VPP polars as initial speed and pointing targets, with conditions and assumptions recorded |
 | Performance data sources | Include the 2016 Laser-dinghy study as a candidate alongside the 2022 ILCA 7 study, subject to compatibility checks |
 | Validation scope | Published reference comparisons, reproducible numerical/behavior checks, visual consistency checks, and desktop performance measurements |
+| Milestone separation | Phases 8–10 deliver engineering-verified playable prototypes with provisional physics; Phase 11 owns objective-data calibration and realism validation for both boats |
+| Calibration dependency | Missing compatible measurements do not block Phases 8–10; Phase 11 remains deferred until suitable data is available. Engineering, regression and 60 Hz/60 FPS gates stay in implementation phases |
 | Deferred areas | Racing and capsize recovery are not initial priorities |
 
 ## Design goals
@@ -162,7 +164,7 @@ Build a sailing simulator in C# with Godot, aiming for physics fidelity comparab
 - Use compatible published measurements as the calibration baseline; use reproducible scenarios to check behavior and keep unsupported values explicitly provisional.
 - Use published ILCA 7 VPP polars as initial quantitative speed and pointing targets, recording the underlying assumptions and conditions.
 - Target stable 60 FPS on a typical desktop.
-- Complete calibration through published-data comparisons, reproducible simulation/visual checks and performance measurements. Subjective sailing feel remains unassessed and is not a milestone requirement.
+- Complete objective-data calibration in Phase 11 through compatible reference comparisons, reproducible simulation/visual checks and renewed performance measurements. Phases 8–10 verify engineering behavior with provisional parameters and do not require measured performance targets. Subjective sailing feel remains unassessed and is not a milestone requirement.
 
 ### Working proposal (to review)
 
@@ -185,22 +187,42 @@ These are starting points for discussion, not locked implementation decisions.
 
 Deliver the full initial scope as the first playable milestone: ILCA 7 open practice with the selected controls, visual feedback, steady wind defaulting to 10 knots, gentle irregular waves that affect boat motion, adjustable wind and wave settings, repeatable conditions for comparisons, and switchable onboard and third-person cameras.
 
+This is an engineering-verified playable prototype, completed through
+[Phase 8: ILCA engineering readiness](phases/08-calibration-and-first-playable.md).
+Reproducible handling/visual checks and measured stable 60 FPS presentation
+and fixed 60 Hz simulation cadence are required. Physics parameters remain
+explicitly provisional; compatible real-boat measurements and calibration
+are not prerequisites. Phase 8 remains open until its engineering criteria pass.
+
+## Calibrated simulator milestone
+
+[Phase 11: calibration and realism validation](phases/11-calibration-and-realism-validation.md)
+follows the two-boat playable experience. It owns compatible objective-data
+comparisons and measurement-based tuning for both boats, then repeats affected
+engineering, visual and performance checks. It remains deferred until suitable
+data is available. A playable prototype does not establish empirical realism;
+calibration claims must identify supported conditions and remaining estimates.
+
 ## Upcoming Phases 9 and 10: Hunter 23.5 and two-sail sailing
 
 The next boat expansion is split after the Phase 8 first-playable milestone:
 
-- [Phase 9: physics, validation and performance](phases/09-hunter-235-physics-and-validation.md)
+- [Phase 9: physics, verification and performance](phases/09-hunter-235-physics-and-validation.md)
   owns online reference research, shared multi-sail simulation support, Hunter
-  hull/mass/rig physics and calibration. A minimal Godot test scene must show
+  hull/mass/rig physics and internal verification with documented estimates.
+  Missing compatible performance targets do not block completion; objective-data
+  comparisons and tuning belong to Phase 11. A minimal Godot test scene must show
   fixed 60 Hz simulation cadence and stable 60 FPS rendering before completion.
 - [Phase 10: playable integration](phases/10-hunter-235-playable-integration.md)
   adds boat selection, full player controls/help, sailing cues, cameras and
   diagnostics. Repeat the 60 Hz/60 FPS checks with the completed experience.
 
-Accurate physics and realism at stable 60 FPS take priority over graphic detail.
-Keep physics/model validation and performance gates in Phase 9, rather than
-leaving them until integration. Reference research and phase planning may
-proceed while Phase 8 remains active.
+Physics correctness and stable 60 FPS take priority over graphic detail.
+Keep numerical stability, model-consistency verification and performance gates
+in Phase 9. Phase 10 uses the engineering-verified provisional model; it does
+not require empirical calibration. Reference research and phase planning may
+proceed while Phase 8 remains active. Implementation still follows completion
+of Phase 8's engineering work, including the unresolved desktop timing defect.
 
 Confirmed planning decisions:
 
@@ -213,24 +235,34 @@ Confirmed planning decisions:
 | Centerboard | Player can raise and lower it during sailing |
 | Sail reduction | Full mainsail and jib; reefing and furling deferred |
 | Skipper movement | Player can shift between port and starboard cockpit seats, affecting mass balance and heel |
-| Hunter performance data | Research trustworthy online references before force tuning; no user-supplied dataset is assumed |
-| Expansion sequence | Phase 9 validates physics and early real-time performance; Phase 10 completes the playable experience and repeats performance validation |
+| Hunter performance data | Research trustworthy online references and document gaps; no user-supplied dataset is assumed and missing numeric targets do not block implementation. Objective-data calibration belongs to Phase 11 |
+| Expansion sequence | Phase 9 verifies provisional physics and early real-time performance; Phase 10 completes the playable experience and repeats engineering/performance checks; Phase 11 calibrates both boats when suitable data is available |
 
 Crew mass, seating geometry, sail sizes, control bindings and aerodynamic
 coefficients need documented references or explicit modeling assumptions during
-phase preparation. Phase 9.1 must record performance-source quality, compatible
-numeric targets and remaining data gaps; measured results, VPP predictions and
+phase preparation. Phase 9.1 must record performance-source quality, any available
+compatible numeric targets and remaining data gaps; measured results, VPP predictions and
 qualitative reports have different validation limits. These choices extend
 the initial ILCA scope; neither expansion phase has been implemented or validated.
 
-## Calibration sequence
+## Engineering baselines and deferred calibration
 
-Phase 8 is active. [Free-sailing baselines](docs/calibration.md) record exact
+Roadmap revised 2026-10-27: Phase 8 remains active as ILCA engineering readiness;
+its original calibration work is transferred to Phase 11 for both boats.
+Phases 9 and 10 retain their numbers and engineering/performance gates.
+Existing phase filenames, result artifacts and historical evidence are retained.
+
+[Free-sailing baselines](docs/calibration.md) record exact
 replay, setup/build metadata and final-window stability screening. These are
 internal observations, not reference polars. Current [milestone evidence and
 remaining work](phases/08-progress.md) retain the unresolved desktop cadence
 defect and missing compatible numeric targets; no physics parameters have
-been calibrated in this pass.
+been calibrated in this pass. Course/balance review tooling, reproducible handling
+and dynamic visual checks and the desktop timing fix remain Phase 8 work.
+Missing targets belong to Phase 11 and do not prevent engineering completion.
+
+When Phase 11 has suitable data, follow this calibration sequence for each boat
+within the conditions supported by the references:
 
 1. Establish steady-sailing behavior under a consistent wind and repeatable water conditions.
 2. Calibrate reaching and sail trim across wind angles.
@@ -278,8 +310,8 @@ Record values with units and source or rationale. Keep experimental conditions a
 - The initial sectional sail, centerboard, rudder and hull equations and provisional coefficients are recorded in [the Phase 3 model](docs/boat-physics.md), extended with [Phase 4 waves](docs/wind-and-waves.md). Which measured coefficients should replace or calibrate them?
 - Extract and verify numeric ILCA 7/Laser VPP polar values, conditions, and crew/rig assumptions before calibration; current sources do not yet provide a verified numeric target table.
 - Wind and wave settings use the confirmed knots/compass angles and calm/gentle/moderate presets. Phase 7 implements F1 editing, seed selection and session-local saved conditions; usability remains subject to Phase 8 review.
-- The initial fixed keys and adjustment rates are documented in [the host controls](godot/README.md). Assess their usability during visual review and calibration.
-- Phase 6's low-fidelity renderer now shows shared sail shape, telltales, heel, wake and waves; check cue visibility, camera framing and consistency with simulation state through reproducible visual scenarios during calibration. Presentation heuristics and the review checklist are recorded in [visual feedback](docs/visual-feedback.md).
+- The initial fixed keys and adjustment rates are documented in [the host controls](godot/README.md). Assess their usability during Phase 8 engineering review and repeat affected checks after Phase 11 calibration.
+- Phase 6's low-fidelity renderer now shows shared sail shape, telltales, heel, wake and waves; check cue visibility, camera framing and consistency with simulation state through Phase 8 reproducible visual scenarios, then repeat affected checks in Phase 11. Presentation heuristics and the review checklist are recorded in [visual feedback](docs/visual-feedback.md).
 
 ## Deferred scope
 

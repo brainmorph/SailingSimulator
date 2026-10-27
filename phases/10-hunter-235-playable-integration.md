@@ -3,21 +3,27 @@
 Status: upcoming planning draft. Implementation has not started.
 
 Read [PLAN.md](../PLAN.md), the [phase index](README.md), and
-[Phase 9: physics, validation and performance](09-hunter-235-physics-and-validation.md).
+[Phase 9: physics, verification and performance](09-hunter-235-physics-and-validation.md).
 
 ## Objective
 
 Turn the Phase 9 Hunter model into a complete second-boat open-practice
 experience, with boat selection, manual jib controls, readable sailing cues
-and both camera views. Preserve the model's validated behavior and meet stable
-60 FPS presentation and fixed 60 Hz simulation cadence in the finished scene.
+and both camera views. Preserve the model's engineering-verified behavior and
+meet stable 60 FPS presentation and fixed 60 Hz simulation cadence in the finished scene.
 Physics fidelity and smooth performance take priority over graphic detail.
 
 ## Depends on
 
-Phase 9, including its reference record, physics/calibration evidence, minimal
+Phase 9, including its reference record, engineering verification, minimal
 Godot scene, desktop timing measurements and completion record. Do not use
 this phase as the destination for unresolved core-physics or timing defects.
+
+Objective-data calibration is deferred to
+[Phase 11](11-calibration-and-realism-validation.md) for both boats. Missing
+compatible measurements or calibrated-realism evidence do not block this
+phase. The completed experience is a playable prototype with provisional
+physics, not the calibrated simulator milestone.
 
 ## Confirmed scope
 
@@ -73,7 +79,7 @@ this phase as the destination for unresolved core-physics or timing defects.
    ownership and geometry/force agreement for both boats.
 2. Replay Phase 9 scenarios with identical inputs/environment. Presentation and
    selection changes must not introduce unexplained differences in the physics.
-   If a model change is needed, rerun the affected Phase 9 validation and timing.
+   If a model change is needed, rerun the affected Phase 9 verification and timing.
 3. Review real-time tacks/jibes, both-sheet errors, crew movement and board
    deployment through visible cues in calm and seeded waves, in both cameras.
 4. Repeat desktop performance measurements with the completed Hunter geometry,
@@ -82,7 +88,7 @@ this phase as the destination for unresolved core-physics or timing defects.
    deadlines, allocations and GC using the established protocol.
 5. Require stable 60 FPS presentation and fixed 60 Hz simulation cadence. Phase
    9's minimal-scene results do not replace these measurements. Reduce visual
-   cost where needed while keeping essential sailing cues and validated physics;
+   cost where needed while keeping essential sailing cues and verified physics;
    unresolved performance defects keep this phase open.
 6. Retain ILCA regression and desktop checks alongside the Hunter evidence.
 
@@ -94,8 +100,11 @@ this phase as the destination for unresolved core-physics or timing defects.
   adjustable board, correct wake origin and both camera modes.
 - F1 diagnostics use the same per-sail completed state as physics and rendering.
 - Reproducible end-to-end and ILCA regression evidence, with continued agreement
-  with the Phase 9 physics/calibration record.
+  with the Phase 9 engineering verification record.
 - Measured stable 60 FPS and fixed 60 Hz cadence in the completed experience on
   a documented representative desktop, with no unresolved milestone defects.
 - Updated README, launch/controls, integration and visual-feedback documentation,
   plus a concise completion record with known data/model limitations.
+- A Phase 11 handoff retains both boats' reproducible scenarios and explicit
+  provisional parameters/data gaps. Missing calibration data is not an unmet
+  Phase 10 engineering criterion and does not prevent completion.

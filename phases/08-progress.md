@@ -5,6 +5,17 @@ This pass establishes reproducible baselines, reduces debug graph allocations
 and improves performance attribution. It does not calibrate physics parameters
 or establish empirical ILCA realism.
 
+## Scope revision — 2026-10-27
+
+Phase 8 is now [ILCA engineering readiness](08-calibration-and-first-playable.md).
+The first-playable milestone is a prototype with provisional physics.
+Objective-data comparisons and measurement-based tuning have moved to
+[Phase 11](11-calibration-and-realism-validation.md) for both boats; missing
+compatible measurements no longer block Phases 8–10. Existing results below
+are retained. No physics or performance work was performed by this roadmap
+revision, and it does not complete Phase 8: review tooling, dynamic
+handling/visual checks and the desktop timing defect remain engineering work.
+
 ## Delivered and observed
 
 - `SimulationHarness --calibration-review` runs seven explicit 30-second
@@ -130,8 +141,8 @@ The generated report was also checked for seven exact replays, 1,800 steps,
 | Repeatable conditions | Seed/environment tests and seven exact trajectory baselines pass. Saved F1 conditions alone do not replay a whole session. |
 | Visual trim/luff/telltale/heel/wake cues and two camera views | Shared-state consistency and scene checks pass; previous Phase 6 fixture review remains applicable. Wider dynamic visual scenario review is still pending. |
 | F1 numeric telemetry, live graphs and diagnostics; F2 controls | Scene checks pass, graph storage/drawing verified, desktop capture reviewed. |
-| Steering, righting, trim, luffing, stopping and tack/jibe behavior | Existing physical-contract checks and new coasting baseline provide internal consistency evidence. Further calibration scenarios remain. |
-| Compatible published speed, pointing and sail-force calibration | Open: no verified numeric polar target/complete compatible conditions entered. See reference boundary in the protocol. |
+| Steering, righting, trim, luffing, stopping and tack/jibe behavior | Existing physical-contract checks and new coasting baseline provide internal consistency evidence. Further reproducible engineering scenarios remain in Phase 8. |
+| Compatible published speed, pointing and sail-force calibration | Deferred to Phase 11; not a first-playable prototype completion criterion. No verified numeric polar target/complete compatible conditions entered. See reference boundary in the protocol. |
 | Stable desktop 60 FPS and 60 Hz simulation | Open: stalls and deadline misses remain, documented above. |
 | Numerical claims distinguished from empirical validation | Recorded in protocol/results; parameters remain explicit estimates. Subjective sailing feel is unassessed and not a milestone requirement. |
 
@@ -140,11 +151,14 @@ The generated report was also checked for seven exact replays, 1,800 steps,
 1. Extend review tooling with a documented deterministic course/balance
    controller, ordinary gradual inputs and a retained control history. Check
    longer-window speed, force and attitude convergence before comparing polars.
-2. Verify compatible numeric targets and rig/crew/mass assumptions using the
-   sources in the plan. Large thesis/dataset retrieval still needs user
-   direction under the plan; none was undertaken in this pass.
-3. Profile native drawing/layout, rendering and worker scheduling to explain
+2. Profile native drawing/layout, rendering and worker scheduling to explain
    the remaining first-open frames and sustained deadline misses. Preserve
    scheduling policy and repeat desktop measurements before closing the criterion.
-4. Extend reproducible dynamic visual/handling reviews, then complete the
-   checklist only when the source and performance evidence supports it.
+3. Extend reproducible dynamic visual/handling reviews, then complete the
+   prototype checklist only when engineering and performance evidence supports it.
+4. Record a completion handoff with tested conditions, estimates and Phase 11
+   data gaps. Compatible numeric target extraction, rig/crew/mass compatibility
+   for comparisons, Chalmers sail-force comparisons and measurement-based tuning
+   are Phase 11 work. Large thesis/dataset retrieval still needs user direction
+   under the plan; none was undertaken in this pass. Do not wait for those
+   targets to close Phase 8 once its engineering criteria actually pass.
