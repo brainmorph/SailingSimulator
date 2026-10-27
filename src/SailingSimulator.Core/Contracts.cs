@@ -11,9 +11,14 @@ public sealed record SailingControls
     public double Cunningham { get; }
     public double Centerboard { get; }
     public double Hiking { get; }
+    /// <summary>Normalized sheet tension, zero eased and one fully trimmed.</summary>
+    public double PortJibSheet { get; }
+    /// <summary>Normalized sheet tension, zero eased and one fully trimmed.</summary>
+    public double StarboardJibSheet { get; }
 
     public SailingControls(double tiller = 0, double mainsheet = 0, double traveler = 0,
-        double vang = 0, double outhaul = 0, double cunningham = 0, double centerboard = 1, double hiking = 0)
+        double vang = 0, double outhaul = 0, double cunningham = 0, double centerboard = 1, double hiking = 0,
+        double portJibSheet = 0, double starboardJibSheet = 0)
     {
         Tiller = InRange(tiller, -1, 1, nameof(tiller));
         Mainsheet = InRange(mainsheet, 0, 1, nameof(mainsheet));
@@ -23,6 +28,8 @@ public sealed record SailingControls
         Cunningham = InRange(cunningham, 0, 1, nameof(cunningham));
         Centerboard = InRange(centerboard, 0, 1, nameof(centerboard));
         Hiking = InRange(hiking, -1, 1, nameof(hiking));
+        PortJibSheet = InRange(portJibSheet, 0, 1, nameof(portJibSheet));
+        StarboardJibSheet = InRange(starboardJibSheet, 0, 1, nameof(starboardJibSheet));
     }
 
     private static double InRange(double value, double min, double max, string name) =>

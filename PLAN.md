@@ -221,8 +221,8 @@ Physics correctness and stable 60 FPS take priority over graphic detail.
 Keep numerical stability, model-consistency verification and performance gates
 in Phase 9. Phase 10 uses the engineering-verified provisional model; it does
 not require empirical calibration. Reference research and phase planning may
-proceed while Phase 8 remains active. Implementation still follows completion
-of Phase 8's engineering work, including the unresolved desktop timing defect.
+proceed while Phase 8 remains active. At the user's direction Phase 9 work has
+started while Phase 8 remains open, including its unresolved desktop timing defect.
 
 Confirmed planning decisions:
 
@@ -243,7 +243,7 @@ coefficients need documented references or explicit modeling assumptions during
 phase preparation. Phase 9.1 must record performance-source quality, any available
 compatible numeric targets and remaining data gaps; measured results, VPP predictions and
 qualitative reports have different validation limits. These choices extend
-the initial ILCA scope; neither expansion phase has been implemented or validated.
+the initial ILCA scope; the Hunter model and playable integration remain unimplemented.
 
 ## Engineering baselines and deferred calibration
 

@@ -1,12 +1,12 @@
 # Phase 9: Hunter 23.5 Physics, Verification and Performance
 
-Status: upcoming planning draft. Implementation has not started.
+Status: started; reference/model contract and implementation remain incomplete.
 See the [preliminary reference register](09-reference-progress.md) for the
 initial configuration and performance-source research and unresolved gaps.
 
 Read this with [PLAN.md](../PLAN.md) and the [phase index](README.md).
-Phase 8 remains active. This phase follows its engineering-verified
-first-playable prototype; reference research and planning may proceed beforehand.
+Phase 8 remains open. At the user's direction, Phase 9 work has started before
+Phase 8 engineering completion; its outstanding timing defect remains open.
 
 ## Objective
 
@@ -75,6 +75,14 @@ a compatible speed polar is not a Phase 9 completion requirement.
   wind speed available in F1; document the verified operating conditions.
 
 ## Work packages
+
+Progress: the shared control and held-input snapshots now carry independently
+adjustable port and starboard jib sheets. They use normalized tension (0 eased,
+1 trimmed), a provisional 0.25 per second ramp, and retain position on release.
+The ILCA model ignores these inputs. No Hunter dynamics, keyboard bindings or
+automatic sheet changes are implemented yet. The integration checks cover
+independent ramps, bounds and snapshot immutability. These contracts are subject
+to review against the eventual jib model.
 
 ### 9.1 Reference boat and model contract
 

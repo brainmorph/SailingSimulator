@@ -5,6 +5,24 @@ using static Check;
 
 var tests = new (string Name, Action Run)[]
 {
+    ("Independent jib sheet snapshots and fixed-step ramps", () =>
+    {
+        var original = new SailingControls(portJibSheet: 0.5, starboardJibSheet: 0.5);
+        var controls = original;
+        var portTrim = new HeldSailingInput(portJibSheet: 1);
+        for (var i = 0; i < 60; i++) controls = portTrim.Advance(controls);
+        Near(controls.PortJibSheet, 0.75);
+        Near(controls.StarboardJibSheet, 0.5);
+        Near(original.PortJibSheet, 0.5);
+        var starboardEase = new HeldSailingInput(starboardJibSheet: -1);
+        for (var i = 0; i < 180; i++) controls = starboardEase.Advance(controls);
+        Near(controls.PortJibSheet, 0.75);
+        Near(controls.StarboardJibSheet, 0);
+        Require(ReferenceEquals(controls, HeldSailingInput.Released.Advance(controls)), "Released sheets retain trim");
+        Throws<ArgumentOutOfRangeException>(() => new SailingControls(portJibSheet: double.NaN));
+        Throws<ArgumentOutOfRangeException>(() => new SailingControls(starboardJibSheet: 1.1));
+        Throws<ArgumentOutOfRangeException>(() => new HeldSailingInput(portJibSheet: -1.1));
+    }),
     ("Fixed-step held inputs, rates, bounds and release", () =>
     {
         var all = new HeldSailingInput(1, 1, 1, 1, 1, 1, 1, 1);

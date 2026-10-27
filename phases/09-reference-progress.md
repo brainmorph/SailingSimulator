@@ -1,7 +1,7 @@
 # Hunter 23.5 reference research: preliminary register
 
-Research date: 2026-10-27. Phase 8 remains open; this is permitted Phase 9
-preparation, not an implementation-ready model contract or completed Phase 9.1.
+Research date: 2026-10-27. Phase 8 remains open; Phase 9 has started at the
+user's direction. This is not an implementation-ready model contract or completed Phase 9.1.
 The selected configuration is the H23.5 with full water ballast, full main and
 jib, adjustable centerboard and an 80 kg skipper. Other Hunter models are not
 substitutes. Measurements below are reference leads, not calibrated parameters.
@@ -50,6 +50,15 @@ performance; calculated hull speed is not a polar. Phase 11 owns objective
 comparisons and calibration.
 
 ## Remaining work before model implementation
+
+An additional search found [SEA Sailmakers' H23.5 listing](https://seasailmakers.com/sailboats/hunter-23-5),
+which quotes a 13.36 m² replacement mainsail and 11.93 m² triangular area.
+Another [replacement sail listing](https://southeastasiasails.com/hunter-sails/full-batten-cross-cut-hunter-235-mainsail)
+quotes approximately 14.31 m² and says its dimensions are based on a database.
+Neither establishes the factory sail outline or actual installed jib; the differing
+areas illustrate why the calculated triangles cannot be treated as measured sails.
+The manufacturer archive listing timed out during this search and the original
+H23.5 drawings remain unreviewed.
 
 Inspect original H23.5 drawings, confirm boat displacement interpretation,
 main and jib areas separately, sail corners and sheet leads, centerboard and
