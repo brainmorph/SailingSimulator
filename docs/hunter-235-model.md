@@ -13,8 +13,9 @@ measurement agreement.
 
 ## Mass accounting
 
-`Hunter235MassModel` and `Hunter235HullModel` are not yet connected to a
-runnable Hunter. Coordinates use the existing hull datum and
+`Hunter235BoatDefinition` connects the provisional mass, hull, foil and rig
+components to an experimental simulation. It has no published boat diagnostics
+or player integration and is not yet an engineering-verified model. Coordinates use the existing hull datum and
 nautical axes: X forward from the approximate waterline midpoint, Y starboard,
 Z down from the nominal waterline. All allocations, centers and intrinsic
 inertias below are estimates, not measurements. The dry allocations sum to
@@ -106,3 +107,25 @@ mass center's path. Tank and cockpit centers are those in the
 mass table; no physical tank boundary has been established. These assumptions
 provide an initial geometry envelope, subject to revision after flotation and
 sail-constraint checks.
+
+## Initial two-sail force experiment
+
+The `Hunter235RigModel` is a provisional reduced-order experiment. It uses six horizontal-force
+sections per sail and the same smooth coefficient and luffing functions as the
+ILCA sail. Main section chord follows the triangular P/E outline plus the
+parabolic roach above. Jib sections follow a straight sloping forestay, with a
+triangular horizontal chord taper. Jib opening rotates around the actual
+forestay axis, and the apparent wind includes local boat and sail motion. Main
+and jib loads and per-section airflow are returned separately and summed once.
+There is currently no main/jib aerodynamic interaction; that omission must be
+addressed before Phase 9 is complete.
+
+Positive opening is to starboard. The port sheet limits starboard opening and
+the starboard sheet limits port opening. Each limit is `0.15 + 1.3 (1 - sheet)`
+radians; a linear spring acts only beyond the corresponding limit, so an
+old tight sheet can restrain the sail across a maneuver. Both tight constrains
+both sides; both eased permits larger openings. The limits are compliant and
+are not a geometric calculation of sheet length through the estimated leads.
+Neither sheet is automatically released. Rig inertia, stiffness and damping are
+provisional; these equations have not been validated for maneuvers, backwinding,
+real sail shapes or running stability.

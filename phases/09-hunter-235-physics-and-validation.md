@@ -105,9 +105,18 @@ tests for ballast, board and skipper accounting. A separately parameterized
 sampled Hunter hull now has calm-water heave initialization and checks for
 flotation, small-angle restoring and dissipative drag. Separate estimated
 centerboard and rudder components reuse the provisional foil curves and have
-deployment and steering checks. These components are not yet connected to a
-complete Hunter simulation; sail constraints and remaining geometry contracts
+deployment and steering checks. These components are connected through an
+experimental Hunter definition; sail constraints and remaining geometry contracts
 are incomplete.
+
+An independent [two-sail force experiment](../docs/hunter-235-model.md) now
+evaluates main and forestay-mounted jib sections, their airflow, summed forces
+and compliant manual sheet limits. Tests cover zero wind, mirrored loads,
+section sums and independent sheet constraints. Force composition and a short
+deterministic replay are checked; the sail states are not yet published in
+completed simulation snapshots. Backwinding and maneuvers,
+main/jib interaction, geometry and real-time stability remain to be verified;
+the rig is not an engineering-complete model.
 
 ### 9.1 Reference boat and model contract
 

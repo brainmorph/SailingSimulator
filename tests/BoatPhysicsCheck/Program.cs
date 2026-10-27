@@ -9,6 +9,62 @@ var calm = Input(controls, 0);
 var windy = Input(controls, 10);
 var tests = new (string Name, Action Run)[]
 {
+    ("Experimental Hunter composes forces and replays deterministically", () =>
+    {
+        var model = new Hunter235BoatModel();
+        var state = model.Hull.CreateInitialState(windy);
+        var mass = new Hunter235MassModel().Evaluate(windy.Controls);
+        var e = new ForceEvaluation(0, state, mass, windy, model.InitialRig);
+        var expected = model.Gravity.Evaluate(e) + model.Hull.Evaluate(e) + model.Foils.Centerboard.Evaluate(e)
+            + model.Foils.Rudder.Evaluate(e) + model.Rig.Evaluate(e);
+        var actual = model.EvaluateDynamics(e);
+        Near(actual.Forces.ForceWorldN, expected.ForceWorldN, 1e-10);
+        Near(actual.Forces.MomentBodyNm, expected.MomentBodyNm, 1e-10);
+        IBoatDefinition definition = new Hunter235BoatDefinition();
+        Require(definition.Id == "hunter-235", "Unexpected Hunter identity.");
+        var first = definition.CreateSimulation(windy);
+        var second = definition.CreateSimulation(windy);
+        for (var i = 0; i < 120; i++)
+        {
+            var a = first.Step(windy);
+            var b = second.Step(windy);
+            Require(a.Boat == b.Boat && a.Rig == b.Rig && a.Mass == b.Mass, "Hunter replay differs.");
+        }
+    }),
+    ("Hunter independent sail forces and manual sheet limits", () =>
+    {
+        var rig = new Hunter235RigModel();
+        var mass = new Hunter235MassModel().Evaluate(calm.Controls);
+        var rest = new ForceEvaluation(0, RigidBodyState.AtRest, mass, calm);
+        var still = rig.Inspect(rest);
+        Near(still.Total.ForceWorldN, Vector3d.Zero, 0);
+        Require(still.Main.Id == "main" && still.Jib.Id == "jib", "Sail identities must be stable.");
+        Near(still.Main.Sections.Sum(s => s.AreaM2), 13.5, 0.06);
+        Near(still.Jib.Sections.Sum(s => s.AreaM2), 8.425, 0.002);
+        var wind = new EnvironmentConfig(new(3, 4, 0), WavePreset.Calm, WaveDirectionMode.Independent, Vector3d.UnitX, 1);
+        var mirrorWind = new EnvironmentConfig(new(3, -4, 0), WavePreset.Calm, WaveDirectionMode.Independent, Vector3d.UnitX, 1);
+        var a = rig.Inspect(rest with { Input = new(calm.Controls, wind), Rig = new(0.5, 0, 0.5, 0) });
+        var b = rig.Inspect(rest with { Input = new(calm.Controls, mirrorWind), Rig = new(-0.5, 0, -0.5, 0) });
+        Require(a.Main.Force.ForceWorldN.Length > 0 && a.Jib.Force.ForceWorldN.Length > 0, "Both sails must carry wind load.");
+        Near(a.Total.ForceWorldN.X, b.Total.ForceWorldN.X, 1e-10);
+        Near(a.Total.ForceWorldN.Y, -b.Total.ForceWorldN.Y, 1e-10);
+        foreach (var sail in new[] { a.Main, a.Jib })
+        {
+            var sum = sail.Sections.Aggregate(default(ForceMoment), (acc, s) => acc + s.Force);
+            Near(sum.ForceWorldN, sail.Force.ForceWorldN, 1e-10);
+            Near(sum.MomentBodyNm, sail.Force.MomentBodyNm, 1e-10);
+        }
+        var tightPort = Input(new(portJibSheet: 1), 0);
+        var tightStarboard = Input(new(starboardJibSheet: 1), 0);
+        var angle = new RigState(0, 0, 0.5, 0);
+        var port = rig.Inspect(rest with { Input = tightPort, Rig = angle });
+        var starboard = rig.Inspect(rest with { Input = tightStarboard, Rig = angle });
+        Require(port.Derivative.JibAngularAcceleration < 0 && starboard.Derivative.JibAngularAcceleration == 0,
+            "Port sheet must restrain starboard opening independently.");
+        var reverse = rig.Inspect(rest with { Input = tightStarboard, Rig = angle with { JibAngleRad = -0.5 } });
+        Require(reverse.Derivative.JibAngularAcceleration > 0, "Starboard sheet must restrain port opening.");
+        Require(a.Jib.Sections is not SailSectionState[], "Published sections must not expose a mutable array.");
+    }),
     ("Hunter foils respond to deployment and steering", () =>
     {
         var foils = new Hunter235Foils();
