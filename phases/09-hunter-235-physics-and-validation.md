@@ -189,6 +189,89 @@ The exact-step run observed boom/jib angles of about -0.74/-0.57 rad and
 speed 1.46 m/s at 54 s; the headless worker run reached -87.0° heading at
 54 s and completed the control sequence at 62 s without a worker fault.
 
+A steady-reach replay now holds the same calm-water, 10-knot, seed-123
+environment and initial trim, with a fixed -0.1 tiller, for 60 s. Two offline
+simulations reproduce the same boat, rig and sail total at every step. During
+40–60 s, speed was 1.933–1.935 m/s, heading 102.75–103.29°, maximum heel
+1.28°, and average section luffing for either sail stayed below 0.001. The
+scenario checks bounded changes, upright attitude and filled sails; these are
+internal engineering criteria, not calibrated performance. With centered
+tiller the provisional boat instead turns substantially, so the fixed helm is
+part of the stated scenario. A worker-host version uses render-thread feedback
+to maintain the helm via held inputs and is not step-exact. A headless host run
+also passed, observing 1.933–1.935 m/s and 102.75–103.29° over 40–60 s, with
+maximum heel 1.28° and average luff below 0.001. Desktop visual and performance
+evidence remains outstanding.
+
+An early desktop Hunter review on 2026-10-27 used the Debug Godot 4.7 .NET
+build, Linux 7.0, Intel i7-6700HQ and Mesa Intel HD Graphics 530 (OpenGL 4.6
+compatibility). It used the fixed initial controls, 10-knot wind, calm water,
+seed 123, two seconds of warm-up and ten seconds each with telemetry hidden
+and visible. The worker completed 600 and 601 steps respectively, with no
+deadline misses in either window. Hidden/visible frame p50/p95/p99/max were
+16.68/17.49/18.75/91.23 ms and 16.69/17.38/19.27/27.03 ms; average FPS was
+59.34 and 59.96. The rolling 300-step compute p95 was 8.89/5.87 ms and
+worker allocation about 940 KiB/s; main-thread allocation was 108/135 KiB/s.
+These consecutive short windows do not isolate telemetry overhead or prove
+headroom; the hidden-window 91 ms stall leaves smooth presentation unproven.
+The captured scene showed the hull and two sails, but their small size and
+overlap made the skipper and underwater markers difficult to inspect. Further
+visual review, stall investigation and the full performance scenarios remain
+open. Reproduce with `--hunter-performance-review`; details and metric limits
+are in the Godot README.
+
+A follow-up on the same desktop and build added frame-aligned process GC/JIT
+correlation and managed scene-update timings. Hidden/visible ten-second
+windows recorded 596/596 frames, maxima of 86.15/73.65 ms and zero worker
+deadline misses. Neither longest frame overlapped a measured GC pause or JIT
+advance. The largest managed render update in either window was 4.96 ms;
+visible telemetry updates averaged 0.040 ms and peaked at 0.136 ms. The long
+frames therefore are not explained by these measured managed updates or by
+the sampled GC/JIT counters. Native drawing, GPU work and OS/compositor
+scheduling are outside these measurements; this does not establish which of
+them caused the stalls. Similar unexplained desktop stalls were observed in
+Phase 8. The Hunter gate remains open pending further investigation and longer,
+representative scenario measurements.
+
+A further attribution run measured the Hunter callback and the gap between
+its sampling point and the next `_Process` entry. With the normal desktop
+settings, the hidden/visible maximum frames were 76.19/83.04 ms, of which
+75.91/82.67 ms occurred in the gap outside the sampled callback. Maximum
+sampled callback time was 0.78/1.51 ms. There were no worker deadline misses
+in those windows. The gap includes native frame work, presentation waits,
+OS scheduling and a small unsampled callback tail; it does not identify a
+specific cause. A diagnostic comparison with `--disable-vsync --max-fps 60`
+had frame maxima of 16.81/16.86 ms in two ten-second windows. In that run,
+however, start lag was already 52.57 ms at the end of the first window and
+53.75 ms at the end of the second, and all 601 steps in each window were
+late. This is consistent with the retained start-delay behavior documented in
+Phase 8, but does not identify its initial cause. A single changed-settings
+comparison suggests presentation synchronization warrants investigation; it
+does not prove causation or satisfy either performance gate. The diagnostic
+flags do not change the project's normal rendering or scheduling settings.
+
+On a repeated capped/no-VSync diagnostic, the warm-up ended with 0.82 ms
+start lag and no late steps. Both subsequent windows also had no late steps;
+lag reached 5.94 ms by the end. The earlier 53 ms lag was therefore not
+reproduced and its cause is still unknown. A subsequent normal-settings run
+lost focus, emitted ILCA input-map errors from the parent scene, and showed
+strongly altered frame rates. Its frame figures are excluded from the focused
+comparison. The Hunter host now prevents the parent ILCA scene from handling
+Hunter input and focus events, and the performance review flags unfocused
+windows and records warm-up timing. A further run had no input-map errors but
+both windows were flagged unfocused, so it too is not focused-window evidence.
+The earlier measurements did not record focus state and should be treated as
+exploratory rather than verified focused-window results.
+
+The normal-settings review was repeated with focus tracking: both ten-second
+windows remained focused. Warm-up ended with 0.95 ms start lag and no late
+steps; each window completed 600 steps with zero late steps, ending at 2.30
+and 4.52 ms lag. Hidden/visible frame p95/p99/max were 17.32/18.91/81.44 ms
+and 17.13/17.90/89.83 ms. The longest frames included 81.26/89.43 ms between
+the sampled callbacks, with no measured GC pause or JIT advance over either
+interval. This focused run confirms that the long-frame issue is not solely
+an artifact of lost focus; the source and performance gate remain open.
+
 ### 9.1 Reference boat and model contract
 
 1. Identify a consistent Hunter 23.5 configuration from manufacturer sailplan,

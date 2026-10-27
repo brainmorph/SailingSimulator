@@ -39,6 +39,40 @@ vary. The shared sequence also has an exact-step offline replay that checks
 crossing the upwind heading, both sails crossing and subsequent filling and
 speed recovery; the host check does not independently verify a tack.
 
+`-- --hunter-steady-check` runs a 60-second worker-host reach in the same
+environment. A small scripted helm correction maintains a tiller setting near
+-0.1 through the held-input interface; other controls remain at their initial
+settings. It reports speed, heading, heel and sail luffing over the final
+20 seconds and checks a bounded, upright, filled-sail reach. The offline
+`dotnet run --project tests/BoatPhysicsCheck -- "Hunter steady reach"` replay
+uses a fixed -0.1 tiller and tighter settling limits. Render-thread input
+handoffs make the host run approximate, and neither run is empirical validation
+or desktop performance evidence.
+
+For an early desktop measurement of the Hunter scene, run
+`./scripts/run-game.sh -- --hunter-performance-review`. After a two-second
+warm-up it records ten seconds each with telemetry hidden and visible, then
+stops the worker, prints the results and saves a frozen scene to
+`/tmp/SailingSimulator-hunter-review.png`. Frame percentiles cover each full
+window; worker compute percentiles and allocation rate are the worker's rolling
+300-step window, and GC counts are cumulative from worker start. Step counts,
+deadline misses and start overrun are window differences. This uses the fixed
+development inputs, not the steady-reach helm scenario. The short measurements
+are diagnostic and do not by themselves establish the performance gate.
+GC pause and JIT deltas are process-wide; the maximum-frame deltas share the
+frame measurement boundaries and show correlation rather than causation.
+Render and telemetry CPU timings cover managed scene-update calls and exclude
+native layout/drawing, GPU work and scheduling outside those calls.
+The reported process time covers the beginning of `_Process` through the
+review's sampling point. The maximum-frame outside-process gap runs from the
+preceding sampling point to the next `_Process` entry; it also includes the
+small unsampled callback tail, native work, waits and scheduling.
+The review also reports a worker warm-up snapshot, lag at both window
+boundaries, and whether the application lost focus or was unfocused at the
+start of each window. Treat unfocused windows as separate observations: desktop
+focus can change rendering behavior and makes them unsuitable for the normal
+focused-window comparison.
+
 The test scene starts an ILCA 7 on a beam reach in the default 10-knot
 northerly wind and gentle waves. Each session chooses a wave seed. The
 physics coefficients are provisional. Low-fidelity hull, rig, sailor and foil

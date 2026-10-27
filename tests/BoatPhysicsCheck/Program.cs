@@ -9,6 +9,38 @@ var calm = Input(controls, 0);
 var windy = Input(controls, 10);
 var tests = new (string Name, Action Run)[]
 {
+    ("Hunter steady reach settles and replays exactly", () =>
+    {
+        var env = HunterDevelopmentScenario.Environment();
+        // Fixed helm represents a held rudder, not the host's spring-return input.
+        var c = new SailingControls(tiller: -0.1, mainsheet: 0.6, traveler: 0.8, vang: 0.6,
+            outhaul: 0.5, cunningham: 0.3, portJibSheet: 0.65);
+        var input = new SimulationInput(c, env);
+        var first = new Hunter235BoatDefinition().CreateSimulation(input, Math.PI / 2);
+        var second = new Hunter235BoatDefinition().CreateSimulation(input, Math.PI / 2);
+        var minSpeed = double.PositiveInfinity; var maxSpeed = 0.0;
+        var minHeading = double.PositiveInfinity; var maxHeading = double.NegativeInfinity;
+        var maxHeel = 0.0; var maxLuff = 0.0;
+        for (var i = 0; i < 3600; i++)
+        {
+            var a = first.Step(input);
+            var b = second.Step(input);
+            Require(a.Boat == b.Boat && a.Rig == b.Rig && a.HunterRig!.Total == b.HunterRig!.Total,
+                $"Steady reach replay differs at step {i + 1}.");
+            if (i < 2400) continue;
+            var attitude = PresentationConversions.GetAttitude(a.Boat.OrientationBodyToWorld);
+            var speed = a.Boat.LinearVelocityWorldMps.Length;
+            minSpeed = Math.Min(minSpeed, speed); maxSpeed = Math.Max(maxSpeed, speed);
+            minHeading = Math.Min(minHeading, attitude.Heading); maxHeading = Math.Max(maxHeading, attitude.Heading);
+            maxHeel = Math.Max(maxHeel, Math.Abs(attitude.Heel));
+            maxLuff = Math.Max(maxLuff, Math.Max(a.HunterRig!.Main.Sections.Average(s => s.Luffing),
+                a.HunterRig.Jib.Sections.Average(s => s.Luffing)));
+        }
+        Console.WriteLine($"  40–60 s: speed {minSpeed:F3}–{maxSpeed:F3} m/s, heading {minHeading * 180 / Math.PI:F2}–{maxHeading * 180 / Math.PI:F2} deg, max heel {maxHeel * 180 / Math.PI:F2} deg, max sail luff {maxLuff:F3}");
+        Require(minSpeed > 1 && maxSpeed - minSpeed < 0.02 &&
+            maxHeading - minHeading < Math.PI / 180 && maxHeel < Math.PI / 4 && maxLuff < 0.1,
+            "Reach failed the scenario's settling, upright or sail-filling criteria.");
+    }),
     ("Hunter scripted tack and control movements replay exactly", () =>
     {
         var env = HunterDevelopmentScenario.Environment();

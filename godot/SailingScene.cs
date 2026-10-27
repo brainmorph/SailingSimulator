@@ -7,6 +7,7 @@ using System.Diagnostics;
 public partial class SailingScene : Node3D
 {
     private SimulationRunner? runner;
+    private bool hunterMode;
     private BoatPresentation boat = null!;
     private WaterPresentation water = null!;
     private Camera3D camera = null!;
@@ -34,8 +35,10 @@ public partial class SailingScene : Node3D
     public override void _Ready()
     {
         if (OS.GetCmdlineUserArgs().Contains("--hunter-dev") || OS.GetCmdlineUserArgs().Contains("--hunter-smoke") ||
-            OS.GetCmdlineUserArgs().Contains("--hunter-scenario") || OS.GetCmdlineUserArgs().Contains("--hunter-scenario-check"))
+            OS.GetCmdlineUserArgs().Contains("--hunter-scenario") || OS.GetCmdlineUserArgs().Contains("--hunter-scenario-check") ||
+            OS.GetCmdlineUserArgs().Contains("--hunter-steady-check") || OS.GetCmdlineUserArgs().Contains("--hunter-performance-review"))
         {
+            hunterMode = true;
             AddChild(new HunterDevelopmentScene());
             return;
         }
@@ -139,6 +142,7 @@ public partial class SailingScene : Node3D
 
     public override void _Input(InputEvent @event)
     {
+        if (hunterMode) return;
         if (@event is InputEventKey diagnosticKey && (diagnosticKey.PhysicalKeycode == Key.F1 || diagnosticKey.Keycode == Key.F1) && focused)
         {
             if (diagnosticKey.Pressed && !diagnosticKey.Echo)
@@ -158,6 +162,7 @@ public partial class SailingScene : Node3D
 
     public override void _UnhandledInput(InputEvent @event)
     {
+        if (hunterMode) return;
         if (@event is InputEventKey key && key.PhysicalKeycode == Key.C && key.Pressed && !key.Echo && focused)
             onboard = !onboard;
         if (@event is InputEventMouseButton button)
@@ -187,6 +192,7 @@ public partial class SailingScene : Node3D
 
     public override void _Notification(int what)
     {
+        if (hunterMode) return;
         if (what == NotificationApplicationFocusOut)
         {
             focused = false;
