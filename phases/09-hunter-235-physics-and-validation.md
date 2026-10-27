@@ -384,6 +384,22 @@ and a close reach with both jib sheets tight saturates the helm; both are
 provisional handling observations for helm and balance review. Desktop
 performance measurement remains open.
 
+The helm and turning review found that high hull surge resistance, not rudder
+authority, made the tack slow: at full helm the yaw rate is limited by boat
+speed. At the user's direction, surge resistance is now
+[ITTC-57 friction with a form factor plus an Fn⁶ wave term](../docs/hunter-235-model.md#hull-resistance-and-helm-balance),
+roughly a third of the previous drag at low speed. The tack crosses the wind
+at 18.7 s (was 25.1 s) and the boat reaches 2.75 m/s on a held broad reach.
+The close-reach helm no longer saturates. Weak directional stability remains:
+fixed-helm heading converges with about a 50 s time constant, so fixed-helm
+checks use -0.07 tiller and a 100–120 s window. Poor-trim checks use a swept
+optimum at 120°. A balance diagnostic records a small lee helm, a 0.02–0.30 m
+center-of-effort lead and an even jib/main load split; at the user's direction no
+geometry was moved to change it. Two fixed-time sheet-change comparisons were
+removed because the faster boat crosses the wind before their schedule; the
+crossing-triggered maneuver checks cover them. The scripted development
+scenario still completes. Desktop performance measurement remains open.
+
 ### 9.1 Reference boat and model contract
 
 1. Identify a consistent Hunter 23.5 configuration from manufacturer sailplan,

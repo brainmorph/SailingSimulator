@@ -64,6 +64,8 @@ public sealed class SampledHullModel : IForceModel
     public IReadOnlyList<HullSample> Samples { get; }
     private readonly Vector3d quadraticDrag;
     private readonly Vector3d linearDrag;
+    private readonly Func<double, double>? surgeCoefficient;
+    private readonly Vector3d surgeReference;
 
     public SampledHullModel()
     {
@@ -87,11 +89,18 @@ public sealed class SampledHullModel : IForceModel
         linearDrag = new(0.4, 5, 30);
     }
 
-    internal SampledHullModel(List<HullSample> samples, Vector3d quadraticDrag, Vector3d linearDrag)
+    /// <param name="surgeCoefficient">
+    /// Optional quadratic surge coefficient as a function of hull surge speed at <paramref name="surgeReference"/>;
+    /// replaces <paramref name="quadraticDrag"/>.X when supplied.
+    /// </param>
+    internal SampledHullModel(List<HullSample> samples, Vector3d quadraticDrag, Vector3d linearDrag,
+        Func<double, double>? surgeCoefficient = null, Vector3d surgeReference = default)
     {
         Samples = Array.AsReadOnly(samples.ToArray());
         this.quadraticDrag = quadraticDrag;
         this.linearDrag = linearDrag;
+        this.surgeCoefficient = surgeCoefficient;
+        this.surgeReference = surgeReference;
     }
 
     public ForceMoment Evaluate(in ForceEvaluation e)
@@ -105,6 +114,8 @@ public sealed class SampledHullModel : IForceModel
         using var measurement = e.Profiler?.Measure(SimulationSubsystem.Hull);
         var buoyancy = default(ForceMoment);
         var drag = default(ForceMoment);
+        var surge = surgeCoefficient is null ? quadraticDrag.X
+            : surgeCoefficient(Math.Abs(BoatGeometry.WaterRelativeVelocityBody(in e, surgeReference).X));
         foreach (var sample in Samples)
         {
             var top = sample.BottomBodyM - Vector3d.UnitZ * sample.HeightM;
@@ -115,7 +126,7 @@ public sealed class SampledHullModel : IForceModel
             var v = BoatGeometry.WaterRelativeVelocityBody(in e, center);
             var wetArea = sample.WaterplaneAreaM2 * Math.Min(1, fraction * sample.HeightM / 0.05);
             var force = new Vector3d(
-                -wetArea * (0.5 * BoatGeometry.WaterDensityKgM3 * quadraticDrag.X * v.X * Math.Abs(v.X) + linearDrag.X * v.X),
+                -wetArea * (0.5 * BoatGeometry.WaterDensityKgM3 * surge * v.X * Math.Abs(v.X) + linearDrag.X * v.X),
                 // Effective shallow-hull side projection is much smaller than waterplane area.
                 -wetArea * (0.5 * BoatGeometry.WaterDensityKgM3 * quadraticDrag.Y * v.Y * Math.Abs(v.Y) + linearDrag.Y * v.Y),
                 -wetArea * (0.5 * BoatGeometry.WaterDensityKgM3 * quadraticDrag.Z * v.Z * Math.Abs(v.Z) + linearDrag.Z * v.Z));

@@ -39,13 +39,14 @@ vary. The shared sequence also has an exact-step offline replay that checks
 crossing the upwind heading, both sails crossing and subsequent filling and
 speed recovery; the host check does not independently verify a tack.
 
-`-- --hunter-steady-check` runs a 60-second worker-host reach in the same
+`-- --hunter-steady-check` runs a 120-second worker-host reach in the same
 environment. A small scripted helm correction maintains a tiller setting near
--0.1 through the held-input interface; other controls remain at their initial
-settings. It reports speed, heading, heel and sail luffing over the final
-20 seconds and checks a bounded, upright, filled-sail reach. The offline
+-0.07 through the held-input interface; other controls remain at their initial
+settings. Because the heading converges slowly, it reports speed, heading, heel
+and sail luffing over the final 20 seconds and checks a bounded, upright,
+filled-sail reach. The offline
 `dotnet run --project tests/BoatPhysicsCheck -- "Hunter steady reach"` replay
-uses a fixed -0.1 tiller and tighter settling limits. Render-thread input
+uses a fixed -0.07 tiller and tighter settling limits. Render-thread input
 handoffs make the host run approximate, and neither run is empirical validation
 or desktop performance evidence.
 

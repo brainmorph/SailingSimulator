@@ -264,11 +264,12 @@ public partial class HunterDevelopmentScene : Node3D
     // Render-thread handoffs can shift the result relative to the exact-step replay.
     private void UpdateSteady(SimulationState state)
     {
-        var error = -0.1 - state.Input.Controls.Tiller;
+        var error = -0.07 - state.Input.Controls.Tiller;
         var direction = Math.Clamp(error / (1.5 * Simulation.StepSeconds), -1, 1);
         if (Math.Abs(direction) < 1e-9) direction = 1e-9; // zero releases the spring-return tiller
         runner.PublishInput(new(new HeldSailingInput(tiller: direction), environment));
-        if (state.TimeSeconds < 40) return;
+        // Heading converges slowly (about 50 s time constant); judge after 100 s.
+        if (state.TimeSeconds < 100) return;
         var attitude = PresentationConversions.GetAttitude(state.Boat.OrientationBodyToWorld);
         var speed = state.Boat.LinearVelocityWorldMps.Length;
         minSteadySpeed = Math.Min(minSteadySpeed, speed); maxSteadySpeed = Math.Max(maxSteadySpeed, speed);
@@ -277,7 +278,7 @@ public partial class HunterDevelopmentScene : Node3D
         var rig = state.HunterRig!;
         maxSteadyLuff = Math.Max(maxSteadyLuff, Math.Max(rig.Main.Sections.Average(s => s.Luffing), rig.Jib.Sections.Average(s => s.Luffing)));
         steadySamples++;
-        if (state.TimeSeconds < 60) return;
+        if (state.TimeSeconds < 120) return;
         GD.Print($"Hunter steady reach: samples={steadySamples} speed={minSteadySpeed:F3}–{maxSteadySpeed:F3} m/s heading={minSteadyHeading * 180 / Math.PI:F2}–{maxSteadyHeading * 180 / Math.PI:F2} deg heel<={maxSteadyHeel * 180 / Math.PI:F2} deg luff<={maxSteadyLuff:F3}");
         if (steadySamples < 20 || minSteadySpeed <= 1 || maxSteadySpeed - minSteadySpeed >= 0.05 ||
             maxSteadyHeading - minSteadyHeading >= 2 * Math.PI / 180 || maxSteadyHeel >= Math.PI / 4 || maxSteadyLuff >= 0.1)

@@ -3,6 +3,19 @@ namespace SailingSimulator.Core;
 /// <summary>Provisional Hunter hull columns and independent resistance estimates.</summary>
 public sealed class Hunter235HullModel : IForceModel
 {
+    // Surge resistance estimates; not towing-tank measurements.
+    public const double WaterlineLengthM = 6.5278;
+    public const double WettedSurfaceM2 = 12.5;
+    public const double FormFactor = 1.15;
+    public const double KinematicViscosityM2PerSec = 1.14e-6;
+    /// <summary>Wave resistance as a fraction of displacement weight at Froude number 0.4.</summary>
+    public const double WaveResistanceAtFn04 = 0.017;
+    /// <summary>
+    /// Calm upright effective wet waterplane of the samples, including the shallow-column wetting
+    /// factor, over which surge resistance is spread.
+    /// </summary>
+    public const double ReferenceWetWaterplaneM2 = 10.8467;
+    private static readonly double WeightN = new Hunter235MassModel().Evaluate(new()).MassKg * BoatGeometry.GravityMps2;
     private readonly SampledHullModel hull;
     public IReadOnlyList<HullSample> Samples => hull.Samples;
 
@@ -25,7 +38,24 @@ public sealed class Hunter235HullModel : IForceModel
                 samples.Add(new(new(x, y, bottom), Hunter235Geometry.HullHeightM, dx * dy));
             }
         }
-        hull = new SampledHullModel(samples, new(0.016, 0.12, 0.85), new(0.6, 8, 40));
+        hull = new SampledHullModel(samples, new(0, 0.12, 0.85), new(0.6, 8, 40), SurgeCoefficient, new(0, 0, 0.3));
+    }
+
+    /// <summary>Upright quadratic surge resistance R(u), excluding the linear low-speed term.</summary>
+    public static double UprightResistanceN(double speedMps) =>
+        0.5 * BoatGeometry.WaterDensityKgM3 * SurgeCoefficient(speedMps) * ReferenceWetWaterplaneM2 * speedMps * speedMps;
+
+    // ITTC-57 friction with a form factor, plus wave resistance rising as Fn^6, expressed per unit
+    // wet waterplane so the sampled columns keep their heel, heave and wave-immersion distribution.
+    private static double SurgeCoefficient(double speedMps)
+    {
+        var reynolds = Math.Max(1e5, speedMps * WaterlineLengthM / KinematicViscosityM2PerSec);
+        var friction = 0.075 / Math.Pow(Math.Log10(reynolds) - 2, 2) * FormFactor * WettedSurfaceM2;
+        var hullSpeed = 0.4 * Math.Sqrt(BoatGeometry.GravityMps2 * WaterlineLengthM);
+        // WaveResistanceAtFn04 W (u / u0.4)^6 divided by the dynamic pressure 0.5 rho u^2.
+        var wave = WaveResistanceAtFn04 * WeightN * Math.Pow(speedMps, 4) /
+            (Math.Pow(hullSpeed, 6) * 0.5 * BoatGeometry.WaterDensityKgM3);
+        return (friction + wave) / ReferenceWetWaterplaneM2;
     }
 
     public ForceMoment Evaluate(in ForceEvaluation evaluation) => hull.Evaluate(in evaluation);

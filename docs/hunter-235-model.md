@@ -73,10 +73,12 @@ the larger assumed main includes roach. The exact outlines, corner coordinates
 and jib lead constraints still need to be defined consistently with these areas;
 these tentative values alone are not an implementation-ready rig contract.
 
-Hull resistance uses the existing local wet-column algorithm but independent,
-estimated quadratic coefficients (0.016, 0.12, 0.85) and linear coefficients
-(0.6, 8, 40) in body X/Y/Z. They are not towing measurements and do not model
-wave-making resistance. The hydrostatic and drag checks test internal signs and
+Hull resistance uses the existing local wet-column algorithm with estimated
+quadratic coefficients (0.12, 0.85) and linear coefficients (0.6, 8, 40) in
+body X/Y/Z. Since 2026-10-27 the quadratic surge coefficient depends on speed;
+see [Hull resistance and helm balance](#hull-resistance-and-helm-balance).
+Results recorded in earlier sections used a constant 0.016 surge coefficient.
+None of these are towing measurements. The hydrostatic and drag checks test internal signs and
 consistency only; they do not validate actual Hunter stability or performance.
 
 Proposed sail corners in the datum above, at zero opening, are main tack
@@ -407,4 +409,99 @@ both jib sheets tight at 60°, the helm saturates at full tiller and leaves a
 6.73° heading error. The 60° case therefore checks only boundedness and
 luffing of fully eased sails. These trends are internal consistency checks;
 the absolute speeds and heel angles are provisional and not calibrated.
+
+## Hull resistance and helm balance
+
+The tack and helm review on 2026-10-27 found that the boat lost speed quickly
+whenever the sails luffed. Its yaw rate at full helm was limited by its low
+speed, not by the rudder. At full tiller the yaw rate settles where the
+rudder's local flow angle almost matches its 0.45 rad deflection, giving a
+turning radius of about two boat lengths. The cause was hull surge resistance:
+the constant 0.016 coefficient over the 13.9 m² sampled waterplane gave 93 N at
+1 m/s and 360 N at 2 m/s. An ITTC-57 friction line with a 1.2 form factor on
+14 m² gives about 28 and 99 N, and the old model omitted wave-making.
+
+The quadratic surge coefficient is now a function of the hull's surge speed
+at (0, 0, 0.3) m, applied to every wet column so heel, heave and wave immersion
+still distribute it. Its upright total is
+
+`R(u) = ½ρu² S Cf(Re) (1 + k) + 0.017 W (Fn / 0.4)⁶`
+
+with `Cf = 0.075 / (log10 Re - 2)²`, Re clamped to at least 1e5, waterline
+length 6.5278 m, kinematic viscosity 1.14e-6 m²/s, form factor 1 + k = 1.15
+and wetted surface S = 12.5 m². W is the 1,440.8 kg boat's weight. The total
+is divided by the samples' 10.8467 m² calm upright effective wet waterplane:
+11.81 m² of columns are wet, but shallow columns near the ends count only
+partly through the existing wetting factor. The
+sampled hull is wide and shallow (0.224 m canoe depth), so a Mumford-style
+estimate gives only 8.9 m², smaller than the wet waterplane itself. The chosen
+wetted surface is the wet waterplane plus about 6% for bottom slope near the
+waterline. The wave term reaches 1.7% of displacement weight at Fn 0.4
+(3.2 m/s, 6.2 kn) and rises as Fn⁶, a representative shape for light
+displacement hulls rather than a Hunter measurement. The linear surge term
+(0.6 per m²) is unchanged. The ILCA hull is unaffected.
+
+| Surge speed | Previous hull drag | Current hull drag | Of which upright R(u) |
+| --- | --- | --- | --- |
+| 1.0 m/s | 93.3 N | 30.5 N | 24.0 N |
+| 2.0 m/s | 360.1 N | 111.6 N | 98.6 N |
+| 3.0 m/s | 800.5 N | 359.5 N | 340.0 N |
+| 3.5 m/s | not recorded | 668.6 N | 645.8 N |
+
+Effects at 10 knots, calm water and seed 123:
+
+- The tack crosses the wind at 18.68 s instead of 25.05 s, the boom at 20.82 s,
+  and the new beam is reached at 33.38 s instead of 51.07 s. Speed at 70 s is
+  2.549 m/s. The jibe crosses at 12.37 s, boom 14.77 s, beam 22.73 s; port and
+  starboard runs still mirror to 1e-7.
+- With the reference trim, the helm-held boat sails 2.75 m/s (5.3 kn) at 120°
+  from the wind. With both jib sheets tight at 60°, the helm now holds the
+  course within 0.12°; previously it saturated at full tiller.
+- The fixed-helm reach has weak directional stability. Starting at 90° with
+  the original reach trim, fixed tillers of -0.07 and -0.05 converge to
+  98.6° and 115.4° by 240 s, with a time constant of about 50 s; -0.03 keeps
+  bearing away. The fixed-helm checks therefore use -0.07 and judge settling
+  over 100–120 s: 2.693–2.698 m/s, 99.40–99.79°, heel at most 1.23°.
+- The interacting held-sheet turn keeps the old-side jib under opposing load
+  for 159 consecutive steps (previously 323); the boat bears away to about
+  159°, and easing the old sheet still lets the jib cross fully.
+
+A coarse 120° sweep of mainsheet and leeward jib sheet (0.4–1.0) with the
+helm holding the course gives the fastest trim at main 0.7, jib 0.7. The
+poor-trim check now uses that reference on a 120° course:
+
+| Trim, 120° from wind | Speed (m/s) | Luff main/jib | Max heel |
+| --- | --- | --- | --- |
+| Reference: main 0.7, leeward jib 0.7 | 2.748 | 0.000/0.000 | 1.28° |
+| Jib eased (both sheets 0) | 2.526 | 0.000/0.046 | 0.76° |
+| Leeward jib fully trimmed | 2.674 | 0.000/0.000 | 1.48° |
+| Both jib sheets fully trimmed | 2.339 | 0.000/0.000 | 1.69° |
+| Main eased (mainsheet 0) | 2.044 | 0.625/0.000 | 0.54° |
+| Main and traveler fully trimmed | 2.289 | 0.000/0.000 | 1.65° |
+
+Off the wind the fully eased jib stays filled at 1.46 rad, so the jib-luffing
+check applies only on the 60° course, where it luffs at 0.968. At 100°, the
+sweep's fastest trim is main 0.9, jib 0.85; the earlier 0.6/0.65 reach trim is
+under-trimmed now that the faster boat sees the apparent wind further forward.
+
+The helm-balance check holds main 0.7, jib 0.7 at 60°, 90° and 120° and averages
+40–60 s. Centers are longitudinal positions relative to the center of mass,
+from the yaw moment divided by side force for each group. Tiller is negative
+toward the wind.
+
+| Course | Mean tiller | Sail CE | Hull+board CLR | CE lead | Jib share of sail load |
+| --- | --- | --- | --- | --- | --- |
+| 60° | -0.132 | +0.53 m | +0.23 m | 0.30 m | 0.53 |
+| 90° | -0.093 | +0.38 m | +0.21 m | 0.17 m | 0.50 |
+| 120° | -0.062 | +0.23 m | +0.21 m | 0.02 m | 0.48 |
+
+The boat carries a small lee helm: about 1.6–3.4° of rudder toward the wind.
+The rudder's yaw moment is only -31 to +21 N m, so the rudder largely cancels
+its own leeway lift rather than a large sail imbalance. The sail center of
+effort leads the lateral resistance by 0.02–0.30 m, moving forward on closer
+courses, and the jib carries about half the sail load from 38% of the area.
+No geometry was moved to change the helm; the board position, sail
+coefficients and their balance remain estimates for Phase 11. The check
+asserts only that average yaw moments balance and that the helm stays below
+0.25.
 
