@@ -62,7 +62,10 @@ Console.WriteLine("Phase 8 calibration screening, coasting and seeded replay che
 var controlled = CourseReview.Run(gentleCondition, 120, 60);
 var controlledAgain = CourseReview.Run(gentleCondition, 120, 60);
 Require(controlled.ExactReplay && controlled.ControlHistory.SequenceEqual(controlledAgain.ControlHistory) &&
-    controlled.Trace.SequenceEqual(controlledAgain.Trace) && controlled.ControlHistory.Length == 120,
+    controlled.Trace.SequenceEqual(controlledAgain.Trace) && controlled.ControlHistory.Length == 120 &&
+    controlled.CompleteWindows.Length == 2 && controlled.CompleteWindows[0].StartSeconds == SailingSimulator.Core.Simulation.StepSeconds &&
+    controlled.CompleteWindows[0].EndSeconds == 1 && controlled.CompleteWindows[1].StartSeconds == 61 * SailingSimulator.Core.Simulation.StepSeconds &&
+    controlled.CompleteWindows[1] == controlled.FinalWindow,
     "Controlled review must reproduce its complete input history and trajectory.");
 var previous = gentleCondition.Controls;
 foreach (var entry in controlled.ControlHistory)

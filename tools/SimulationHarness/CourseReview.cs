@@ -17,7 +17,7 @@ public static class CourseReview
         double MaxHeadingError, double MaxAbsHeel, double MeanNetForceN, double MeanNetMomentNm,
         double MeanNetForceChangeN, double MeanNetMomentChangeNm, bool Converged);
     public sealed record Result(CalibrationReview.Condition Condition, int Steps, int WindowSteps,
-        Entry[] ControlHistory, Observation[] Trace, Summary FinalWindow, bool ExactReplay);
+        Entry[] ControlHistory, Observation[] Trace, Summary FinalWindow, Summary[] CompleteWindows, bool ExactReplay);
 
     // Heading and heel feedback requests normalized control targets. Keys are held until the
     // target is reached, so the same fixed-step rates and release behaviour as the host apply.
@@ -56,6 +56,8 @@ public static class CourseReview
         var history = new List<Entry>(steps);
         var trace = new List<Observation>();
         var tail = new List<Observation>(windowSteps);
+        var window = new List<Observation>(windowSteps);
+        var windows = new List<Summary>();
         for (var step = 1; step <= steps; step++)
         {
             var held = sailor.Decide(first.Latest, condition.HeadingDegrees);
@@ -66,10 +68,16 @@ public static class CourseReview
             var state = first.Step(input);
             CalibrationReview.RequireSame(state, replay.Step(input));
             var sample = Observe(state, condition.HeadingDegrees);
+            window.Add(sample);
+            if (window.Count == windowSteps)
+            {
+                windows.Add(Summarize(window));
+                window.Clear();
+            }
             if (step > steps - windowSteps) tail.Add(sample);
             if (step % 60 == 0 || step == steps) trace.Add(sample);
         }
-        return new(condition, steps, windowSteps, history.ToArray(), trace.ToArray(), Summarize(tail), true);
+        return new(condition, steps, windowSteps, history.ToArray(), trace.ToArray(), Summarize(tail), windows.ToArray(), true);
     }
 
     public static Summary Summarize(IReadOnlyList<Observation> samples)
@@ -115,6 +123,20 @@ public static class CourseReview
                 Sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(a.Location))) }).ToArray(),
         Protocol = "120 s at 60 Hz; final 30 s screen; north 10 kt wind; fixed trim; ordinary held-key steering and hiking; per-step controls retained; independent exact replay",
         Results = CalibrationReview.Conditions.Where(c => c.Id is "upwind-45-calm" or "reach-90-calm" or "broad-reach-135-calm" or "default-reach-gentle").Select(c => Run(c)).ToArray()
+    }, new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+        Converters = { new JsonStringEnumConverter() } });
+
+    public static string WaveReviewJson() => JsonSerializer.Serialize(new
+    {
+        Evidence = "Wave variability investigation; screens are provisional and do not establish equilibrium or real-boat accuracy",
+        Runtime = RuntimeInformation.FrameworkDescription,
+        OperatingSystem = RuntimeInformation.OSDescription,
+        Architecture = RuntimeInformation.ProcessArchitecture.ToString(),
+        Assemblies = new[] { typeof(Simulation).Assembly, typeof(HeldSailingInput).Assembly, typeof(CourseReview).Assembly }
+            .Select(a => new { Name = a.GetName().Name, Configuration = a.GetCustomAttribute<AssemblyConfigurationAttribute>()?.Configuration,
+                Sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(a.Location))) }).ToArray(),
+        Protocol = "120 s at 60 Hz, four non-overlapping 30 s windows; 10 kt north wind, fixed trim, held-key course and balance control; exact per-step replay",
+        Results = new[] { 1, 123, 456 }.Select(seed => Run(CalibrationReview.Conditions.Single(c => c.Id == "default-reach-gentle") with { Seed = seed })).ToArray()
     }, new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
         Converters = { new JsonStringEnumConverter() } });
 }

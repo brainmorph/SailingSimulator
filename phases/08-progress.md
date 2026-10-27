@@ -234,3 +234,31 @@ no-catch-up policy, demonstrated by the existing schedule regression; it is not
 evidence identifying the source of the initial desktop stalls. The policy and
 warnings are unchanged. Desktop profiling and any decision to revisit the
 schedule remain open.
+
+## Gentle-wave variability investigation — 2026-10-27
+
+`--wave-review` repeats the controlled 90° reach at 10 knots with gentle
+waves and seeds 1, 123 and 456. Each 120-second run retains the complete
+held-key history and performs an independent exact replay. Four consecutive
+30-second windows use every physics step and the unchanged flat-water screen.
+The [results](08-wave-review-results.json.gz) include conditions, runtime and
+assembly hashes, controls, one-second traces and window summaries. Reproduce
+with `dotnet run -c Release --project tools/SimulationHarness -- --wave-review`.
+
+The first window contains acceleration and fails for multiple reasons. In
+each subsequent window all three seeds exceed the 0.1 m/s speed-range limit:
+ranges are 0.109–0.168 m/s, while the half-window mean changes are at most
+0.0076 m/s in magnitude. Estimated 30-second mean speeds from the retained
+one-second samples are 2.237–2.244 m/s across those later windows. The seed
+123 trace repeatedly rises and falls over a few seconds. This supports the
+interpretation that the threshold flags ongoing wave-driven variation in
+these runs, rather than a clear sustained speed drift. It does not prove
+statistical stationarity, exclude slower drift, or justify a new acceptance
+threshold for arbitrary wave conditions. Net-force and moment magnitude means
+also do not prove force balance. The existing screen is unchanged and these
+wave runs are not claimed converged or calibrated.
+
+The added regression checks verify the complete-window boundaries and their
+agreement with the final window for an exactly divisible run. The Release
+solution build and calibration-condition checks pass. Dynamic visual and
+handling evidence and the desktop performance defect remain open.

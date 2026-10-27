@@ -12,6 +12,11 @@ if (args is ["--course-review"])
     Console.WriteLine(CourseReview.ReportJson());
     return 0;
 }
+if (args is ["--wave-review"])
+{
+    Console.WriteLine(CourseReview.WaveReviewJson());
+    return 0;
+}
 
 var steps = 600;
 var boatScenario = false;
@@ -29,7 +34,7 @@ for (var i = 0; i < args.Length; i++)
         stepsSpecified = true;
     else
     {
-        Console.Error.WriteLine("Usage: SimulationHarness [--boat | --waves] [--wave-seed integer] [--steps 1..1000000] | --calibration-review | --course-review");
+        Console.Error.WriteLine("Usage: SimulationHarness [--boat | --waves] [--wave-seed integer] [--steps 1..1000000] | --calibration-review | --course-review | --wave-review");
         return 2;
     }
 }
