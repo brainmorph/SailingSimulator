@@ -114,8 +114,9 @@ public sealed record SimulationState(long StepIndex, double TimeSeconds, RigidBo
     public RigState Rig { get; init; }
 }
 
-/// <summary>Reduced-order boom position, positive towards starboard, and relative angular rate.</summary>
-public readonly record struct RigState(double BoomAngleRad, double BoomRateRadPerSec);
+/// <summary>Reduced-order sail angles and rates, positive towards starboard. Jib angle is about its forestay, not a boom.</summary>
+public readonly record struct RigState(double BoomAngleRad, double BoomRateRadPerSec,
+    double JibAngleRad = 0, double JibRateRadPerSec = 0);
 
 /// <summary>Mass, hull-datum centre of mass, and full body-frame inertia about that centre.</summary>
 public sealed record MassProperties

@@ -102,7 +102,7 @@ public sealed class Simulation
             var angularAccelerationBody = inertia.Solve(netMoment);
             var orientationRate = (raw.Boat.OrientationBodyToWorld * new Quaterniond(omega.X, omega.Y, omega.Z, 0)) * 0.5;
             var result = new StateDerivative(boat.LinearVelocityWorldMps, orientationRate, forces.ForceWorldN / currentMass.MassKg, angularAccelerationBody,
-                rigRate.AngleRate, rigRate.AngularAcceleration);
+                rigRate.AngleRate, rigRate.AngularAcceleration, rigRate.JibAngleRate, rigRate.JibAngularAcceleration);
             if (!result.IsFinite) throw new ArithmeticException("Non-finite state derivative.");
             return result;
         }
@@ -114,7 +114,8 @@ public sealed class Simulation
 
     private static void ValidateRig(RigState rig)
     {
-        if (!double.IsFinite(rig.BoomAngleRad) || !double.IsFinite(rig.BoomRateRadPerSec))
+        if (!double.IsFinite(rig.BoomAngleRad) || !double.IsFinite(rig.BoomRateRadPerSec) ||
+            !double.IsFinite(rig.JibAngleRad) || !double.IsFinite(rig.JibRateRadPerSec))
             throw new ArithmeticException("Non-finite rig state.");
     }
 
@@ -123,17 +124,18 @@ public sealed class Simulation
     private static IntegratedState Advance(IntegratedState y, StateDerivative k, double dt) => new(new(
         y.Boat.PositionWorldM + k.Position * dt, y.Boat.OrientationBodyToWorld + k.Orientation * dt,
         y.Boat.LinearVelocityWorldMps + k.Velocity * dt, y.Boat.AngularVelocityBodyRadPerSec + k.AngularVelocity * dt),
-        new(y.Rig.BoomAngleRad + k.BoomAngle * dt, y.Rig.BoomRateRadPerSec + k.BoomRate * dt));
+        new(y.Rig.BoomAngleRad + k.BoomAngle * dt, y.Rig.BoomRateRadPerSec + k.BoomRate * dt,
+            y.Rig.JibAngleRad + k.JibAngle * dt, y.Rig.JibRateRadPerSec + k.JibRate * dt));
 
     private readonly record struct StateDerivative(Vector3d Position, Quaterniond Orientation, Vector3d Velocity, Vector3d AngularVelocity,
-        double BoomAngle, double BoomRate)
+        double BoomAngle, double BoomRate, double JibAngle, double JibRate)
     {
-        public bool IsFinite => Position.IsFinite && Orientation.IsFinite && Velocity.IsFinite && AngularVelocity.IsFinite && double.IsFinite(BoomAngle) && double.IsFinite(BoomRate);
+        public bool IsFinite => Position.IsFinite && Orientation.IsFinite && Velocity.IsFinite && AngularVelocity.IsFinite && double.IsFinite(BoomAngle) && double.IsFinite(BoomRate) && double.IsFinite(JibAngle) && double.IsFinite(JibRate);
         public static StateDerivative operator +(StateDerivative a, StateDerivative b) =>
             new(a.Position + b.Position, a.Orientation + b.Orientation, a.Velocity + b.Velocity, a.AngularVelocity + b.AngularVelocity,
-                a.BoomAngle + b.BoomAngle, a.BoomRate + b.BoomRate);
+                a.BoomAngle + b.BoomAngle, a.BoomRate + b.BoomRate, a.JibAngle + b.JibAngle, a.JibRate + b.JibRate);
         public static StateDerivative operator *(StateDerivative a, double s) => new(a.Position * s, a.Orientation * s, a.Velocity * s, a.AngularVelocity * s,
-            a.BoomAngle * s, a.BoomRate * s);
+            a.BoomAngle * s, a.BoomRate * s, a.JibAngle * s, a.JibRate * s);
     }
 }
 

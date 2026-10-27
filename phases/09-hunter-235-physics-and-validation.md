@@ -84,6 +84,13 @@ automatic sheet changes are implemented yet. The integration checks cover
 independent ramps, bounds and snapshot immutability. These contracts are subject
 to review against the eventual jib model.
 
+The shared RK4 state also carries a provisional jib angle about the forestay
+and its rate, with derivatives evaluated at each stage. Existing single-sail
+models leave both at zero. A coupled analytic integration check and a non-finite
+stage/atomic-publication check cover this infrastructure. This is a state
+contract only: it does not implement sail geometry, constraints or jib forces,
+and its suitability must be reviewed with the Hunter model contract.
+
 ### 9.1 Reference boat and model contract
 
 1. Identify a consistent Hunter 23.5 configuration from manufacturer sailplan,

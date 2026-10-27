@@ -21,7 +21,7 @@ This folder turns [PLAN.md](../PLAN.md) into independently actionable work for f
 ## Handoff rules
 
 Phase 7 evidence and remaining desktop timing defect: [completion record](07-completion.md).
-The active phase is [ILCA engineering readiness](08-calibration-and-first-playable.md).
+The active phase is [Hunter physics, verification and performance](09-hunter-235-physics-and-validation.md).
 Phase 8 has started; see its [progress and milestone evidence](08-progress.md)
 and [recorded free-sailing baselines](08-baseline-results.json). It remains open.
 Phase 9 has started at the user's direction while Phase 8 remains open; Phase 10

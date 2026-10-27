@@ -60,6 +60,13 @@ areas illustrate why the calculated triangles cannot be treated as measured sail
 The manufacturer archive listing timed out during this search and the original
 H23.5 drawings remain unreviewed.
 
+On 2026-10-27 a direct manual PDF link was identified in an
+[owner discussion](https://forums.sailboatowners.com/threads/how-to-use-hunter-23-5-centerboard-uphaul-blocks.154049/),
+but the [PDF](https://sbo.sailboatowners.com/downloads/Hunter_23.5_50853939.pdf)
+timed out when fetched. The indexed manual text does identify the H23.5 sail
+plan and rigging list, but its drawing text remains too corrupted to extract
+dimensions reliably. No original drawing measurements are claimed from this attempt.
+
 Inspect original H23.5 drawings, confirm boat displacement interpretation,
 main and jib areas separately, sail corners and sheet leads, centerboard and
 rudder geometry, ballast tank and cockpit positions. Establish a traceable

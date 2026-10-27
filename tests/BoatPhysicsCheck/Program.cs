@@ -69,6 +69,23 @@ var tests = new (string Name, Action Run)[]
         catch (SimulationStepException exception) { Require(exception.Stage == "completion", "Diagnostic error must identify completion."); }
         Require(ReferenceEquals(before, brokenDiagnostics.Latest), "Diagnostic failure published partial state.");
     }),
+    ("Jib state participates in coupled RK4 and rejects non-finite stages", () =>
+    {
+        var tensor = new MassProperties(138, new(100, 200, 200));
+        // Boom acceleration is time; jib acceleration follows the evolving boom rate.
+        var sim = new Simulation(RigidBodyState.AtRest, tensor,
+            new FunctionRig(e => new(e.Rig.BoomRateRadPerSec, e.TimeSeconds,
+                e.Rig.JibRateRadPerSec, e.Rig.BoomRateRadPerSec)), calm);
+        for (var i = 0; i < 60; i++) sim.Step(calm);
+        Near(sim.Latest.Rig.JibRateRadPerSec, 1.0 / 6, 1e-14);
+        Near(sim.Latest.Rig.JibAngleRad, 1.0 / 24, 1e-14);
+        var broken = new Simulation(RigidBodyState.AtRest, tensor,
+            new FunctionRig(e => new(0, 0, 0, e.TimeSeconds > 0 ? double.NaN : 0)), calm);
+        var before = broken.Latest;
+        try { broken.Step(calm); throw new InvalidOperationException("Expected jib failure."); }
+        catch (SimulationStepException exception) { Require(exception.Stage == "k2", "Jib error must identify its stage."); }
+        Require(ReferenceEquals(before, broken.Latest), "Jib failure published partial state.");
+    }),
     ("Hydrostatic balance, heave/roll/pitch restoring and hiking sign", () =>
     {
         var state = boatModel.CreateInitialState(calm);
