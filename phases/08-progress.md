@@ -262,3 +262,35 @@ The added regression checks verify the complete-window boundaries and their
 agreement with the final window for an exactly divisible run. The Release
 solution build and calibration-condition checks pass. Dynamic visual and
 handling evidence and the desktop performance defect remain open.
+
+## Desktop start-delay attribution — 2026-10-27
+
+The worker now records start lag relative to the original cadence, the sum
+of overruns relative to each requested start, and the largest individual
+overrun since startup. The performance review reports the change in that sum
+over each view. An overrun can include prior step work, OS scheduling, or
+waiting overhead; these measurements do not distinguish their causes. They
+do not change scheduling or deadline warnings. The overload regression checks
+that start-delay measurements remain visible.
+
+One desktop run used the same Godot 4.7 Mono Debug build, Intel HD 530/Mesa
+renderer, seed, warm-up and five-second windows described above. The solution
+and Godot project built without warnings; all 14 integration groups passed,
+including a 600-step isolated run with zero late steps. The desktop run had:
+
+| View | FPS | Frame p95 / max, ms | Late steps | Start lag at end, ms | Window start overruns, ms |
+| --- | ---: | --- | ---: | ---: | ---: |
+| Hidden | 58.70 | 18.56 / 98.16 | 9 | 6.11 | 5.09 |
+| Telemetry | 59.72 | 16.99 / 25.31 | 0 | 6.48 | 0.37 |
+| Environment | 58.75 | 17.06 / 63.53 | 200 | 12.51 | 6.03 |
+| Performance | 59.75 | 17.05 / 31.79 | 296 | 12.81 | 0.30 |
+
+The largest start overrun observed since startup was 4.91 ms. In the final
+view compute p95 was 5.145 ms, but the start lag had already reached 12.81 ms;
+252 consecutive steps were late at the end. This demonstrates how retained
+start delays can produce persistent deadline misses even when subsequent
+computation is ordinarily short. It does not identify the initial cause of
+the overruns or the long frame stalls, nor does it meet the performance gate.
+The desktop review completed and captured its views; its raw console output
+is recorded in [08-start-delay-results.log](08-start-delay-results.log).
+Further profiling and dynamic visual/handling review remain necessary.

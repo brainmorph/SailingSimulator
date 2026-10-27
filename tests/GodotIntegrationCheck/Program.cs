@@ -128,6 +128,8 @@ var tests = new (string Name, Action Run)[]
         Require(snapshot.Timing.Warning == DeadlineWarning.Hard && snapshot.Timing.TotalLateSteps >= 8, "Overload concealed");
         Require(snapshot.Timing.ElapsedSeconds - snapshot.State.TimeSeconds > 0.06, "Clock dropped simulation time");
         Require(snapshot.Timing.DeadlineLatenessMilliseconds > 60, "Deadlines reset after overload");
+        Require(snapshot.Timing.StartLagMilliseconds > 60 && snapshot.Timing.TotalStartOverrunMilliseconds > 0 &&
+            snapshot.Timing.MaxStartOverrunMilliseconds > 0, "Start delay attribution missing under overload");
     }),
     ("Rolling performance percentiles, allocation rates and eviction", () =>
     {

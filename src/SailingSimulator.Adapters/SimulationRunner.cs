@@ -8,6 +8,11 @@ public enum DeadlineWarning { None, Soft, Hard }
 public sealed record StepTiming(long CompletedSteps, double ElapsedSeconds, double StepMilliseconds,
     double DeadlineLatenessMilliseconds, int ConsecutiveLateSteps, long TotalLateSteps)
 {
+    // Start lag is relative to the original cadence; overrun is relative to the
+    // requested start, and includes both wake-up delays and prior step work.
+    public double StartLagMilliseconds { get; init; }
+    public double TotalStartOverrunMilliseconds { get; init; }
+    public double MaxStartOverrunMilliseconds { get; init; }
     public DeadlineWarning Warning => ConsecutiveLateSteps >= 5 ? DeadlineWarning.Hard
         : ConsecutiveLateSteps >= 3 ? DeadlineWarning.Soft : DeadlineWarning.None;
 }
@@ -119,6 +124,7 @@ public sealed class SimulationRunner : IDisposable
         var schedule = new FixedStepSchedule(epoch, Stopwatch.Frequency);
         var consecutiveLate = 0;
         long totalLate = 0, completed = 0;
+        long totalStartOverrun = 0, maxStartOverrun = 0;
         var profile = new StepProfiler();
         var performance = new StepPerformanceWindow();
         var previousSample = epoch;
@@ -128,10 +134,15 @@ public sealed class SimulationRunner : IDisposable
         var gen2 = GC.CollectionCount(2);
         try
         {
-            while (WaitUntil(schedule.NextStart))
+            while (true)
             {
+                var requestedStart = schedule.NextStart;
+                if (!WaitUntil(requestedStart)) break;
                 var started = Stopwatch.GetTimestamp();
                 var deadline = schedule.BeginStep(started);
+                var overrun = started - requestedStart;
+                totalStartOverrun += overrun;
+                maxStartOverrun = Math.Max(maxStartOverrun, overrun);
                 var current = input.Read(); // Exactly one coherent held-key/environment sample per step.
                 var controls = current.Held.Advance(simulation.Latest.Input.Controls);
                 profile.Reset();
@@ -146,11 +157,17 @@ public sealed class SimulationRunner : IDisposable
                 previousAllocation = allocation;
                 var finished = Stopwatch.GetTimestamp();
                 var lateness = Math.Max(0, finished - deadline);
+                var nominalStart = epoch + (long)Math.Round(completed * (double)Stopwatch.Frequency / 60);
                 consecutiveLate = lateness > 0 ? consecutiveLate + 1 : 0;
                 if (lateness > 0) totalLate++;
                 var timing = new StepTiming(++completed, (finished - epoch) / (double)Stopwatch.Frequency,
                     (finished - started) * 1000.0 / Stopwatch.Frequency,
-                    lateness * 1000.0 / Stopwatch.Frequency, consecutiveLate, totalLate);
+                    lateness * 1000.0 / Stopwatch.Frequency, consecutiveLate, totalLate)
+                {
+                    StartLagMilliseconds = (started - nominalStart) * 1000.0 / Stopwatch.Frequency,
+                    TotalStartOverrunMilliseconds = totalStartOverrun * 1000.0 / Stopwatch.Frequency,
+                    MaxStartOverrunMilliseconds = maxStartOverrun * 1000.0 / Stopwatch.Frequency
+                };
                 output.Publish(new(state, timing, true) { Performance = metrics });
             }
         }

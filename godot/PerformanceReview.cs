@@ -7,6 +7,7 @@ public partial class SailingScene
 {
     private int performanceStage = -1;
     private long stageLateSteps;
+    private double stageStartOverrun;
     private readonly string[] performanceNames = ["hidden", "telemetry", "environment", "performance"];
     private bool performanceCapturing;
     private int captureFrame;
@@ -38,6 +39,7 @@ public partial class SailingScene
         public double JitMs { get; set; }
         public double MaxFramePauseMs { get; set; }
         public double MaxFrameJitMs { get; set; }
+        public double StartOverrunMs { get; set; }
     }
 
     private void ObservePerformanceFrame(double renderMs, double overlayMs)
@@ -66,6 +68,7 @@ public partial class SailingScene
     private void BeginPerformanceWindow(RunnerSnapshot snapshot)
     {
         stageLateSteps = snapshot.Timing.TotalLateSteps;
+        stageStartOverrun = snapshot.Timing.TotalStartOverrunMilliseconds;
         mainAllocationStart = GC.GetAllocatedBytesForCurrentThread();
         pauseStart = previousPause = GC.GetTotalPauseDuration();
         jitStart = previousJit = JitInfo.GetCompilationTime();
@@ -122,6 +125,7 @@ public partial class SailingScene
             var result = performanceResults[performanceStage];
             result.Snapshot = snapshot;
             result.LateSteps = snapshot.Timing.TotalLateSteps - stageLateSteps;
+            result.StartOverrunMs = snapshot.Timing.TotalStartOverrunMilliseconds - stageStartOverrun;
             result.MainKiBPerSecond = (GC.GetAllocatedBytesForCurrentThread() - mainAllocationStart) / 1024.0 / measuredSeconds;
             result.PauseMs = (GC.GetTotalPauseDuration() - pauseStart).TotalMilliseconds;
             result.JitMs = (JitInfo.GetCompilationTime() - jitStart).TotalMilliseconds;
@@ -165,7 +169,9 @@ public partial class SailingScene
                 $"overlay mean/max={result.Overlay.Average():F3}/{result.Overlay.Max():F3} ms, " +
                 $"main allocation={result.MainKiBPerSecond:F1} KiB/s, process GC pause={result.PauseMs:F2} ms, " +
                 $"process JIT={result.JitMs:F2} ms; max-frame GC pause/JIT={result.MaxFramePauseMs:F2}/{result.MaxFrameJitMs:F2} ms, " +
-                $"worker lateness={snapshot.Timing.DeadlineLatenessMilliseconds:F2} ms");
+                $"worker lateness={snapshot.Timing.DeadlineLatenessMilliseconds:F2} ms, " +
+                $"start lag={snapshot.Timing.StartLagMilliseconds:F2} ms, window start overrun={result.StartOverrunMs:F2} ms, " +
+                $"max start overrun since start={snapshot.Timing.MaxStartOverrunMilliseconds:F2} ms");
         }
     }
 }
