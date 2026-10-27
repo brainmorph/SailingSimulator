@@ -28,8 +28,8 @@ Phase 9 has started at the user's direction while Phase 8 remains open; Phase 10
 is an upcoming planning draft. Their confirmed choices are
 recorded in `PLAN.md`. Hunter physics, internal verification and early real-time
 performance belong to Phase 9; the completed playable integration follows in
-Phase 10 and must pass performance checks again. Implementation follows
-Phase 8's engineering completion was previously required; the user has directed
+Phase 10 and must pass performance checks again. Phase 8's engineering
+completion was previously required; the user has directed
 work to proceed while skipping Phase 8 for now. The [preliminary Hunter reference register](09-reference-progress.md)
 records initial sources and gaps; it is not a completed model contract.
 

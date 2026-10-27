@@ -99,7 +99,10 @@ designed against the reference/model contract; this boundary does not complete
 work package 9.2.
 The existing component mass and parallel-axis calculation is also available as
 `MassAggregation.Combine`, retaining the ILCA calculation and checking invalid
-input and a symmetric component example. A Hunter mass budget is still needed.
+input and a symmetric component example. A provisional Hunter mass model and
+budget are recorded in [Hunter model work](../docs/hunter-235-model.md), with
+tests for ballast, board and skipper accounting. The model is not yet connected
+to Hunter forces; the remaining geometry and sail contract is incomplete.
 
 ### 9.1 Reference boat and model contract
 

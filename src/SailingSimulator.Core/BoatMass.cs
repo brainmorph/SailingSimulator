@@ -88,3 +88,20 @@ public sealed class IlcaMassModel : IMassModel
 
     public MassProperties Evaluate(SailingControls controls) => MassAggregation.Combine(Contributors(controls));
 }
+
+/// <summary>Provisional full-ballast Hunter 23.5 budget plus an 80 kg skipper.</summary>
+public sealed class Hunter235MassModel : IMassModel
+{
+    public IReadOnlyList<MassContributor> Contributors(SailingControls controls) => Array.AsReadOnly(new[]
+    {
+        new MassContributor("Hull", 700, new(0, 0, -0.05), new(400, 2600, 2800, 0, 0, 0)),
+        new MassContributor("Rig", 100, new(0.45, 0, -2.8), new(650, 680, 45, 0, 0, 0)),
+        new MassContributor("Fittings", 72.18474, new(-0.4, 0, -0.25), new(25, 100, 110, 0, 0, 0)),
+        new MassContributor("Centerboard", 25, new(0.15, 0, 0.55 - 0.45 * (1 - controls.Centerboard)), new(6, 7, 2, 0, 0, 0)),
+        new MassContributor("Rudder", 10, new(-3.35, 0, 0.25), new(2, 2.5, 0.8, 0, 0, 0)),
+        new MassContributor("Water ballast", 453.59237, new(0, 0, 0.35), new(110, 360, 430, 0, 0, 0)),
+        new MassContributor("Skipper", 80, new(-1.8, 0.55 * controls.Hiking, -0.65), default)
+    });
+
+    public MassProperties Evaluate(SailingControls controls) => MassAggregation.Combine(Contributors(controls));
+}

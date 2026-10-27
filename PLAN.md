@@ -249,7 +249,9 @@ The [Hunter reference register](phases/09-reference-progress.md) now identifies 
 accessible scan of the original H23.5 sail plan, deck hardware and centerboard
 drawings. Its sail plan lists 2,000 lb dry, 1,000 lb full ballast and 3,000 lb
 displacement; crew and equipment inclusion and separate sail areas remain
-uncertain. Detailed model geometry and component mass allocations remain estimates.
+uncertain. A provisional [Hunter mass budget](docs/hunter-235-model.md) allocates
+the dry boat and full ballast once and adds an 80 kg skipper. Component masses,
+centers and inertias are estimates; detailed model geometry remains incomplete.
 
 ## Engineering baselines and deferred calibration
 

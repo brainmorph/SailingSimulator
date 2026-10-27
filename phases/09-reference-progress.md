@@ -17,12 +17,11 @@ substitutes. Measurements below are reference leads, not calibrated parameters.
 | [Good Old Boat H23.5 sail data](https://goodoldboat.com/saildata/boat/hunter-235/) | Illustrates candidate replacement-sail dimensions. | Its asterisked sail measurements and areas are calculated from rig dimensions. They do not establish actual factory main or jib outline or area. Its prose quotes 1,100 lb ballast, conflicting with the 1,000 lb secondary listings; do not reconcile by assumption. |
 | [PHRF Lake Erie master class list, 2020](https://phrf-le.org/wp-content/uploads/2025/03/Base-Handicaps-8.1.20-Rating-New.pdf) | Lists HUNTER 23.5 CB and class handicap 249, plus rig and hull fields. | Handicap is a broad rating cross-check, not a speed polar; individual ratings vary. Its I = 25.0 ft and P = 25.8 ft differ from the secondary listing, and its source/configuration for those fields is unclear. Do not silently combine them. |
 
-A plausible working accounting hypothesis is 1,360.8 kg for the full-ballast
-boat plus a separate 80 kg skipper, but this is **not yet an auditable mass
-budget**. The manufacturer's sail plan supports the 2,000 + 1,000 = 3,000 lb
-accounting; crew/equipment inclusion, tank location, board mass,
-component centers and inertia remain unverified. No numerical component
-allocations or sail attachment coordinates are adopted in this record.
+A provisional component allocation for the 3,000 lb full-ballast boat plus a
+separate 80 kg skipper is now documented in [Hunter model work](../docs/hunter-235-model.md).
+The manufacturer's sail plan supports the 2,000 + 1,000 = 3,000 lb accounting;
+crew/equipment inclusion, tank location, board mass, component centers and
+inertia remain unverified. Sail attachment coordinates remain to be specified.
 
 ### Original H23.5 drawing review
 
@@ -91,7 +90,7 @@ extract drawing dimensions reliably; the subsequent scan review is recorded abov
 
 Complete the model contract using the inspected H23.5 drawings and document
 remaining assumptions: main and jib areas separately, sail corners and sheet leads, centerboard and
-rudder geometry, ballast tank and cockpit positions. Establish a traceable
-mass and inertia budget with explicit estimates, and record the selected
+rudder geometry, ballast tank and cockpit positions. Refine the provisional
+mass and inertia budget as evidence permits, and record the selected
 configuration and control/geometry contracts. Phase 8's handling, visual and
 desktop performance gates remain open.

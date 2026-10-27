@@ -9,6 +9,22 @@ var calm = Input(controls, 0);
 var windy = Input(controls, 10);
 var tests = new (string Name, Action Run)[]
 {
+    ("Hunter full ballast and cockpit mass budget", () =>
+    {
+        var hunter = new Hunter235MassModel();
+        var lowered = new SailingControls(centerboard: 1, hiking: 1);
+        var raised = new SailingControls(centerboard: 0, hiking: -1);
+        var parts = hunter.Contributors(lowered);
+        Near(parts.Where(c => c.Name != "Skipper").Sum(c => c.MassKg), 1360.77711, 1e-10);
+        Near(hunter.Evaluate(lowered).MassKg, 1440.77711, 1e-10);
+        Require(parts.Single(c => c.Name == "Water ballast") == hunter.Contributors(raised).Single(c => c.Name == "Water ballast"), "Board and seat movement must not change ballast.");
+        Near(parts.Single(c => c.Name == "Skipper").CenterBodyM.Y, 0.55, 0);
+        Near(hunter.Contributors(raised).Single(c => c.Name == "Skipper").CenterBodyM.Y, -0.55, 0);
+        Require(hunter.Contributors(raised).Single(c => c.Name == "Centerboard").CenterBodyM.Z < parts.Single(c => c.Name == "Centerboard").CenterBodyM.Z, "Raised board must move upward.");
+        var tensor = hunter.Evaluate(lowered).InertiaBodyKgM2;
+        var vector = new Vector3d(1, -2, 3);
+        Near(tensor.Solve(tensor.Multiply(vector)), vector, 1e-12);
+    }),
     ("Boat definition preserves ILCA simulation and creates independent instances", () =>
     {
         IBoatDefinition definition = new IlcaBoatDefinition();
