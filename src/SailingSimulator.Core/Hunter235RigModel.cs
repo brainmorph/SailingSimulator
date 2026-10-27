@@ -30,7 +30,7 @@ public sealed record HunterRigEvaluation(HunterSailState Main, HunterSailState J
 public sealed class Hunter235RigModel : IRigDynamicsModel
 {
     private readonly bool experimentalSheetGeometry;
-    /// <summary>Experimental sheet geometry is opt-in for engineering checks only.</summary>
+    /// <summary>The Hunter definition selects sheet geometry; the legacy constraint remains for comparison checks.</summary>
     public Hunter235RigModel(bool experimentalSheetGeometry = false) =>
         this.experimentalSheetGeometry = experimentalSheetGeometry;
     private const int SectionCount = 6;

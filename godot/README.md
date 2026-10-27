@@ -28,7 +28,7 @@ automated headless worker and geometry check, use `-- --hunter-smoke` instead.
 
 Run `./scripts/run-game.sh -- --hunter-scenario` for a scripted worker exercise:
 four seconds of fixed controls followed by steering toward the wind. After 20 s,
-the port jib sheet eases and the starboard sheet trims for three seconds while
+the starboard jib sheet eases and the port sheet trims for three seconds while
 steering continues until 44 s. After ten seconds with the tiller released, the
 board and crew move in opposite directions for four seconds each. Stage
 transitions and heading are printed to the console.

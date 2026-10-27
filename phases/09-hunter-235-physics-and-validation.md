@@ -347,6 +347,19 @@ magnitudes. The breakdown is evaluated at the completed state; its additional
 diagnostic cost has not yet been measured in the desktop performance gate.
 The production sheet model and remaining rig and performance work are unchanged.
 
+The Hunter definition now uses the sheet-geometry and two-sail momentum
+experiments by default; the legacy constraint remains only for isolated
+comparison checks. The legacy constraint used the windward sheet to hold the
+jib, whereas the geometric model holds it with the leeward sheet. The shared
+scenario and standard reach therefore now trim the starboard sheet initially,
+and the tack eases starboard and trims port. The original port-sheet reach
+did not settle with the geometric model. After the change, all five test
+projects pass, the exact-step reach settles at 1.892–1.896 m/s and
+97.70–98.13°, and headless smoke, scenario and steady host checks pass.
+Main/jib aerodynamic interaction, wider maneuver verification and the
+desktop cost of the promoted model remain open; see
+[default Hunter rig selection](../docs/hunter-235-model.md#default-hunter-rig-selection).
+
 ### 9.1 Reference boat and model contract
 
 1. Identify a consistent Hunter 23.5 configuration from manufacturer sailplan,

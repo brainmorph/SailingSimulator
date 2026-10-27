@@ -106,14 +106,14 @@ public sealed class Hunter235BoatModel : IRigDynamicsModel, IHunterRigInspection
     }
 }
 
-/// <summary>Creates an experimental Hunter simulation with provisional sail diagnostics.</summary>
+/// <summary>Creates a provisional Hunter simulation using sheet geometry and rig momentum coupling.</summary>
 public sealed class Hunter235BoatDefinition : IBoatDefinition
 {
     public string Id => "hunter-235";
     public Simulation CreateSimulation(SimulationInput input, double headingRad = 0)
     {
         ArgumentNullException.ThrowIfNull(input);
-        var model = new Hunter235BoatModel();
+        var model = new Hunter235BoatModel(new Hunter235RigModel(experimentalSheetGeometry: true), experimentalRigMomentum: true);
         return new Simulation(model.Hull.CreateInitialState(input, headingRad), new Hunter235MassModel(), model, input);
     }
 }

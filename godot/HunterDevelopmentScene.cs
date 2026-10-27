@@ -307,7 +307,7 @@ public partial class HunterDevelopmentScene : Node3D
             $"port={c.PortJibSheet:F2} starboard={c.StarboardJibSheet:F2} board={c.Centerboard:F2} crew={c.Hiking:F2}");
         if (stage == 7 && scenarioCheck)
         {
-            if (c.PortJibSheet > 0.1 || c.StarboardJibSheet < 0.6 || c.Centerboard < 0.9 || c.Hiking > -0.9)
+            if (c.StarboardJibSheet > 0.1 || c.PortJibSheet < 0.6 || c.Centerboard < 0.9 || c.Hiking > -0.9)
             {
                 GD.PushError("FAIL Hunter scenario: expected control movements were not observed");
                 GetTree().Quit(1);

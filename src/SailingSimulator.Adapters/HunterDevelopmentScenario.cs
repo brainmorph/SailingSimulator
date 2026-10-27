@@ -6,7 +6,7 @@ namespace SailingSimulator.Adapters;
 public static class HunterDevelopmentScenario
 {
     public static SailingControls InitialControls => new(mainsheet: 0.6, traveler: 0.8, vang: 0.6,
-        outhaul: 0.5, cunningham: 0.3, portJibSheet: 0.65);
+        outhaul: 0.5, cunningham: 0.3, starboardJibSheet: 0.65);
     public static EnvironmentConfig Environment() => PresentationConversions.EnvironmentFromSettings(
         wavePreset: WavePreset.Calm, waveSeed: 123);
     public const long EndStep = 3720;
@@ -18,7 +18,7 @@ public static class HunterDevelopmentScenario
     public static HeldSailingInput Input(long step) => Stage(step) switch
     {
         1 or 3 => new(tiller: -0.6),
-        2 => new(tiller: -0.6, portJibSheet: -1, starboardJibSheet: 1),
+        2 => new(tiller: -0.6, portJibSheet: 1, starboardJibSheet: -1),
         5 => new(centerboard: -1, hiking: 1),
         6 => new(centerboard: 1, hiking: -1),
         _ => HeldSailingInput.Released

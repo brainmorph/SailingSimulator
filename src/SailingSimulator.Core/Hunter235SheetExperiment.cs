@@ -5,7 +5,7 @@ public readonly record struct HunterSheetEvaluation(double LengthM, double Slack
     Vector3d ClewBodyM, Vector3d LeadBodyM, Vector3d ForceOnClewBodyN, double TorqueAboutForestayNm);
 
 /// <summary>
-/// Sheet-geometry experiment; only connected when explicitly selected for Hunter engineering checks.
+/// Provisional sheet geometry, selected by the Hunter definition and optional for isolated rig checks.
 /// Dimensions and spring stiffness are estimates, not measured rigging.
 /// </summary>
 public static class Hunter235SheetExperiment

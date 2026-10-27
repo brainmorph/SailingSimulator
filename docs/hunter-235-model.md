@@ -174,18 +174,18 @@ the positive-side case crossed slightly even with the old sheet held, ending at
 loading.
 
 The experiment can be selected explicitly when constructing a Hunter rig for
-engineering tests; the standard boat definition still uses the original
-constraint. In experimental mode the snapshot marks `ExperimentalSheetGeometry`;
+engineering tests. Since 2026-10-27 the standard boat definition selects it
+(see [Default Hunter rig selection](#default-hunter-rig-selection)). In experimental mode the snapshot marks `ExperimentalSheetGeometry`;
 the published angular limits are legacy indicators, not the geometric sheet
 limits. It also publishes each sheet's clew and lead positions, line and slack
 lengths, force on the clew, and torque about the forestay, evaluated at the
-completed rig state and sampled input. The default model publishes no sheet
+completed rig state and sampled input. The legacy constraint publishes no sheet
 force records. Only the sheet torque is added to the jib's relative angular
 equation. Equal and opposite collinear sheet forces at the clew and lead have
 zero net force and moment on the combined boat; checks verify this and the
-published torque. The default model does not include hull reaction from relative
-rig acceleration. A separate, opt-in momentum-coupling experiment is described
-below; neither experiment is enabled in the standard boat definition.
+published torque. The legacy rig does not include hull reaction from relative
+rig acceleration. A separate momentum-coupling experiment is described below;
+both are now enabled in the standard boat definition.
 
 ### Isolated angular-momentum experiment
 
@@ -206,7 +206,7 @@ reaction; it keeps momentum within 1e-5 kg m²/s and energy drift below 0.001 J
 in this case (observed maximum 0.000197 J). These are numerical checks of a
 specified simplified model, not a general articulated-rig solution.
 
-The opt-in `experimentalRigMomentum` mode extends the trial to the boom and jib
+The `experimentalRigMomentum` mode extends the trial to the boom and jib
 as two body-fixed axes with constant scalar inertias of 120 and 40 kg m². It
 solves their relative angular accelerations together with the hull reaction at
 every RK4 stage, including external boat moments. It assumes those inertias
@@ -264,4 +264,34 @@ against measured performance. Thirty-second checks with seed 123, 10-knot wind,
 calm/gentle/moderate water and gradual sheet, board and crew movements remain
 bounded in all three presets. These checks do not establish all maneuver,
 wind-range or aerodynamic-interaction requirements, nor desktop performance.
-Both experiments remain opt-in pending the broader Phase 9 verification.
+Both experiments were opt-in when these results were recorded.
+
+## Default Hunter rig selection
+
+On 2026-10-27 `Hunter235BoatDefinition` began constructing the rig with
+sheet geometry and the two-sail momentum coupling. The legacy angular
+constraint remains selectable through `new Hunter235RigModel()` for isolated
+comparison checks; it is no longer used by the Godot host or scenario replays.
+The `Experimental` names and flags are retained because both treatments are
+still provisional, uncalibrated reduced-order models.
+
+The two treatments assign opposite roles to the sheets. In the legacy
+constraint, the port sheet limits starboard opening, so the original reach
+and scripted tack trimmed the windward sheet. In the geometric model each
+sheet's length is shortest near an opening on its own side, so the leeward
+sheet holds the jib, as on a real boat. With the old controls (port sheet
+0.65, jib to starboard), the geometric reach did not settle: over 40–60 s its
+heading varied 137.65–173.98° and speed 1.191–1.487 m/s. The shared
+`HunterDevelopmentScenario` therefore now starts with the starboard sheet at
+0.65 and, during the tack, eases starboard and trims port. The standard reach
+uses the same starboard trim.
+
+With these changes the exact-step reach settles at 1.892–1.896 m/s, heading
+97.70–98.13°, maximum heel 1.24° and average luff below 0.001, matching the
+earlier coupled experimental reach. The scripted tack, board and crew replay
+passes its existing crossing, filling and speed checks. Headless
+`--hunter-smoke`, `--hunter-scenario-check` and `--hunter-steady-check` host
+runs pass; the steady host run observed the same speed, heading, heel and luff
+ranges. These are internal engineering results, not validation or desktop
+performance evidence. The additional per-stage sheet and coupling cost has not
+been measured on the desktop.

@@ -111,7 +111,7 @@ var tests = new (string Name, Action Run)[]
         var env = HunterDevelopmentScenario.Environment();
         // Fixed helm represents a held rudder, not the host's spring-return input.
         var c = new SailingControls(tiller: -0.1, mainsheet: 0.6, traveler: 0.8, vang: 0.6,
-            outhaul: 0.5, cunningham: 0.3, portJibSheet: 0.65);
+            outhaul: 0.5, cunningham: 0.3, starboardJibSheet: 0.65);
         var input = new SimulationInput(c, env);
         var first = new Hunter235BoatDefinition().CreateSimulation(input, Math.PI / 2);
         var second = new Hunter235BoatDefinition().CreateSimulation(input, Math.PI / 2);
@@ -171,7 +171,7 @@ var tests = new (string Name, Action Run)[]
         }
         Require(crossedWind, "Hunter did not cross the upwind heading while upright.");
         Require(crossedSails, "Both sails did not cross after the boat crossed the wind.");
-        Require(controls.PortJibSheet < 0.01 && controls.StarboardJibSheet > 0.7 &&
+        Require(controls.StarboardJibSheet < 0.01 && controls.PortJibSheet > 0.7 &&
             controls.Centerboard > 0.99 && controls.Hiking < -0.99, "Scripted controls did not reach expected positions.");
     }),
     ("Hunter tack comparison preserves the unreleased old sheet input", () =>
@@ -538,18 +538,19 @@ var tests = new (string Name, Action Run)[]
     }),
     ("Hunter snapshots publish completed sail evaluations", () =>
     {
-        var model = new Hunter235BoatModel();
+        var model = new Hunter235BoatModel(new Hunter235RigModel(experimentalSheetGeometry: true), experimentalRigMomentum: true);
         var simulation = new Hunter235BoatDefinition().CreateSimulation(windy);
         var initial = simulation.Latest;
         var initialRig = initial.HunterRig ?? throw new Exception("Initial Hunter sail state missing.");
-        Require(!initialRig.ExperimentalSheetGeometry, "The Hunter definition must retain the default sheet model.");
-        Require(initialRig.PortSheet is null && initialRig.StarboardSheet is null,
-            "The default constraint must not publish experimental sheet forces.");
+        Require(initialRig.ExperimentalSheetGeometry && initialRig.ExperimentalRigMomentum,
+            "The Hunter definition must use sheet geometry and rig momentum coupling.");
+        Require(initialRig.PortSheet is not null && initialRig.StarboardSheet is not null,
+            "The Hunter definition must publish both sheet evaluations.");
         var initialSection = initialRig.Jib.Sections[0];
         var changed = Input(new SailingControls(mainsheet: 0.8, portJibSheet: 0.9, starboardJibSheet: 0.2), 10);
         var completed = simulation.Step(changed);
         var published = completed.HunterRig ?? throw new Exception("Completed Hunter sail state missing.");
-        var expected = model.Rig.Inspect(new(completed.TimeSeconds, completed.Boat, completed.Mass!, changed, completed.Rig));
+        var expected = model.InspectHunterRig(new(completed.TimeSeconds, completed.Boat, completed.Mass!, changed, completed.Rig));
         Require(published.Main.Id == "main" && published.Jib.Id == "jib", "Sail identities are missing.");
         Require(published.Main.Sections.SequenceEqual(expected.Main.Sections) &&
             published.Jib.Sections.SequenceEqual(expected.Jib.Sections), "Sail sections must match the completed state.");
