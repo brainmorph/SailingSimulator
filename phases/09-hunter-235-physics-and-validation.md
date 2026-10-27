@@ -307,9 +307,38 @@ An isolated [sheet-geometry experiment](../docs/hunter-235-model.md#isolated-she
 now checks clew-to-lead tension, slack, symmetry and torque against spring
 energy. A fixed-hull prescribed-wind exercise also shows the held sheet
 retaining the jib on its starting side in both mirrored cases, while easing it
-allows crossing; a stronger-wind case crosses slightly even with the sheet
-held. It is not connected to the simulation; force accounting and full-boat
-behavior still need verification before it can replace the current constraint.
+allows crossing, including when eased gradually after being held. A stronger-wind
+single-sheet case crosses slightly even with the sheet held. An opt-in full-boat
+comparison now uses the experimental torque: after 54 s, the released and held
+cases reach -0.614 and -0.343 rad respectively and both boats have crossed the
+upwind heading upright. This shows a change in behavior, not demonstrated
+backwinding or retention throughout the maneuver. The default model is
+unchanged. Force accounting, diagnostics and full-boat behavior still need
+verification before the experiment can replace the current constraint.
+A completed experimental snapshot now includes both sheet forces, clew and
+lead positions, lengths and torques. Checks verify the sheet end forces cancel
+as a combined-body force and moment, and that the published sheet torques enter
+the completed jib derivative. The reduced-order model's handling of angular
+momentum from relative rig motion remains open.
+An isolated closed-system experiment quantifies that omission and compares two
+test-only reaction formulations. One preserves angular momentum but shows
+energy drift; a coupled single-jib version preserves both within stated numerical
+tolerances in that restricted case. A two-sail fixed-axis version is now also
+available as an opt-in full-boat experiment. Closed-system momentum/energy,
+external moment balance, a deterministic reach and turn, mirrored held-sheet
+turns, and 30-second calm/gentle/moderate wave and control-movement checks pass.
+Its assumptions, conditions and limits are in the model record; the standard
+boat remains unchanged and wider phase verification remains open.
+A further experimental turn with the old starboard sheet fully trimmed and
+the other sheet eased retains the jib on its old side under opposing aerodynamic
+torque for 335 consecutive steps after crossing the wind. A comparison easing
+the old sheet ends with substantially more jib crossing. The held jib itself
+does cross slightly by 54 s; this remains a scenario-specific model check, not
+validated real backwinding. Inputs and results are in the model record.
+An exactly mirrored test-only initial rig and controls reproduce the held-sheet
+turn on the port side, comparing reflected boat motion, sail angles and jib
+torque at every step. With experimental momentum coupling it observes 331
+consecutive opposing-load steps.
 
 ### 9.1 Reference boat and model contract
 

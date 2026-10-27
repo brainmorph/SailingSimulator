@@ -157,7 +157,7 @@ are mirrored. These endpoints and stiffness are engineering estimates, not
 measured sheet lengths or a claim of correct trim response. Distance is not
 monotonic over all angles, so those nominal angles are not universal opening
 limits. The experiment excludes sheet damping and does not resolve hull reaction
-loads or moving lead hardware.
+forces at moving lead hardware.
 
 Checks cover tension direction, mirrored forces, slack, opposing tight sheets
 and agreement between torque and the spring energy gradient. A separate
@@ -166,11 +166,102 @@ current jib aerodynamic torque, 40 kg m² inertia and 80 N m s/rad damping.
 Starting at ±0.4 rad with zero rate and imposing body-frame wind (2, ∓2, 0)
 m/s for 10 s, a fully held old sheet kept the jib on its starting side (minimum
 opening 0.003 rad); an eased old sheet let it cross and reach ∓1.460 rad.
-Only that one sheet is included. With wind (3, -4, 0) m/s in the positive-side
-case the held sail crossed slightly, ending at -0.034 rad: this compliant model
-does not guarantee retention under arbitrary loading.
+The opposite sheet is eased throughout. After holding for 10 s, easing the old
+sheet at 0.25 per second allowed the held jib to cross, reaching ∓1.461 rad
+after another 10 s. An earlier single-sheet trial with wind (3, -4, 0) m/s in
+the positive-side case crossed slightly even with the old sheet held, ending at
+-0.034 rad: this compliant model does not guarantee retention under arbitrary
+loading.
 
-The experiment is not connected to the boat or published snapshots. This
-prescribed-flow exercise is not a full-boat tack or a validation of backwinded
-aerodynamics. Integrating it requires an explicit force/reaction accounting and
-reverification of numerical stability, the reach and maneuver scenarios.
+The experiment can be selected explicitly when constructing a Hunter rig for
+engineering tests; the standard boat definition still uses the original
+constraint. In experimental mode the snapshot marks `ExperimentalSheetGeometry`;
+the published angular limits are legacy indicators, not the geometric sheet
+limits. It also publishes each sheet's clew and lead positions, line and slack
+lengths, force on the clew, and torque about the forestay, evaluated at the
+completed rig state and sampled input. The default model publishes no sheet
+force records. Only the sheet torque is added to the jib's relative angular
+equation. Equal and opposite collinear sheet forces at the clew and lead have
+zero net force and moment on the combined boat; checks verify this and the
+published torque. The default model does not include hull reaction from relative
+rig acceleration. A separate, opt-in momentum-coupling experiment is described
+below; neither experiment is enabled in the standard boat definition.
+
+### Isolated angular-momentum experiment
+
+An engineering check isolates a single 40 kg m² jib rotational degree of
+freedom, the experimental starboard sheet spring and an otherwise force-free
+body with the Hunter mass tensor. Starting from rest with the jib centered and
+the sheet fully trimmed, it runs for 10 s at 60 Hz without aerodynamic forces,
+gravity or damping. For this reduced system, the tracked angular momentum is
+`R (I omega + axis * 40 * jibRate)`, where `I` is the body tensor and `axis`
+is the body-fixed forestay. With no reaction, its magnitude reaches
+15.215 kg m²/s even though no external torque acts.
+
+A test-only reaction that cancels the rate of the relative momentum keeps that
+momentum near zero but changes the modeled mechanical energy by up to 0.03295 J
+from 2.89359 J. A second test-only formulation couples the jib's relative
+acceleration to the body's angular acceleration as well as applying the
+reaction; it keeps momentum within 1e-5 kg m²/s and energy drift below 0.001 J
+in this case (observed maximum 0.000197 J). These are numerical checks of a
+specified simplified model, not a general articulated-rig solution.
+
+The opt-in `experimentalRigMomentum` mode extends the trial to the boom and jib
+as two body-fixed axes with constant scalar inertias of 120 and 40 kg m². It
+solves their relative angular accelerations together with the hull reaction at
+every RK4 stage, including external boat moments. It assumes those inertias
+are already represented in the body tensor when the sails are stationary
+relative to the hull. Completed rig diagnostics mark the mode and publish the
+coupled derivatives. A two-sail closed-system check uses the same coupling code
+with spring torques and no external forces: over 10 s, maximum momentum was
+less than 1e-5 kg m²/s and energy changed by at most 0.000287 J from 18.518589 J.
+A full-boat check also reconstructs the angular-momentum rate from the coupled
+derivatives and verifies it equals the external moment at a completed state.
+The scalar inertias, fixed axes and body tensor are estimates. The treatment
+omits shape-dependent inertia and detailed moving sail mass, and the existing
+mass-repositioning approximation remains in effect. These tests do not validate
+a general articulated-rig solution or measured Hunter stability.
+
+The fixed-hull exercise is not a validation of backwinded aerodynamics. A
+54-second full-boat comparison with the experimental constraint, 10-knot wind
+and calm water follows the steering and sheet schedule in the Phase 9 record.
+The jib was at +0.381 rad at the sheet change; after 54 s it was -0.614 rad
+with the old sheet released and -0.343 rad with it held. Both crossed the
+upwind heading upright, ending at headings 282.8° and 250.9° respectively.
+The sheet changes the result but neither run demonstrates the jib held on the
+old side at the end. The full boat and its airflow also take different paths,
+so this comparison alone does not isolate a backwinded aerodynamic load.
+
+A second 54-second experimental turn starts with the starboard sheet fully
+trimmed and the port sheet eased. At 20 s the jib is at +0.404 rad. One run
+eases the starboard sheet at 0.25/s from 20 to 24 s; the other holds it at 1.
+Both steer at -0.6 from 4 to 44 s and the port sheet stays eased. In the held
+run, after the boat crosses the upwind heading while upright, the jib remains
+on its starting side with aerodynamic torque below -1 N m for 335 consecutive
+steps (about 5.58 s). At 54 s the held and released angles are -0.020 and
+-0.639 rad, with headings 249.7° and 322.9° respectively. This demonstrates
+opposing aerodynamic load during a particular simulated maneuver; it does not
+validate real backwinded sail behavior, prove retention throughout the turn, or
+establish equivalent boat paths. The fully trimmed and 0.65-trim tests have
+different control schedules and are not a controlled trim sweep.
+
+The held-sheet turn also has a mirrored 54-second replay: initial heading,
+boom and jib angles, tiller and held sheet are reflected between sides. A
+test-only wrapper supplies the mirrored initial rig; the normal Hunter
+definition still starts both angles at +0.1 rad. At each step, the checks
+compare reflected position, velocity, sail angles and jib torque. With the
+momentum experiment enabled, the port-side case has 331 consecutive opposing-load steps after crossing the wind;
+the two final jib angles are -0.020 and +0.020 rad. This is a symmetry and
+internal-consistency check, not an independent real-boat observation.
+
+With both experiments enabled, the equivalent held-sheet turn is deterministic:
+the jib encounters opposing torque for 331 consecutive steps, ends at -0.020 rad
+and ends at -0.643 rad when the old sheet is eased. A 60-second reach with a
+-0.1 fixed tiller and starboard sheet 0.65 settles over 40–60 s at 1.892–1.896
+m/s and heading 97.70–98.13°, with maximum heel 1.24° and average luff below
+0.001. This is a different trim from the legacy reach; it is not a comparison
+against measured performance. Thirty-second checks with seed 123, 10-knot wind,
+calm/gentle/moderate water and gradual sheet, board and crew movements remain
+bounded in all three presets. These checks do not establish all maneuver,
+wind-range or aerodynamic-interaction requirements, nor desktop performance.
+Both experiments remain opt-in pending the broader Phase 9 verification.

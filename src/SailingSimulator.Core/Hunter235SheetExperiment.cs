@@ -2,10 +2,10 @@ namespace SailingSimulator.Core;
 
 /// <summary>One provisional straight-line sheet, evaluated in hull-datum coordinates.</summary>
 public readonly record struct HunterSheetEvaluation(double LengthM, double SlackLengthM,
-    Vector3d ForceOnClewBodyN, double TorqueAboutForestayNm);
+    Vector3d ClewBodyM, Vector3d LeadBodyM, Vector3d ForceOnClewBodyN, double TorqueAboutForestayNm);
 
 /// <summary>
-/// Isolated sheet-geometry experiment; not connected to Hunter simulation dynamics.
+/// Sheet-geometry experiment; only connected when explicitly selected for Hunter engineering checks.
 /// Dimensions and spring stiffness are estimates, not measured rigging.
 /// </summary>
 public static class Hunter235SheetExperiment
@@ -35,6 +35,6 @@ public static class Hunter235SheetExperiment
         var slackLength = (Tack + Offset(tautAngle) - lead).Length;
         var extension = Math.Max(0, length - slackLength);
         var force = length > 1e-10 ? line * (-StiffnessNPerM * extension / length) : Vector3d.Zero;
-        return new(length, slackLength, force, Vector3d.Dot(Vector3d.Cross(offset, force), Axis));
+        return new(length, slackLength, Tack + offset, lead, force, Vector3d.Dot(Vector3d.Cross(offset, force), Axis));
     }
 }

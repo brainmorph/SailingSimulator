@@ -15,7 +15,13 @@ public sealed record HunterSailState(string Id, double PortLimitRad, double Star
     IReadOnlyList<SailSectionState> Sections, IReadOnlyList<HunterSailSectionGeometry> Geometry,
     Vector3d TackBodyM, Vector3d HeadBodyM, Vector3d ClewBodyM, ForceMoment Force, double TorqueNm);
 
-public sealed record HunterRigEvaluation(HunterSailState Main, HunterSailState Jib, RigDerivative Derivative)
+/// <summary>
+/// Completed sail state. With experimental sheet geometry, the jib's legacy
+/// angular limits are informational only and do not describe its sheet forces.
+/// </summary>
+public sealed record HunterRigEvaluation(HunterSailState Main, HunterSailState Jib, RigDerivative Derivative,
+    bool ExperimentalSheetGeometry = false, HunterSheetEvaluation? PortSheet = null, HunterSheetEvaluation? StarboardSheet = null,
+    bool ExperimentalRigMomentum = false)
 {
     public ForceMoment Total => Main.Force + Jib.Force;
 }
@@ -23,7 +29,13 @@ public sealed record HunterRigEvaluation(HunterSailState Main, HunterSailState J
 /// <summary>Independent-sail prototype; coefficients, limits and inertia are not calibrated.</summary>
 public sealed class Hunter235RigModel : IRigDynamicsModel
 {
+    private readonly bool experimentalSheetGeometry;
+    /// <summary>Experimental sheet geometry is opt-in for engineering checks only.</summary>
+    public Hunter235RigModel(bool experimentalSheetGeometry = false) =>
+        this.experimentalSheetGeometry = experimentalSheetGeometry;
     private const int SectionCount = 6;
+    internal const double BoomInertiaKgM2 = 120;
+    internal const double JibInertiaKgM2 = 40;
     private static readonly Vector3d JibTack = new(3.0908, 0, -0.45);
     private static readonly Vector3d JibHead = new(0.5, 0, -8.2224);
     private static readonly Vector3d ForestayAxis = (JibHead - JibTack) / (JibHead - JibTack).Length;
@@ -49,10 +61,18 @@ public sealed class Hunter235RigModel : IRigDynamicsModel
         static double Constraint(double angle, double port, double starboard, double stiffness) =>
             -stiffness * (Math.Max(0, angle - starboard) + Math.Min(0, angle + port));
         var boomAcceleration = (main.TorqueNm + Constraint(e.Rig.BoomAngleRad, mainLimit, mainLimit, 2500)
-            - (100 + 50 * controls.Vang) * e.Rig.BoomRateRadPerSec) / 120;
-        var jibAcceleration = (jib.TorqueNm + Constraint(e.Rig.JibAngleRad, portLimit, starboardLimit, 1000)
-            - 80 * e.Rig.JibRateRadPerSec) / 40;
-        return new(main, jib, new(e.Rig.BoomRateRadPerSec, boomAcceleration, e.Rig.JibRateRadPerSec, jibAcceleration));
+            - (100 + 50 * controls.Vang) * e.Rig.BoomRateRadPerSec) / BoomInertiaKgM2;
+        HunterSheetEvaluation? portSheet = experimentalSheetGeometry
+            ? Hunter235SheetExperiment.Evaluate(true, controls.PortJibSheet, e.Rig.JibAngleRad) : null;
+        HunterSheetEvaluation? starboardSheet = experimentalSheetGeometry
+            ? Hunter235SheetExperiment.Evaluate(false, controls.StarboardJibSheet, e.Rig.JibAngleRad) : null;
+        var sheetTorque = experimentalSheetGeometry
+            ? portSheet!.Value.TorqueAboutForestayNm + starboardSheet!.Value.TorqueAboutForestayNm
+            : Constraint(e.Rig.JibAngleRad, portLimit, starboardLimit, 1000);
+        var jibAcceleration = (jib.TorqueNm + sheetTorque
+            - 80 * e.Rig.JibRateRadPerSec) / JibInertiaKgM2;
+        return new(main, jib, new(e.Rig.BoomRateRadPerSec, boomAcceleration, e.Rig.JibRateRadPerSec, jibAcceleration),
+            experimentalSheetGeometry, portSheet, starboardSheet);
     }
 
     private static HunterSailState Sail(in ForceEvaluation e, bool jib, double portLimit, double starboardLimit)
