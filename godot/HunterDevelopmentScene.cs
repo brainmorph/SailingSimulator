@@ -16,12 +16,18 @@ public partial class HunterDevelopmentScene : Node3D
     private Camera3D camera = null!;
     private Label telemetry = null!;
     private bool smoke;
+    private bool scenario;
+    private bool scenarioCheck;
+    private EnvironmentConfig environment = null!;
+    private int scenarioStage = -1;
     private long start;
     private long lastStep = -1;
 
     public override void _Ready()
     {
         smoke = OS.GetCmdlineUserArgs().Contains("--hunter-smoke");
+        scenarioCheck = OS.GetCmdlineUserArgs().Contains("--hunter-scenario-check");
+        scenario = scenarioCheck || OS.GetCmdlineUserArgs().Contains("--hunter-scenario");
         AddChild(new DirectionalLight3D { RotationDegrees = new(-45, -35, 0), LightEnergy = 1.2f });
         AddChild(new WorldEnvironment { Environment = new Godot.Environment
         {
@@ -31,7 +37,7 @@ public partial class HunterDevelopmentScene : Node3D
         } });
         boat = new Node3D();
         AddChild(boat);
-        var environment = PresentationConversions.EnvironmentFromSettings(wavePreset: WavePreset.Calm, waveSeed: 123);
+        environment = PresentationConversions.EnvironmentFromSettings(wavePreset: WavePreset.Calm, waveSeed: 123);
         var controls = new SailingControls(mainsheet: 0.6, traveler: 0.8, vang: 0.6,
             outhaul: 0.5, cunningham: 0.3, portJibSheet: 0.65);
         var simulation = new Hunter235BoatDefinition().CreateSimulation(new(controls, environment), Math.PI / 2);
@@ -62,17 +68,18 @@ public partial class HunterDevelopmentScene : Node3D
         if (snapshot.Fault is not null)
         {
             GD.PushError($"Hunter worker stopped: {snapshot.Fault}");
-            if (smoke) GetTree().Quit(1);
+            if (smoke || scenarioCheck) GetTree().Quit(1);
             return;
         }
         if (snapshot.State.StepIndex != lastStep) Render(snapshot.State);
         var rig = snapshot.State.HunterRig!;
         var controls = snapshot.State.Input.Controls;
+        if (scenario) UpdateScenario(snapshot.State);
         telemetry.Text = $"HUNTER DEVELOPMENT · provisional physics\n" +
             $"step {snapshot.State.StepIndex}  time {snapshot.State.TimeSeconds:F2} s  worker {snapshot.Timing.StepMilliseconds:F2} ms  late {snapshot.Timing.TotalLateSteps}\n" +
             $"main {rig.Main.Force.ForceWorldN.Length:F1} N  jib {rig.Jib.Force.ForceWorldN.Length:F1} N  total sail {rig.Total.ForceWorldN.Length:F1} N\n" +
             $"jib sheets port {controls.PortJibSheet:F2}  starboard {controls.StarboardJibSheet:F2}  board {controls.Centerboard:F2}  crew {controls.Hiking:F2}\n" +
-            $"frame {delta * 1000:F1} ms · fixed development inputs";
+            $"frame {delta * 1000:F1} ms · {(scenario ? $"script stage {scenarioStage}" : "fixed development inputs")}";
         if (smoke && Stopwatch.GetElapsedTime(start).TotalSeconds > 2)
         {
             var state = snapshot.State;
@@ -95,6 +102,41 @@ public partial class HunterDevelopmentScene : Node3D
                 return;
             }
             GD.Print($"PASS Hunter development scene: worker snapshots, hull, sails, foils, skipper and telemetry; steps={snapshot.State.StepIndex}");
+            GetTree().Quit();
+        }
+    }
+
+    // Inputs are published from the presentation thread and sampled by the worker.
+    // Boundaries are approximate under frame delays, so this is a host exercise,
+    // not an exact deterministic replay or proof that a tack was completed.
+    private void UpdateScenario(SimulationState state)
+    {
+        var t = state.TimeSeconds;
+        var stage = t < 4 ? 0 : t < 8 ? 1 : t < 11 ? 2 : t < 15 ? 3 : t < 19 ? 4 : 5;
+        var held = stage switch
+        {
+            1 => new HeldSailingInput(tiller: 0.6),
+            2 => new HeldSailingInput(portJibSheet: -1, starboardJibSheet: 1),
+            3 => new HeldSailingInput(centerboard: -1, hiking: 1),
+            4 => new HeldSailingInput(centerboard: 1, hiking: -1),
+            _ => HeldSailingInput.Released
+        };
+        runner.PublishInput(new(held, environment));
+        if (stage == scenarioStage) return;
+        scenarioStage = stage;
+        var c = state.Input.Controls;
+        var forward = state.Boat.OrientationBodyToWorld.Rotate(Vector3d.UnitX);
+        GD.Print($"Hunter scenario stage {stage}: step={state.StepIndex} t={t:F2} heading={Math.Atan2(forward.Y, forward.X) * 180 / Math.PI:F1} " +
+            $"port={c.PortJibSheet:F2} starboard={c.StarboardJibSheet:F2} board={c.Centerboard:F2} crew={c.Hiking:F2}");
+        if (stage == 5 && scenarioCheck)
+        {
+            if (c.PortJibSheet > 0.1 || c.StarboardJibSheet < 0.6 || c.Centerboard < 0.9 || c.Hiking > -0.9)
+            {
+                GD.PushError("FAIL Hunter scenario: expected control movements were not observed");
+                GetTree().Quit(1);
+                return;
+            }
+            GD.Print("PASS Hunter scenario: worker completed scripted control movements");
             GetTree().Quit();
         }
     }

@@ -155,6 +155,19 @@ simple placeholder scene. The headless `--hunter-smoke` checks the worker and
 rendered geometry; scripted maneuver/crew/board scenarios, visual review and
 desktop performance evidence remain outstanding.
 
+The development host now also has a scripted worker exercise
+(`--hunter-scenario`, or `--hunter-scenario-check` for an automated exit).
+With 10-knot wind, calm water and seed 123, it holds the initial controls for
+4 s, steers at +0.6 for 4 s, eases port and trims starboard jib sheets for
+3 s, then raises the board/moves crew to starboard for 4 s and reverses both
+for 4 s. A headless run reached steps 240, 480, 660, 900 and 1140 at the
+stage boundaries; final sheet positions were 0.00/0.75, board 1.00 and crew
+-1.00. Heading changed from 90.0° initially to 122.8° after steering and
+125.6° at the end. The control movement check passed without a worker fault,
+but this does not establish a completed tack, steady sailing, visual quality,
+or performance. Input changes are published on render frames, so exact
+boundaries can vary; a step-exact replay and verified tack remain outstanding.
+
 ### 9.1 Reference boat and model contract
 
 1. Identify a consistent Hunter 23.5 configuration from manufacturer sailplan,

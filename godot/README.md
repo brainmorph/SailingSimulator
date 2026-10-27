@@ -26,6 +26,15 @@ worker timing. The flat water and block hull are placeholders; this is not the
 playable Hunter interface or a performance acceptance measurement. For an
 automated headless worker and geometry check, use `-- --hunter-smoke` instead.
 
+Run `./scripts/run-game.sh -- --hunter-scenario` for a scripted worker exercise:
+four seconds of fixed controls, four seconds of steering, three seconds of
+manual jib sheet changes, then four seconds each raising and lowering the board
+while moving the crew. Stage transitions and heading are printed to the console.
+`-- --hunter-scenario-check` exits after the sequence and checks that the sheet,
+board and crew controls moved. The script is driven by completed simulation
+time, but input handoffs occur on render frames, so exact step boundaries can
+vary. It is an initial steering attempt, not yet a verified tack.
+
 The test scene starts an ILCA 7 on a beam reach in the default 10-knot
 northerly wind and gentle waves. Each session chooses a wave seed. The
 physics coefficients are provisional. Low-fidelity hull, rig, sailor and foil

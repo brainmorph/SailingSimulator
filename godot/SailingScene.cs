@@ -33,7 +33,8 @@ public partial class SailingScene : Node3D
 
     public override void _Ready()
     {
-        if (OS.GetCmdlineUserArgs().Contains("--hunter-dev") || OS.GetCmdlineUserArgs().Contains("--hunter-smoke"))
+        if (OS.GetCmdlineUserArgs().Contains("--hunter-dev") || OS.GetCmdlineUserArgs().Contains("--hunter-smoke") ||
+            OS.GetCmdlineUserArgs().Contains("--hunter-scenario") || OS.GetCmdlineUserArgs().Contains("--hunter-scenario-check"))
         {
             AddChild(new HunterDevelopmentScene());
             return;
