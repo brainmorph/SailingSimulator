@@ -76,6 +76,34 @@ a compatible speed polar is not a Phase 9 completion requirement.
 
 ## Work packages
 
+### Immediate priority: integrated Hunter milestone
+
+At the user's direction, prioritize an end-to-end development scene now, using
+the existing provisional model and documented estimates. Work packages below
+may overlap; their numbering does not prescribe implementation order. The next
+milestone is a visible Hunter sailing in Godot with enough telemetry to inspect
+its behavior, using the real simulation worker and completed snapshots.
+
+1. Publish the boat geometry and completed main/jib state needed by the scene,
+   including sheet positions, sail geometry, local airflow and force diagnostics.
+   Clearly identify any provisional or unavailable diagnostics.
+2. Connect a minimal Godot development scene with simple hull, sails, board and
+   skipper markers. Scripted inputs and development telemetry are sufficient.
+3. Run repeatable initial scenarios for steady sailing, a tack with manual sheet
+   changes, and board and crew movement. Record inputs and conditions, and fix
+   integration and numerical stability problems revealed by these runs.
+4. Measure real-time simulation and presentation performance early, including
+   telemetry overhead. Investigate misses, including any relationship to the
+   existing Phase 8 desktop timing defect, and record findings and headroom.
+   Early measurements inform development; the full gate still applies at completion.
+5. Finish and verify the remaining rig behavior, including luffing, backwinding,
+   both-tight and both-eased sheets, maneuvers and main/jib interaction, then
+   complete the broader verification and performance scenarios below.
+
+Use explicit estimates for unresolved dimensions rather than holding this
+milestone for more reference searches. This sequence changes priority, not the
+phase's engineering, regression, documentation or performance completion gates.
+
 Progress: the shared control and held-input snapshots now carry independently
 adjustable port and starboard jib sheets. They use normalized tension (0 eased,
 1 trimmed), a provisional 0.25 per second ramp, and retain position on release.

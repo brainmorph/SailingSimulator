@@ -224,6 +224,14 @@ not require empirical calibration. Reference research and phase planning may
 proceed while Phase 8 remains active. At the user's direction Phase 9 work has
 started while Phase 8 remains open, including its unresolved desktop timing defect.
 
+The immediate Phase 9 priority is an integrated Hunter development milestone:
+publish boat and sail state, connect a minimal Godot scene, exercise repeatable
+steady sailing, manual-sheet tack and crew/board scenarios, and measure real-time
+performance early. Then finish the remaining rig behavior and broad verification.
+Use documented estimates where dimensions remain uncertain; the full Phase 9
+engineering and performance completion gates still apply. See the
+[prioritized sequence](phases/09-hunter-235-physics-and-validation.md#immediate-priority-integrated-hunter-milestone).
+
 Confirmed planning decisions:
 
 | Area | Decision |
@@ -243,7 +251,7 @@ coefficients need documented references or explicit modeling assumptions during
 phase preparation. Phase 9.1 must record performance-source quality, any available
 compatible numeric targets and remaining data gaps; measured results, VPP predictions and
 qualitative reports have different validation limits. These choices extend
-the initial ILCA scope; the Hunter model and playable integration remain unimplemented.
+the initial ILCA scope; the Hunter model is experimental and playable integration remains unimplemented.
 
 The [Hunter reference register](phases/09-reference-progress.md) now identifies an
 accessible scan of the original H23.5 sail plan, deck hardware and centerboard
