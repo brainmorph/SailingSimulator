@@ -3,7 +3,7 @@ using SailingSimulator.Adapters;
 using SailingSimulator.Core;
 
 /// <summary>Lightweight meshes authored at the core hull datum. No sailing dynamics live here.</summary>
-public partial class BoatPresentation : Node3D
+public partial class BoatPresentation : Node3D, IBoatView
 {
     public Node3D Boom { get; private set; } = null!;
     public Node3D Rudder { get; private set; } = null!;

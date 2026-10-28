@@ -48,7 +48,7 @@ public partial class SailingScene
         var body = new RigidBodyState(new Vector3d(0, 0, -0.20) + orientation.Rotate(mass.CenterOfMassBodyM), orientation, velocity, default);
         var diagnostics = new IlcaBoatModel().Inspect(new(time, body, mass, input, rig));
         var state = new SimulationState(index, time, body, input) { Mass = mass, Diagnostics = diagnostics, Rig = rig };
-        boat.Render(state);
+        ilcaBoat.Render(state);
         water.Trail.Clear();
         if (index == 6)
         {
@@ -58,7 +58,7 @@ public partial class SailingScene
                 water.Trail.Update(state with { TimeSeconds = t, Boat = body with { PositionWorldM = body.PositionWorldM - velocity * (6 - t) } });
             }
         }
-        water.Render(state, boat.Position);
+        water.Render(state, ilcaBoat.Position);
         UpdateCamera();
         debug.Visible = false;
     }

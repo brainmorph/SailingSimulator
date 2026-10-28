@@ -22,6 +22,8 @@ internal partial class DebugOverlay : PanelContainer
     internal OptionButton Strength { get; private set; } = null!;
     internal CheckButton Align { get; private set; } = null!;
     internal SpinBox Seed { get; private set; } = null!;
+    internal OptionButton Boat { get; private set; } = null!;
+    internal Button RestartButton { get; private set; } = null!;
     internal DebugEnvironmentSettings Settings { get; private set; } = new();
     internal long DisplayedStep { get; private set; } = -1;
     internal int GraphSamples => speed.SampleCount;
@@ -29,6 +31,7 @@ internal partial class DebugOverlay : PanelContainer
     internal string WarningText => warning.Text;
     private DebugEnvironmentSettings? saved;
     private Action<EnvironmentConfig>? publish;
+    private Action<BoatChoice>? restart;
     private bool syncing;
     private long lastObserved = -1;
     private double refresh;
@@ -93,6 +96,15 @@ internal partial class DebugOverlay : PanelContainer
         Button(settings, "Default conditions (keep seed)", () => Edit(new(WaveSeed: Settings.WaveSeed)));
         settings.AddChild(active);
         settings.AddChild(TextLabel("Seed edits apply on the next completed step.\nSaved conditions last for this session and restore wind, waves and seed.\nThey do not rewind boat position, trim or simulation time."));
+        var session = Page(tabs, "Session");
+        session.AddChild(TextLabel("Boat"));
+        Boat = new OptionButton { FocusMode = FocusModeEnum.None };
+        foreach (var choice in BoatCatalog.All) Boat.AddItem(BoatCatalog.Name(choice), (int)choice);
+        session.AddChild(Boat);
+        RestartButton = new Button { Text = "Restart session with this boat", FocusMode = FocusModeEnum.None };
+        RestartButton.Pressed += () => restart?.Invoke((BoatChoice)Boat.GetSelectedId());
+        session.AddChild(RestartButton);
+        session.AddChild(TextLabel("Restarting keeps the current wind, waves and seed.\nIt resets simulation time, boat position and motion, sails and all sailing controls,\nand clears held keys, graphs and wake."));
         var timing = Page(tabs, "Performance");
         timing.AddChild(performance);
         timing.AddChild(step);
@@ -105,6 +117,21 @@ internal partial class DebugOverlay : PanelContainer
         publish = changed;
         Settings = DebugEnvironmentSettings.FromEnvironment(environment);
         SyncWidgets();
+    }
+
+    public void InitializeSession(BoatChoice current, Action<BoatChoice> restarted)
+    {
+        restart = restarted;
+        Boat.Select(Boat.GetItemIndex((int)current));
+    }
+
+    /// <summary>Clears observations from the previous session; the environment settings are retained.</summary>
+    public void ResetHistory()
+    {
+        foreach (var graph in new[] { speed, heel, step, late }) graph.Clear();
+        lastObserved = -1;
+        DisplayedStep = -1;
+        refresh = 0;
     }
 
     internal void Edit(DebugEnvironmentSettings settings)
@@ -180,6 +207,14 @@ internal partial class DebugOverlay : PanelContainer
                 ForceRow("Hull drag", d.HullDrag), ForceRow("Centerboard", d.Centerboard), ForceRow("Rudder", d.Rudder),
                 ForceRow("Sail", d.Sail), ForceRow("Total", d.Total) }) + "\n" +
                 string.Join("\n", d.SailShape.Sections.Select((s, i) => $"Strip {i + 1}: angle {RadiansToDegrees(s.AngleRad):F1}° · twist {RadiansToDegrees(s.TwistRad):F1}° · camber {s.CamberRatio:F3} · luff {s.Luffing:F2}"));
+        }
+        else if (state.HunterDiagnostics is { } h && state.HunterRig is { } rig)
+        {
+            forces.Text = string.Join("\n", new[] { ForceRow("Gravity", h.Gravity), ForceRow("Buoyancy", h.Buoyancy),
+                ForceRow("Hull drag", h.HullDrag), ForceRow("Centerboard", h.Centerboard), ForceRow("Rudder", h.Rudder),
+                ForceRow("Main", h.Main), ForceRow("Jib", h.Jib), ForceRow("Rig reaction", h.RigReaction), ForceRow("Total", h.Total) }) + "\n" +
+                $"Jib {RadiansToDegrees(state.Rig.JibAngleRad):F1}° · sheets port {c.PortJibSheet:F2} · starboard {c.StarboardJibSheet:F2}\n" +
+                $"Average luff · main {rig.Main.Sections.Average(s => s.Luffing):F2} · jib {rig.Jib.Sections.Average(s => s.Luffing):F2}";
         }
         var e = state.Input.Environment;
         var windFrom = e.TrueWindVelocityWorldMps.Length > 0

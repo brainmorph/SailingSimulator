@@ -5,6 +5,14 @@ directly. The script also prepares imported resources on first launch, so
 you do not need to open the editor. Set `GODOT_BIN` to override the detected
 Godot 4.7 .NET executable.
 
+The game opens with a boat picker: ILCA 7 or Hunter 23.5. No simulation runs
+until a boat is chosen. Skip the picker with `./scripts/run-game.sh --
+--boat=ilca-7` or `-- --boat=hunter-235`. F1 · Session changes boats; this
+restarts the session, keeping the current wind, waves and seed and resetting
+time, boat motion, sails and all sailing controls, held keys, graphs and wake.
+The Hunter currently renders provisional block geometry and has no jib-sheet
+keys yet; Phase 10 adds its controls, sail cues and fitted cameras.
+
 Open `project.godot` with **Godot 4.7 .NET (Mono)** and build the C# project,
 then run the main scene (F6) or project (F5). The local executable is recorded
 in [LOCAL_ENVIRONMENT.md](../LOCAL_ENVIRONMENT.md). From the repository root:
@@ -144,6 +152,14 @@ positions, verifies F2 show/hide and key-repeat handling, and joins the
 worker before exiting. A pass prints `PASS Godot
 scene` and exits 0. See [the integration contract](../docs/godot-integration.md)
 for ownership, cadence and failure behavior.
+
+The smoke starts with the ILCA and then restarts through F1 · Session to the
+Hunter, back to the ILCA and to the Hunter again. Each restart must join the
+previous worker, release held keys, clear graphs and wake, show only the
+selected boat, retain the environment and seed, reset controls and time, and
+render and display the new session. `-- --picker-check` verifies that the
+picker holds the session until a choice, then that choosing the Hunter starts
+and steps its session.
 
 The scene smoke also exercises F1 events, repeat suppression, environment
 sliders, independent waves, seed application and saved conditions, completed

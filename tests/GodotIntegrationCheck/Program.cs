@@ -339,6 +339,56 @@ var tests = new (string Name, Action Run)[]
         trail.Update(state with { TimeSeconds = 18 });
         Require(trail.Samples.Count == 0, "Stopped wake must decay completely");
     }),
+    ("Boat sessions restart with a joined worker, retained environment and reset state", () =>
+    {
+        Require(BoatCatalog.TryParse("hunter-235", out var parsed) && parsed == BoatChoice.Hunter235 &&
+            BoatCatalog.TryParse("ILCA-7", out parsed) && parsed == BoatChoice.Ilca7 && !BoatCatalog.TryParse("laser", out _),
+            "Boat ids parse");
+        var environment = PresentationConversions.EnvironmentFromSettings(windSpeedKnots: 12, windFromDegrees: 20,
+            wavePreset: WavePreset.Moderate, waveSeed: -456);
+        var session = SailingSession.Create(BoatChoice.Ilca7, environment);
+        var runners = new List<SimulationRunner>();
+        session.Runner.Start();
+        try
+        {
+            foreach (var next in new[] { BoatChoice.Hunter235, BoatChoice.Ilca7, BoatChoice.Hunter235, BoatChoice.Hunter235 })
+            {
+                var previous = session.Runner;
+                runners.Add(previous);
+                // Held steering and trim change the old session's controls before the switch.
+                previous.PublishInput(new(new HeldSailingInput(tiller: 1, mainsheet: 1, starboardJibSheet: 1), environment));
+                WaitFor(() => previous.Latest.State.StepIndex >= 20 && previous.Latest.State.Input.Controls.Tiller > 0.5);
+                session = session.Restart(next, environment);
+                Require(!previous.Latest.Running, "Restart stops and joins the previous worker");
+                var stoppedStep = previous.Latest.State.StepIndex;
+                var initial = session.Runner.Latest;
+                Require(session.Boat == next && !initial.Running && initial.State.StepIndex == 0 && initial.State.TimeSeconds == 0,
+                    "The replacement session starts from step zero and has not started");
+                Require(ReferenceEquals(initial.State.Input.Environment, environment), "Wind, waves and seed are retained");
+                Require(initial.State.Input.Controls == BoatCatalog.InitialControls(next) && initial.State.Rig == BoatCatalog.Definition(next)
+                    .CreateSimulation(new(BoatCatalog.InitialControls(next), environment), SailingSession.StartHeadingRad).Latest.Rig,
+                    "Controls and rig reset to the boat's initial state");
+                Require((initial.State.HunterRig is not null) == (next == BoatChoice.Hunter235) &&
+                    (initial.State.Diagnostics is not null) == (next == BoatChoice.Ilca7), "Snapshots describe the selected boat");
+                Require(initial.State.Boat.LinearVelocityWorldMps == Vector3d.Zero &&
+                    PresentationConversions.GetAttitude(initial.State.Boat.OrientationBodyToWorld).Heading is var h &&
+                    Math.Abs(h - SailingSession.StartHeadingRad) < 1e-12, "Boat motion and pose reset");
+                // Input published to the old runner after the switch cannot reach the new session.
+                previous.PublishInput(new(new HeldSailingInput(tiller: -1), environment));
+                Thread.Sleep(30);
+                Require(previous.Latest.State.StepIndex == stoppedStep, "The previous worker stays stopped");
+                session.Runner.Start();
+                WaitFor(() => session.Runner.Latest.State.StepIndex >= 10);
+                Require(session.Runner.Latest.State.Input.Controls.Tiller == 0, "The new session starts with released input");
+            }
+        }
+        finally
+        {
+            session.Dispose();
+            foreach (var runner in runners) runner.Dispose();
+        }
+        Require(!session.Runner.Latest.Running, "Disposing a session joins its worker");
+    }),
     ("Ten-second ILCA wall-clock cadence without render reads", () =>
     {
         var input = new SimulationInput(new SailingControls(mainsheet: 0.6, traveler: 0.8, vang: 0.6,

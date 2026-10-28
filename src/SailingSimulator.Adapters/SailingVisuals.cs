@@ -102,7 +102,9 @@ public sealed class WakeTrail
         while (samples.TryPeek(out var first) && state.TimeSeconds - first.TimeSeconds > LifetimeSeconds) samples.Dequeue();
         if (state.TimeSeconds - lastTime < 0.1) return;
         var q = state.Boat.OrientationBodyToWorld;
-        var stern = state.Boat.PositionWorldM + q.Rotate(new Vector3d(-2.0, 0, 0) - state.Mass!.CenterOfMassBodyM);
+        // Boats that publish geometry supply their own stern; the ILCA stern is at -2.0 m.
+        var sternBody = state.HunterGeometry?.SternBodyM ?? new Vector3d(-2.0, 0, 0);
+        var stern = state.Boat.PositionWorldM + q.Rotate(sternBody - state.Mass!.CenterOfMassBodyM);
         var flow = state.Boat.LinearVelocityWorldMps - state.Input.Environment.Water.VelocityAt(stern, state.TimeSeconds);
         var speed = Math.Sqrt(flow.X * flow.X + flow.Y * flow.Y);
         if (speed < 0.25) return;

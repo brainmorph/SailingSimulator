@@ -21,6 +21,15 @@ internal partial class DebugGraph : Control
         MouseFilter = MouseFilterEnum.Ignore;
     }
 
+    /// <summary>A restarted session begins a new simulation-time history.</summary>
+    public void Clear()
+    {
+        points.Clear();
+        latestTime = double.NegativeInfinity;
+        nextRedrawTime = 0;
+        QueueRedraw();
+    }
+
     public void Add(double time, double value)
     {
         if (time <= latestTime) return;

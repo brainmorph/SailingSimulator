@@ -1,6 +1,8 @@
 # Phase 10: Hunter 23.5 Playable Integration
 
-Status: upcoming planning draft. Implementation has not started.
+Status: started 2026-10-27 at the user's direction while Phase 9 remains open
+(its desktop performance gate is paused; see
+[Phase 9](09-hunter-235-physics-and-validation.md)).
 
 Read [PLAN.md](../PLAN.md), the [phase index](README.md), and
 [Phase 9: physics, verification and performance](09-hunter-235-physics-and-validation.md).
@@ -91,6 +93,33 @@ physics, not the calibrated simulator milestone.
    cost where needed while keeping essential sailing cues and verified physics;
    unresolved performance defects keep this phase open.
 6. Retain ILCA regression and desktop checks alongside the Hunter evidence.
+
+## Progress
+
+**10.1 boat selection and session lifecycle (implemented).** `BoatCatalog` and
+`SailingSession` in the adapters project own the boat list, each boat's initial
+controls and the restart policy. A restart publishes released input, stops and
+joins the previous worker, then creates a fresh simulation with the retained
+environment object (wind, waves, seed) at the common beam-reach start. The
+Hunter starts with main 0.7, leeward (starboard) jib sheet 0.7 and the skipper
+on the windward seat. The main scene shows a picker before any simulation runs;
+`--boat=ilca-7` or `--boat=hunter-235` skips it, and automated ILCA checks
+start without it. F1 has a Session tab with a boat selector and restart button.
+Restarts release held keys and clear F1 graphs and wake history. The wake now
+starts at the Hunter's published stern. F1 telemetry shows Hunter forces per
+component, jib angle, sheets and luffing in place of the ILCA sail strips.
+The Hunter uses `HunterPresentation`, the Phase 9 block geometry shared with
+the development host; recognizable geometry, cues and fitted cameras remain 10.3.
+
+Verification: an integration group restarts sessions four times across both
+boats, checking the joined worker, step-zero state, retained environment,
+reset controls, rig and pose, that stale input cannot reach the stopped worker,
+and released input in the new session. The Godot smoke switches three times
+through F1 and checks the scene state listed in the Godot README; a picker
+check confirms no session before a choice. All existing test projects and the
+Hunter development checks pass. Hunter jib-sheet bindings (10.2) are not yet
+implemented, and desktop review and performance measurement of the switched
+scene remain outstanding.
 
 ## Deliverables and completion criteria
 

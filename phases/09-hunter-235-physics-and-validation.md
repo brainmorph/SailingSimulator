@@ -1,6 +1,9 @@
 # Phase 9: Hunter 23.5 Physics, Verification and Performance
 
-Status: started; reference/model contract and implementation remain incomplete.
+Status: open and paused on 2026-10-27 at the user's direction to begin
+[Phase 10](10-hunter-235-playable-integration.md). The physics verification
+below is recorded; the desktop performance gate, the helm-balance follow-up and
+the completion record remain outstanding.
 See the [preliminary reference register](09-reference-progress.md) for the
 initial configuration and performance-source research and unresolved gaps.
 

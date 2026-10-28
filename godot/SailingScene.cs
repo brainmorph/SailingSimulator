@@ -6,9 +6,14 @@ using System.Diagnostics;
 /// <summary>Only this main-thread adapter reads input or touches Godot nodes.</summary>
 public partial class SailingScene : Node3D
 {
-    private SimulationRunner? runner;
+    private SailingSession? session;
+    private SimulationRunner? runner => session?.Runner;
     private bool hunterMode;
-    private BoatPresentation boat = null!;
+    private BoatPresentation ilcaBoat = null!;
+    private HunterPresentation hunterBoat = null!;
+    private Node3D activeBoat = null!;
+    private IBoatView view = null!;
+    private Control picker = null!;
     private WaterPresentation water = null!;
     private Camera3D camera = null!;
     private DebugOverlay debug = null!;
@@ -25,6 +30,7 @@ public partial class SailingScene : Node3D
     private float onboardFov = 80;
     private long visualStep = -1;
     private bool smokeTest;
+    private bool pickerCheck;
     private bool performanceReview;
     private bool stalled;
     private bool released;
@@ -44,6 +50,7 @@ public partial class SailingScene : Node3D
         }
         SailingKeyMap.Register();
         smokeTest = OS.GetCmdlineUserArgs().Contains("--smoke-test");
+        pickerCheck = OS.GetCmdlineUserArgs().Contains("--picker-check");
         performanceReview = OS.GetCmdlineUserArgs().Contains("--performance-review");
         if (smokeTest)
         {
@@ -63,14 +70,14 @@ public partial class SailingScene : Node3D
         }
         environment = PresentationConversions.EnvironmentFromSettings(waveSeed: smokeTest || performanceReview ? 123 : null);
         debug.Initialize(environment, changed => environment = changed);
-        var controls = new SailingControls(mainsheet: 0.6, traveler: 0.8, vang: 0.6,
-            outhaul: 0.5, cunningham: 0.3, hiking: -0.3);
-        var input = new SimulationInput(controls, environment);
-        // Start on a beam reach in the default northerly wind.
-        var simulation = new IlcaBoatDefinition().CreateSimulation(input, Math.PI / 2);
-        runner = new(simulation);
-        Render(simulation.Latest);
-        runner.Start();
+        var requested = OS.GetCmdlineUserArgs().FirstOrDefault(a => a.StartsWith("--boat=", StringComparison.Ordinal));
+        if (requested is not null && !BoatCatalog.TryParse(requested["--boat=".Length..], out _))
+            GD.PushError($"Unknown boat {requested}; choose ilca-7 or hunter-235.");
+        // Automated checks start with the ILCA; otherwise the player chooses before sailing.
+        if (BoatCatalog.TryParse(requested?["--boat=".Length..], out var boatChoice) || smokeTest || performanceReview)
+            StartSession(boatChoice);
+        else
+            picker.Visible = true;
         smokeStart = Stopwatch.GetTimestamp();
         if (smokeTest)
         {
@@ -79,9 +86,31 @@ public partial class SailingScene : Node3D
         }
     }
 
+    /// <summary>Starts the chosen boat, or restarts the session; the previous worker is joined first.</summary>
+    private void StartSession(BoatChoice choice)
+    {
+        SailingKeyMap.ReleaseAll();
+        orbiting = false;
+        session = session is null ? SailingSession.Create(choice, environment) : session.Restart(choice, environment);
+        ilcaBoat.Visible = choice == BoatChoice.Ilca7;
+        hunterBoat.Visible = choice == BoatChoice.Hunter235;
+        activeBoat = choice == BoatChoice.Ilca7 ? ilcaBoat : hunterBoat;
+        view = choice == BoatChoice.Ilca7 ? ilcaBoat : hunterBoat;
+        visualStep = -1;
+        previousRenderedStep = 0;
+        water.Trail.Clear();
+        debug.ResetHistory();
+        debug.InitializeSession(choice, StartSession);
+        picker.Visible = false;
+        GetViewport().GuiReleaseFocus();
+        Render(session.Runner.Latest.State);
+        session.Runner.Start();
+    }
+
     public override void _Process(double delta)
     {
         if (visualReview) { ProcessVisualReview(); return; }
+        if (pickerCheck) { CheckPicker(); return; }
         if (runner is null) return;
         var frameTimestamp = Stopwatch.GetTimestamp();
         var frameSeconds = previousFrameTimestamp == 0 ? delta
@@ -107,8 +136,8 @@ public partial class SailingScene : Node3D
     {
         if (state.StepIndex != visualStep)
         {
-            boat.Render(state);
-            water.Render(state, boat.Position);
+            view.Render(state);
+            water.Render(state, activeBoat.Position);
             visualStep = state.StepIndex;
         }
         UpdateCamera();
@@ -116,22 +145,22 @@ public partial class SailingScene : Node3D
 
     private void UpdateCamera()
     {
-        boat.Sailor.Visible = !onboard;
+        view.Sailor.Visible = !onboard;
         if (onboard)
         {
             camera.Fov = onboardFov;
             camera.Near = 0.04f;
-            camera.Position = boat.ToGlobal(boat.Sailor.Position + new Vector3(0, 0.72f, 0.35f));
+            camera.Position = activeBoat.ToGlobal(view.Sailor.Position + new Vector3(0, 0.72f, 0.35f));
             var direction = new Vector3(Mathf.Sin(onboardYaw) * Mathf.Cos(onboardPitch),
                 Mathf.Sin(onboardPitch), -Mathf.Cos(onboardYaw) * Mathf.Cos(onboardPitch));
-            camera.LookAt(camera.Position + boat.Basis * direction, boat.Basis * Vector3.Up);
+            camera.LookAt(camera.Position + activeBoat.Basis * direction, activeBoat.Basis * Vector3.Up);
         }
         else
         {
             camera.Fov = 65;
             camera.Near = 0.1f;
-            var target = boat.Position + Vector3.Up * 2.1f;
-            var forward = -boat.Basis.Z;
+            var target = activeBoat.Position + Vector3.Up * 2.1f;
+            var forward = -activeBoat.Basis.Z;
             var heading = Mathf.Atan2(-forward.X, -forward.Z);
             var yaw = cameraYaw + heading;
             camera.Position = target + new Vector3(Mathf.Sin(yaw) * Mathf.Cos(cameraPitch),
@@ -205,8 +234,8 @@ public partial class SailingScene : Node3D
 
     public override void _ExitTree()
     {
-        runner?.Dispose(); // Wake the deadline wait and join before nodes disappear.
-        runner = null;
+        session?.Dispose(); // Wake the deadline wait and join before nodes disappear.
+        session = null;
     }
 
     private void BuildScene()
@@ -224,9 +253,14 @@ public partial class SailingScene : Node3D
             }
         };
         AddChild(world);
-        boat = new BoatPresentation { Name = "Boat" };
-        AddChild(boat);
-        boat.Build();
+        ilcaBoat = new BoatPresentation { Name = "Boat" };
+        AddChild(ilcaBoat);
+        ilcaBoat.Build();
+        hunterBoat = new HunterPresentation { Name = "Hunter", Visible = false };
+        AddChild(hunterBoat);
+        hunterBoat.Build(Hunter235Geometry.ForControls(BoatCatalog.InitialControls(BoatChoice.Hunter235)));
+        activeBoat = ilcaBoat;
+        view = ilcaBoat;
         water = new WaterPresentation { Name = "Water" };
         AddChild(water);
         water.Build();
@@ -245,6 +279,9 @@ public partial class SailingScene : Node3D
         controlsHelp = ControlsHelp.Create();
         canvas.AddChild(controlsHelp);
         controlsHelp.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        picker = BoatPicker.Create(StartSession);
+        canvas.AddChild(picker);
+        picker.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
     }
 
     private void SmokeCheck(RunnerSnapshot snapshot)
@@ -255,8 +292,8 @@ public partial class SailingScene : Node3D
             Require(snapshot.State.StepIndex >= previousRenderedStep, "snapshot order");
             previousRenderedStep = snapshot.State.StepIndex;
             var datum = snapshot.State.Boat.PositionWorldM - snapshot.State.Boat.OrientationBodyToWorld.Rotate(snapshot.State.Mass!.CenterOfMassBodyM);
-            Require(boat.Position.DistanceTo(SceneFrames.ToGodot(datum)) < 0.0001, "rendered hull datum");
-            Require(Math.Abs(boat.Quaternion.Dot(SceneFrames.ToGodot(snapshot.State.Boat.OrientationBodyToWorld))) > 0.9999, "rendered orientation");
+            Require(activeBoat.Position.DistanceTo(SceneFrames.ToGodot(datum)) < 0.0001, "rendered hull datum");
+            Require(Math.Abs(activeBoat.Quaternion.Dot(SceneFrames.ToGodot(snapshot.State.Boat.OrientationBodyToWorld))) > 0.9999, "rendered orientation");
             var elapsed = Stopwatch.GetElapsedTime(smokeStart).TotalSeconds;
             if (!stalled && elapsed > 0.4)
             {
@@ -315,9 +352,10 @@ public partial class SailingScene : Node3D
                 Require(cameraYaw != beforeYaw, "mouse actually moves the camera");
                 Require(SailingKeyMap.Read() == beforeMouse, "camera leaves sailing keys unchanged");
                 VerifyPresentation(snapshot.State);
+                VerifySessionSwitching();
                 runner!.Stop();
                 Require(!runner.Latest.Running, "shutdown joins worker");
-                GD.Print($"PASS Godot scene: F1 settings/telemetry/graphs/performance, keys, F2 controls help, transforms, focus, render stall, both cameras, sectional sail, foils/body, waves, camera isolation, shutdown; steps={runner.Latest.State.StepIndex}");
+                GD.Print($"PASS Godot scene: F1 settings/telemetry/graphs/performance, keys, F2 controls help, transforms, focus, render stall, both cameras, sectional sail, foils/body, waves, camera isolation, F1 boat switching, shutdown; steps={runner.Latest.State.StepIndex}");
                 GetTree().Quit();
             }
         }
@@ -325,6 +363,73 @@ public partial class SailingScene : Node3D
         {
             GD.PushError($"FAIL Godot smoke: {exception.Message}");
             GetTree().Quit(1);
+        }
+    }
+
+    // The picker must hold the session until a choice, then start exactly that boat.
+    private void CheckPicker()
+    {
+        try
+        {
+            if (session is null)
+            {
+                Require(picker.Visible && !controlsHelp.Visible, "picker shown before sailing");
+                var buttons = picker.FindChildren("*", "Button", true, false).OfType<Button>().ToArray();
+                Require(buttons.Select(b => b.Text).SequenceEqual(BoatCatalog.All.Select(BoatCatalog.Name)), "picker lists both boats");
+                buttons.Single(b => b.Text == BoatCatalog.Name(BoatChoice.Hunter235)).EmitSignal(Button.SignalName.Pressed);
+                Require(session is { Boat: BoatChoice.Hunter235 } && !picker.Visible && hunterBoat.Visible && !ilcaBoat.Visible,
+                    "picking the Hunter starts its session");
+                smokeStart = Stopwatch.GetTimestamp();
+                return;
+            }
+            if (Stopwatch.GetElapsedTime(smokeStart).TotalSeconds < 0.5) return;
+            var latest = session.Runner.Latest;
+            Require(latest.Fault is null && latest.Running && latest.State.StepIndex >= 10 && latest.State.HunterRig is not null,
+                "the picked Hunter session steps");
+            session.Runner.Stop();
+            GD.Print($"PASS Boat picker: no session before choice, Hunter started on selection; steps={latest.State.StepIndex}");
+            GetTree().Quit();
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"FAIL Boat picker: {exception.Message}");
+            GetTree().Quit(1);
+        }
+    }
+
+    private void VerifySessionSwitching()
+    {
+        foreach (var choice in new[] { BoatChoice.Hunter235, BoatChoice.Ilca7, BoatChoice.Hunter235 })
+        {
+            var previous = session!.Runner;
+            var retained = environment;
+            SendKey(Key.D, true);
+            Require(SailingKeyMap.Read().Tiller == 1, "held key before restart");
+            debug.Boat.Select(debug.Boat.GetItemIndex((int)choice));
+            debug.RestartButton.EmitSignal(Button.SignalName.Pressed);
+            Require(!previous.Latest.Running && session.Runner != previous && session.Boat == choice,
+                "F1 restart joins the previous worker and selects the boat");
+            Require(SailingKeyMap.Read() == HeldSailingInput.Released, "restart releases held keys");
+            Require(debug.GraphSamples == 0 && water.Trail.Samples.Count == 0, "restart clears graphs and wake");
+            Require(activeBoat.Visible && ilcaBoat.Visible == (choice == BoatChoice.Ilca7) &&
+                hunterBoat.Visible == (choice == BoatChoice.Hunter235), "only the selected boat is shown");
+            Thread.Sleep(100);
+            var latest = session.Runner.Latest;
+            Require(latest.Fault is null && latest.Running && latest.State.StepIndex >= 3, "the new worker steps");
+            Require(ReferenceEquals(latest.State.Input.Environment, retained) && retained.WaveSeed == -456,
+                "wind, waves and seed are retained");
+            Require(latest.State.Input.Controls == BoatCatalog.InitialControls(choice) && latest.State.TimeSeconds < 1,
+                "time and controls reset for the new boat");
+            Render(latest.State);
+            var datum = latest.State.Boat.PositionWorldM - latest.State.Boat.OrientationBodyToWorld.Rotate(latest.State.Mass!.CenterOfMassBodyM);
+            Require(activeBoat.Position.DistanceTo(SceneFrames.ToGodot(datum)) < 0.0001, "the selected boat renders the new session");
+            if (latest.State.HunterGeometry is { } geometry)
+                Require(view.Sailor.Position.DistanceTo(SceneFrames.ToGodot(geometry.SkipperBodyM)) < 1e-5, "Hunter skipper position");
+            debug.Visible = true;
+            debug.Observe(latest, 0.2);
+            Require(debug.DisplayedStep == latest.State.StepIndex, "F1 displays the new session");
+            debug.Visible = false;
+            SendKey(Key.D, false);
         }
     }
 
@@ -378,8 +483,8 @@ public partial class SailingScene : Node3D
 
     private void VerifyPresentation(SimulationState state)
     {
-        Require(boat.SailMesh.GetSurfaceCount() == 1, "sectional sail mesh");
-        var sailVertices = boat.SailMesh.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array();
+        Require(ilcaBoat.SailMesh.GetSurfaceCount() == 1, "sectional sail mesh");
+        var sailVertices = ilcaBoat.SailMesh.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array();
         var first = SailingVisuals.SailPoint(SailingVisuals.EdgeSection(state.Diagnostics!.SailShape, false), 0, state.TimeSeconds);
         Require(sailVertices[0].DistanceTo(SceneFrames.ToGodot(first)) < 1e-5, "sail uses published geometry");
         for (var row = 0; row < state.Diagnostics.SailShape.Sections.Count; row++)
@@ -389,13 +494,13 @@ public partial class SailingScene : Node3D
             Require(sailVertices[(row + 1) * 60 + column * 6].DistanceTo(SceneFrames.ToGodot(expected)) < 1e-5,
                 "all sail strips use published geometry");
         }
-        var chordEnd = boat.Boom.ToGlobal(new(0, 0, 1));
-        var expectedChord = boat.ToGlobal(new((float)Math.Sin(state.Rig.BoomAngleRad), 0.5f,
+        var chordEnd = ilcaBoat.Boom.ToGlobal(new(0, 0, 1));
+        var expectedChord = ilcaBoat.ToGlobal(new((float)Math.Sin(state.Rig.BoomAngleRad), 0.5f,
             -(float)SectionalSailModel.MastXM + (float)Math.Cos(state.Rig.BoomAngleRad)));
         Require(chordEnd.DistanceTo(expectedChord) < 1e-5, "boom side matches aerodynamic chord");
         var mass = new IlcaMassModel().Contributors(state.Input.Controls);
-        Require(boat.Sailor.Position.DistanceTo(SceneFrames.ToGodot(mass.Single(c => c.Name == "Sailor").CenterBodyM)) < 1e-5, "sailor mass location");
-        Require(boat.Board.Position.DistanceTo(SceneFrames.ToGodot(mass.Single(c => c.Name == "Centerboard").CenterBodyM)) < 1e-5, "board mass location");
+        Require(ilcaBoat.Sailor.Position.DistanceTo(SceneFrames.ToGodot(mass.Single(c => c.Name == "Sailor").CenterBodyM)) < 1e-5, "sailor mass location");
+        Require(ilcaBoat.Board.Position.DistanceTo(SceneFrames.ToGodot(mass.Single(c => c.Name == "Centerboard").CenterBodyM)) < 1e-5, "board mass location");
         Require((int)water.Material.GetShaderParameter("mode_count") == state.Input.Environment.Water.Components.Count, "shared wave spectrum");
         Require(Math.Abs((float)water.Material.GetShaderParameter("simulation_time") - state.TimeSeconds) < 1e-4, "shared wave time");
         var keys = SailingKeyMap.Read();
@@ -404,7 +509,7 @@ public partial class SailingScene : Node3D
         _UnhandledInput(new InputEventKey { PhysicalKeycode = Key.C, Pressed = true });
         UpdateCamera();
         Require(onboard && camera.Position.DistanceTo(thirdPosition) > 1, "C switches camera");
-        Require(camera.Position.DistanceTo(boat.ToGlobal(boat.Sailor.Position + new Vector3(0, 0.72f, 0.35f))) < 1e-5, "onboard attachment");
+        Require(camera.Position.DistanceTo(ilcaBoat.ToGlobal(ilcaBoat.Sailor.Position + new Vector3(0, 0.72f, 0.35f))) < 1e-5, "onboard attachment");
         var before = camera.Transform;
         _UnhandledInput(new InputEventMouseMotion { Relative = new(15, 10) });
         _UnhandledInput(new InputEventMouseButton { ButtonIndex = MouseButton.WheelUp, Pressed = true });
@@ -423,12 +528,12 @@ public partial class SailingScene : Node3D
         {
             Sections = state.Diagnostics.SailShape.Sections.Select(s => s with { ApparentWindBodyMps = default }).ToArray()
         };
-        boat.RenderSail(stillShape, state.TimeSeconds);
-        var drooping = boat.TelltaleMesh.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array();
+        ilcaBoat.RenderSail(stillShape, state.TimeSeconds);
+        var drooping = ilcaBoat.TelltaleMesh.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array();
         for (var i = 0; i < drooping.Length; i += 3)
             Require((drooping[i + 1] - drooping[i]).Cross(drooping[i + 2] - drooping[i]).LengthSquared() > 1e-10,
                 "still-air telltales have visible area");
-        boat.RenderSail(state.Diagnostics.SailShape, state.TimeSeconds);
+        ilcaBoat.RenderSail(state.Diagnostics.SailShape, state.TimeSeconds);
     }
 
     private static void VerifyKeyBindings()

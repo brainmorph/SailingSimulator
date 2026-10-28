@@ -8,12 +8,7 @@ using System.Runtime;
 public partial class HunterDevelopmentScene : Node3D
 {
     private SimulationRunner runner = null!;
-    private Node3D boat = null!;
-    private MeshInstance3D board = null!;
-    private MeshInstance3D rudder = null!;
-    private MeshInstance3D skipper = null!;
-    private readonly ImmediateMesh main = new();
-    private readonly ImmediateMesh jib = new();
+    private HunterPresentation boat = null!;
     private Camera3D camera = null!;
     private Label telemetry = null!;
     private bool smoke;
@@ -56,19 +51,12 @@ public partial class HunterDevelopmentScene : Node3D
             AmbientLightSource = Godot.Environment.AmbientSource.Color,
             AmbientLightColor = new(0.7f, 0.8f, 0.9f), AmbientLightEnergy = 0.8f
         } });
-        boat = new Node3D();
+        boat = new HunterPresentation { Name = "Hunter" };
         AddChild(boat);
         environment = HunterDevelopmentScenario.Environment();
         var controls = HunterDevelopmentScenario.InitialControls;
         var simulation = new Hunter235BoatDefinition().CreateSimulation(new(controls, environment), Math.PI / 2);
-        var geometry = simulation.Latest.HunterGeometry!;
-        BoatPresentation.AddMesh(boat, new BoxMesh { Size = new((float)geometry.HullBeamM, (float)geometry.HullHeightM, (float)geometry.HullLengthM) },
-            Vector3.Zero, new(0.85f, 0.87f, 0.82f));
-        BoatPresentation.AddMesh(boat, main, Vector3.Zero, new(0.98f, 0.94f, 0.8f));
-        BoatPresentation.AddMesh(boat, jib, Vector3.Zero, new(0.88f, 0.91f, 0.82f));
-        board = BoatPresentation.AddMesh(boat, new BoxMesh { Size = new(0.06f, 1, 0.55f) }, Vector3.Zero, new(0.45f, 0.35f, 0.2f));
-        rudder = BoatPresentation.AddMesh(boat, new BoxMesh { Size = new(0.06f, 1, 0.4f) }, Vector3.Zero, new(0.45f, 0.35f, 0.2f));
-        skipper = BoatPresentation.AddMesh(boat, new SphereMesh { Radius = 0.2f, Height = 0.4f }, Vector3.Zero, new(0.9f, 0.25f, 0.1f));
+        boat.Build(simulation.Latest.HunterGeometry!);
         BoatPresentation.AddMesh(this, new PlaneMesh { Size = new(200, 200) }, Vector3.Zero, new(0.18f, 0.43f, 0.55f));
         camera = new Camera3D { Current = true, Far = 300 };
         AddChild(camera);
@@ -119,17 +107,17 @@ public partial class HunterDevelopmentScene : Node3D
             var state = snapshot.State;
             var geometry = state.HunterGeometry!;
             var sail = state.HunterRig!;
-            var mainVertices = main.GetSurfaceCount() == 1
-                ? main.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array() : Array.Empty<Vector3>();
-            var jibVertices = jib.GetSurfaceCount() == 1
-                ? jib.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array() : Array.Empty<Vector3>();
-            if (snapshot.State.StepIndex < 20 || main.GetSurfaceCount() != 1 || jib.GetSurfaceCount() != 1 ||
+            var mainVertices = boat.MainMesh.GetSurfaceCount() == 1
+                ? boat.MainMesh.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array() : Array.Empty<Vector3>();
+            var jibVertices = boat.JibMesh.GetSurfaceCount() == 1
+                ? boat.JibMesh.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array() : Array.Empty<Vector3>();
+            if (snapshot.State.StepIndex < 20 || boat.MainMesh.GetSurfaceCount() != 1 || boat.JibMesh.GetSurfaceCount() != 1 ||
                 !snapshot.Running || lastStep != state.StepIndex ||
                 mainVertices.Length == 0 || jibVertices.Length == 0 ||
                 mainVertices[0].DistanceTo(SceneFrames.ToGodot(sail.Main.TackBodyM)) > 1e-5 ||
                 jibVertices[0].DistanceTo(SceneFrames.ToGodot(sail.Jib.TackBodyM)) > 1e-5 ||
-                skipper.Position.DistanceTo(SceneFrames.ToGodot(geometry.SkipperBodyM)) > 1e-5 ||
-                board.Position.DistanceTo(SceneFrames.ToGodot((geometry.CenterboardTopBodyM + geometry.CenterboardTipBodyM) * 0.5)) > 1e-5)
+                boat.Sailor.Position.DistanceTo(SceneFrames.ToGodot(geometry.SkipperBodyM)) > 1e-5 ||
+                boat.Board.Position.DistanceTo(SceneFrames.ToGodot((geometry.CenterboardTopBodyM + geometry.CenterboardTipBodyM) * 0.5)) > 1e-5)
             {
                 GD.PushError("FAIL Hunter development scene: worker or geometry unavailable");
                 GetTree().Quit(1);
@@ -333,43 +321,11 @@ public partial class HunterDevelopmentScene : Node3D
 
     private void Render(SimulationState state)
     {
-        var geometry = state.HunterGeometry!;
-        var rig = state.HunterRig!;
-        var datum = state.Boat.PositionWorldM - state.Boat.OrientationBodyToWorld.Rotate(state.Mass!.CenterOfMassBodyM);
-        boat.Transform = new(new Basis(SceneFrames.ToGodot(state.Boat.OrientationBodyToWorld)), SceneFrames.ToGodot(datum));
-        SetFoil(board, geometry.CenterboardTopBodyM, geometry.CenterboardTipBodyM);
-        SetFoil(rudder, geometry.RudderTopBodyM, geometry.RudderTipBodyM);
-        skipper.Position = SceneFrames.ToGodot(geometry.SkipperBodyM);
-        Sail(main, rig.Main);
-        Sail(jib, rig.Jib);
+        boat.Render(state);
         var target = boat.Position + Vector3.Up * 3;
         camera.Position = target + new Vector3(12, 8, 16);
         camera.LookAt(target);
         lastStep = state.StepIndex;
-    }
-
-    private static void SetFoil(MeshInstance3D node, Vector3d top, Vector3d tip)
-    {
-        node.Position = SceneFrames.ToGodot((top + tip) * 0.5);
-        node.Scale = new(1, (float)(tip - top).Length, 1);
-    }
-
-    private static void Sail(ImmediateMesh mesh, HunterSailState sail)
-    {
-        var rows = new[] { new HunterSailSectionGeometry(sail.TackBodyM, sail.ClewBodyM) }
-            .Concat(sail.Geometry).Append(new(sail.HeadBodyM, sail.HeadBodyM)).ToArray();
-        mesh.ClearSurfaces();
-        mesh.SurfaceBegin(Mesh.PrimitiveType.Triangles);
-        for (var i = 0; i < rows.Length - 1; i++)
-        {
-            var a = SceneFrames.ToGodot(rows[i].LeadingEdgeBodyM);
-            var b = SceneFrames.ToGodot(rows[i].TrailingEdgeBodyM);
-            var c = SceneFrames.ToGodot(rows[i + 1].LeadingEdgeBodyM);
-            var d = SceneFrames.ToGodot(rows[i + 1].TrailingEdgeBodyM);
-            BoatPresentation.Triangle(mesh, a, b, c);
-            BoatPresentation.Triangle(mesh, b, d, c);
-        }
-        mesh.SurfaceEnd();
     }
 
     public override void _ExitTree() => runner?.Dispose();
