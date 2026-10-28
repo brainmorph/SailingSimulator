@@ -531,6 +531,42 @@ var tests = new (string Name, Action Run)[]
             }
         }
     }),
+    ("Hunter session tacks with keyboard-equivalent input only", () =>
+    {
+        // The player's session start, driven only by full key directions through the held-input ramps:
+        // hold A until the wind crosses, then hold ; and O (ease starboard, trim port jib) and X (skipper
+        // to the new windward seat) for three seconds, and release the tiller at the new beam.
+        // The game's default 10-knot northerly with seeded gentle waves.
+        var env = PresentationConversions.EnvironmentFromSettings(waveSeed: 123);
+        var controls = BoatCatalog.InitialControls(BoatChoice.Hunter235);
+        var simulation = BoatCatalog.Definition(BoatChoice.Hunter235).CreateSimulation(new(controls, env), SailingSession.StartHeadingRad);
+        long crossed = -1, completed = -1;
+        var maxHeel = 0.0;
+        for (long step = 0; step < 4200; step++)
+        {
+            var relative = WindRelativeHeading(simulation.Latest);
+            if (completed < 0 && crossed >= 0 && Math.Abs(relative) >= Math.PI / 2) completed = step;
+            var steer = step >= 240 && completed < 0 ? -1 : 0;
+            var change = crossed >= 0 && step < crossed + 180 ? 1 : 0;
+            var held = new HeldSailingInput(tiller: steer, hiking: change, portJibSheet: change, starboardJibSheet: -change);
+            var before = controls;
+            controls = held.Advance(controls);
+            if (change == 0)
+                Require(controls.PortJibSheet == before.PortJibSheet && controls.StarboardJibSheet == before.StarboardJibSheet,
+                    "Jib sheets move only while their keys are held.");
+            var after = simulation.Step(new(controls, env));
+            maxHeel = Math.Max(maxHeel, Math.Abs(PresentationConversions.GetAttitude(after.Boat.OrientationBodyToWorld).Heel));
+            if (crossed < 0 && WindRelativeHeading(after) < 0) crossed = step;
+        }
+        var end = simulation.Latest;
+        var rig = end.HunterRig!;
+        Console.WriteLine($"  Keyboard tack: crossed wind {crossed / 60.0:F2} s, new beam {completed / 60.0:F2} s; at 70 s {end.Boat.LinearVelocityWorldMps.Length:F3} m/s, heading {WindRelativeHeading(end) * 180 / Math.PI:F1} deg from wind, luff {rig.Main.Sections.Average(s => s.Luffing):F3}/{rig.Jib.Sections.Average(s => s.Luffing):F3}, max heel {maxHeel * 180 / Math.PI:F2} deg");
+        Require(crossed >= 0 && completed >= 0 && completed < 3600, "The keyed tack must cross the wind and reach the new beam within 60 s.");
+        Require(end.Rig.BoomAngleRad < -0.1 && end.Rig.JibAngleRad < -0.1, "Both sails must finish on the new side.");
+        Require(end.Boat.LinearVelocityWorldMps.Length > 1 && rig.Main.Sections.Average(s => s.Luffing) < 0.1 &&
+            rig.Jib.Sections.Average(s => s.Luffing) < 0.1 && maxHeel < Math.PI / 4,
+            "The keyed tack must recover speed with both sails filled while remaining upright.");
+    }),
     ("Hunter helm balance diagnostics on held courses", () =>
     {
         var env = HunterDevelopmentScenario.Environment();

@@ -101,6 +101,7 @@ public partial class SailingScene : Node3D
         water.Trail.Clear();
         debug.ResetHistory();
         debug.InitializeSession(choice, StartSession);
+        ControlsHelp.Show(controlsHelp, choice);
         picker.Visible = false;
         GetViewport().GuiReleaseFocus();
         Render(session.Runner.Latest.State);
@@ -117,7 +118,7 @@ public partial class SailingScene : Node3D
             : Stopwatch.GetElapsedTime(previousFrameTimestamp, frameTimestamp).TotalSeconds;
         previousFrameTimestamp = frameTimestamp;
         if (performanceReview) ObservePerformanceInterval(frameSeconds);
-        runner.PublishInput(new(focused ? SailingKeyMap.Read() : HeldSailingInput.Released, environment));
+        runner.PublishInput(new(focused ? SailingKeyMap.Read(session!.Boat == BoatChoice.Hunter235) : HeldSailingInput.Released, environment));
         var snapshot = runner.Latest; // One completed snapshot drives the whole render frame.
         var renderStart = performanceReview ? Stopwatch.GetTimestamp() : 0;
         Render(snapshot.State);
@@ -430,7 +431,40 @@ public partial class SailingScene : Node3D
             Require(debug.DisplayedStep == latest.State.StepIndex, "F1 displays the new session");
             debug.Visible = false;
             SendKey(Key.D, false);
+            VerifyBoatControls(choice);
         }
+    }
+
+    /// <summary>Jib-sheet keys reach only the Hunter, through the same gradual ramps, and F2 lists them only there.</summary>
+    private void VerifyBoatControls(BoatChoice choice)
+    {
+        var hunter = choice == BoatChoice.Hunter235;
+        var rows = controlsHelp.FindChild("Rows", owned: false).GetChildren().OfType<Label>().Select(label => label.Text).ToArray();
+        Require(rows.Contains("O / L") == hunter && rows.Contains("P / ;") == hunter && rows.Contains("W / S"),
+            "F2 lists the selected boat's controls");
+        Require(rows.Length == 2 * ControlsHelp.Rows(hunter, "").Count(), "F2 rows are complete");
+        var before = runner!.Latest.State.Input.Controls;
+        SendKey(Key.L, true);
+        SendKey(Key.P, true);
+        Require(SailingKeyMap.Read(hunter) == new HeldSailingInput(portJibSheet: hunter ? -1 : 0, starboardJibSheet: hunter ? 1 : 0),
+            "jib-sheet keys apply only to the Hunter");
+        var start = runner.Latest.State.StepIndex;
+        while (runner.Latest.State.StepIndex < start + 30)
+        {
+            runner.PublishInput(new(SailingKeyMap.Read(hunter), environment));
+            Thread.Sleep(5);
+        }
+        var after = runner.Latest.State.Input.Controls;
+        Require(hunter
+            ? after.StarboardJibSheet > before.StarboardJibSheet && after.StarboardJibSheet - before.StarboardJibSheet < 0.25 &&
+              after.PortJibSheet == 0
+            : after.StarboardJibSheet == before.StarboardJibSheet && after.PortJibSheet == before.PortJibSheet,
+            "held jib-sheet keys ramp gradually on the Hunter");
+        _Notification((int)NotificationApplicationFocusOut);
+        Require(SailingKeyMap.Read() == HeldSailingInput.Released, "focus loss releases jib-sheet keys");
+        _Notification((int)NotificationApplicationFocusIn);
+        SendKey(Key.L, false);
+        SendKey(Key.P, false);
     }
 
     private void VerifyDebugControls(HeldSailingInput keys)
@@ -543,7 +577,8 @@ public partial class SailingScene : Node3D
             (Key.D, Key.A, new(tiller: 1)), (Key.W, Key.S, new(mainsheet: 1)),
             (Key.Q, Key.E, new(traveler: 1)), (Key.R, Key.F, new(vang: 1)),
             (Key.T, Key.G, new(outhaul: 1)), (Key.U, Key.J, new(cunningham: 1)),
-            (Key.I, Key.K, new(centerboard: 1)), (Key.X, Key.Z, new(hiking: 1))
+            (Key.I, Key.K, new(centerboard: 1)), (Key.X, Key.Z, new(hiking: 1)),
+            (Key.O, Key.L, new(portJibSheet: 1)), (Key.P, Key.Semicolon, new(starboardJibSheet: 1))
         };
         foreach (var (positive, negative, expected) in pairs)
         {
@@ -554,7 +589,8 @@ public partial class SailingScene : Node3D
             SendKey(positive, false);
             Require(SailingKeyMap.Read() == new HeldSailingInput(
                 -expected.Tiller, -expected.Mainsheet, -expected.Traveler, -expected.Vang,
-                -expected.Outhaul, -expected.Cunningham, -expected.Centerboard, -expected.Hiking), $"negative binding {negative}");
+                -expected.Outhaul, -expected.Cunningham, -expected.Centerboard, -expected.Hiking,
+                -expected.PortJibSheet, -expected.StarboardJibSheet), $"negative binding {negative}");
             SendKey(negative, false);
         }
     }

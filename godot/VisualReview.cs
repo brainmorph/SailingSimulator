@@ -9,7 +9,7 @@ public partial class SailingScene
     private int reviewFrame;
     private int reviewIndex;
     private readonly string[] reviewNames =
-    ["reach-starboard", "reach-port", "luff-a", "luff-b", "onboard-starboard", "onboard-port", "heel-wake", "run-before-jibe", "run-after-jibe", "calm-stopped", "controls-help"];
+    ["reach-starboard", "reach-port", "luff-a", "luff-b", "onboard-starboard", "onboard-port", "heel-wake", "run-before-jibe", "run-after-jibe", "calm-stopped", "controls-help", "controls-help-hunter"];
 
     private void StartVisualReview()
     {
@@ -20,7 +20,9 @@ public partial class SailingScene
     private void SetReviewFixture()
     {
         var index = reviewIndex;
-        controlsHelp.Visible = index == 10;
+        controlsHelp.Visible = index >= 10;
+        // The Hunter list is shown over the ILCA fixture; only the help panel is under review.
+        ControlsHelp.Show(controlsHelp, index == 11 ? BoatChoice.Hunter235 : BoatChoice.Ilca7);
         var port = index is 1 or 5 or 8;
         var sign = port ? -1 : 1;
         var luff = index is 2 or 3;

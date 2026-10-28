@@ -10,8 +10,9 @@ until a boat is chosen. Skip the picker with `./scripts/run-game.sh --
 --boat=ilca-7` or `-- --boat=hunter-235`. F1 · Session changes boats; this
 restarts the session, keeping the current wind, waves and seed and resetting
 time, boat motion, sails and all sailing controls, held keys, graphs and wake.
-The Hunter currently renders provisional block geometry and has no jib-sheet
-keys yet; Phase 10 adds its controls, sail cues and fitted cameras.
+The Hunter adds independent jib-sheet keys (below). It still renders
+provisional block geometry with ILCA camera framing; Phase 10.3 adds its
+recognizable geometry, sail cues and fitted cameras.
 
 Open `project.godot` with **Godot 4.7 .NET (Mono)** and build the C# project,
 then run the main scene (F6) or project (F5). The local executable is recorded
@@ -107,7 +108,9 @@ it. Sailing and camera controls continue working while it is open.
 | T / G | Outhaul on / off | 0.25 |
 | U / J | Cunningham on / off | 0.25 |
 | I / K | Centerboard down / up | 0.25 |
-| Z / X | Sailor toward port / starboard | 0.5 |
+| Z / X | Sailor toward port / starboard (Hunter: skipper between cockpit seats) | 0.5 |
+| O / L | Hunter port jib sheet trim / ease | 0.25 |
+| P / ; | Hunter starboard jib sheet trim / ease | 0.25 |
 | C | Switch third-person / onboard camera | — |
 | Right mouse drag | Orbit in third-person; look around onboard | — |
 | Mouse wheel | Third-person distance; onboard field of view | — |
@@ -119,9 +122,13 @@ including hiking, stay at their last value. Losing application focus clears
 held keys immediately and releases mouse orbit; simulation continues and
 tiller centres. Releasing keys never resets trim. Initial normalized settings:
 tiller 0, sheet 0.6, traveler 0.8, vang 0.6, outhaul 0.5, cunningham 0.3,
-centerboard 1, hiking −0.3. These rates/settings are provisional usability
-choices, not measured ILCA trim values. Stop/restart the project for a new
-session; capsize recovery is deferred.
+centerboard 1, hiking −0.3. The Hunter starts with main 0.7, starboard
+(leeward) jib sheet 0.7, port jib sheet 0 and the skipper on the port seat.
+The jib-sheet keys do nothing on the ILCA. Nothing eases or trims a sheet
+automatically: when tacking or jibing the Hunter, ease the old jib sheet and
+trim the new one. F2 lists only the selected boat's controls. These
+rates/settings are provisional usability choices, not measured trim values.
+Restart through F1 · Session; capsize recovery is deferred.
 
 Third-person follows the boat's heading with a level horizon and targets the
 whole rig. Onboard follows the hiking position and boat roll/pitch; the sailor
@@ -153,13 +160,16 @@ worker before exiting. A pass prints `PASS Godot
 scene` and exits 0. See [the integration contract](../docs/godot-integration.md)
 for ownership, cadence and failure behavior.
 
-The smoke starts with the ILCA and then restarts through F1 · Session to the
-Hunter, back to the ILCA and to the Hunter again. Each restart must join the
+The key check includes both jib-sheet pairs. The smoke starts with the ILCA
+and then restarts through F1 · Session to the Hunter, back to the ILCA and to
+the Hunter again. Each restart must join the
 previous worker, release held keys, clear graphs and wake, show only the
 selected boat, retain the environment and seed, reset controls and time, and
-render and display the new session. `-- --picker-check` verifies that the
-picker holds the session until a choice, then that choosing the Hunter starts
-and steps its session.
+render and display the new session. After each restart it checks that F2
+lists that boat's controls, that held jib-sheet keys ramp gradually on the
+Hunter and leave the ILCA unchanged, and that focus loss releases them.
+`-- --picker-check` verifies that the picker holds the session until a
+choice, then that choosing the Hunter starts and steps its session.
 
 The scene smoke also exercises F1 events, repeat suppression, environment
 sliders, independent waves, seed application and saved conditions, completed
@@ -181,7 +191,7 @@ For repeatable rendered review (requires a display), run:
 /home/purple-eden/Desktop/Godot_v4.7-stable_mono_linux_x86_64/Godot_v4.7-stable_mono_linux.x86_64 --path godot -- --visual-review
 ```
 
-This opens a brief window, saves eleven PNGs (including the controls window) to
+This opens a brief window, saves twelve PNGs (including the controls window for each boat) to
 `/tmp/SailingSimulator-<fixture>.png`, then exits. It uses real aerodynamic
 diagnostics in frozen instantaneous fixtures, not calibrated steady sailing
 or scripted maneuver physics. It does not start a simulation worker.

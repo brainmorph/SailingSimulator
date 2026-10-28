@@ -121,6 +121,30 @@ Hunter development checks pass. Hunter jib-sheet bindings (10.2) are not yet
 implemented, and desktop review and performance measurement of the switched
 scene remain outstanding.
 
+**10.2 player controls and help (implemented).** At the user's direction, O/L
+trim and ease the port jib sheet and P/; the starboard sheet, at the Phase 9
+held-input rate of 0.25/s. They are physical-key bindings like the others and
+are ignored on the ILCA. The existing Z/X crew keys move the Hunter skipper
+between its estimated cockpit seats and I/K drive its centerboard. The Hunter
+model uses every main control (mainsheet, traveler, vang, outhaul and
+cunningham), so all remain offered. F2 lists only the selected boat's controls,
+with a note that sheets are never handled automatically. No sheet release or
+tack assistance was added.
+
+Verification: the scene smoke checks both jib-sheet key pairs alongside the
+others (positive, opposed and negative), and after each F1 restart checks the
+F2 rows, that held jib keys ramp gradually on a running Hunter session and
+leave the ILCA unchanged, and that focus loss releases them. Help and camera
+isolation checks are unchanged. The visual review adds a Hunter controls-window
+capture. A new offline group starts from the player's Hunter session (initial
+controls, start heading, default environment with seed 123) and tacks using
+only full key directions through the held-input ramps: A held until the wind
+crosses, then ; and O and X for three seconds, then the tiller released at the
+new beam. It crosses the wind at 17.7 s and reaches the new beam at 30.8 s; at
+70 s it sails at 2.41 m/s with both sails filled and a maximum heel of 9.5°.
+With the tiller released the boat then bears away to about 139° from the wind,
+consistent with the weak directional stability recorded in Phase 9.
+
 ## Deliverables and completion criteria
 
 - Both boats selectable through the initial picker and F1 with consistent restart.
