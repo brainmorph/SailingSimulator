@@ -10,9 +10,9 @@ until a boat is chosen. Skip the picker with `./scripts/run-game.sh --
 --boat=ilca-7` or `-- --boat=hunter-235`. F1 · Session changes boats; this
 restarts the session, keeping the current wind, waves and seed and resetting
 time, boat motion, sails and all sailing controls, held keys, graphs and wake.
-The Hunter adds independent jib-sheet keys (below). It still renders
-provisional block geometry with ILCA camera framing; Phase 10.3 adds its
-recognizable geometry, sail cues and fitted cameras.
+The Hunter adds independent jib-sheet keys (below). It renders a
+modest-detail hull and cockpit, both sails with telltales, both jib sheets and
+cameras fitted to its size; see [visual feedback](../docs/visual-feedback.md#hunter-235).
 
 Open `project.godot` with **Godot 4.7 .NET (Mono)** and build the C# project,
 then run the main scene (F6) or project (F5). The local executable is recorded
@@ -131,8 +131,10 @@ rates/settings are provisional usability choices, not measured trim values.
 Restart through F1 · Session; capsize recovery is deferred.
 
 Third-person follows the boat's heading with a level horizon and targets the
-whole rig. Onboard follows the hiking position and boat roll/pitch; the sailor
-proxy is hidden to keep the camera clear. Each view retains its own look/zoom.
+whole rig, fitted to the selected boat's size; switching boats restores that
+boat's distance. Onboard follows the hiking position (the Hunter skipper's
+cockpit seat) and boat roll/pitch; the crew figure is hidden to keep the
+camera clear. Each view retains its own look/zoom.
 See [visual feedback and review](../docs/visual-feedback.md) for cue meanings,
 presentation estimates and a short review checklist.
 
@@ -191,10 +193,12 @@ For repeatable rendered review (requires a display), run:
 /home/purple-eden/Desktop/Godot_v4.7-stable_mono_linux_x86_64/Godot_v4.7-stable_mono_linux.x86_64 --path godot -- --visual-review
 ```
 
-This opens a brief window, saves twelve PNGs (including the controls window for each boat) to
-`/tmp/SailingSimulator-<fixture>.png`, then exits. It uses real aerodynamic
-diagnostics in frozen instantaneous fixtures, not calibrated steady sailing
-or scripted maneuver physics. It does not start a simulation worker.
+This opens a brief window, saves eighteen PNGs (including the controls window
+for each boat and six Hunter views) to `/tmp/SailingSimulator-<fixture>.png`,
+then exits. The ILCA fixtures use real aerodynamic diagnostics in frozen
+instantaneous states, not calibrated steady sailing or scripted maneuver
+physics. The Hunter fixtures run the model offline from the session start.
+It does not start a simulation worker.
 
 For offline Phase 8 comparisons, see the [calibration baseline protocol](../docs/calibration.md).
 The baseline suite records simulation conditions and assembly hashes and

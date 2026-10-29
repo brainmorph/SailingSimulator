@@ -268,6 +268,35 @@ var tests = new (string Name, Action Run)[]
         var noWind = luff.Sections[0] with { ApparentWindBodyMps = default };
         Require(SailingVisuals.SailPoint(noWind, 0.4, 0) == SailingVisuals.SailPoint(noWind, 0.4, 1), "No wind cannot animate sail");
     }),
+    ("Hunter cloth follows both published sails and their local airflow", () =>
+    {
+        var env = HunterDevelopmentScenario.Environment();
+        var simulation = BoatCatalog.Definition(BoatChoice.Hunter235).CreateSimulation(
+            new(BoatCatalog.InitialControls(BoatChoice.Hunter235), env), SailingSession.StartHeadingRad);
+        var rig = simulation.Latest.HunterRig!;
+        foreach (var sail in new[] { rig.Main, rig.Jib })
+        {
+            var strips = SailingVisuals.HunterStrips(sail);
+            Require(strips.Length == sail.Sections.Count + 2, "Foot and head rows bound the published strips");
+            Require((SailingVisuals.SailPoint(strips[0], 0, 0) - sail.TackBodyM).Length < 1e-12 &&
+                (SailingVisuals.SailPoint(strips[0], 1, 0) - sail.ClewBodyM).Length < 1e-12, $"{sail.Id} foot runs tack to clew");
+            Require((SailingVisuals.SailPoint(strips[^1], 0.5, 0) - sail.HeadBodyM).Length < 1e-12, $"{sail.Id} head is a point");
+            for (var i = 0; i < sail.Sections.Count; i++)
+            {
+                var g = sail.Geometry[i];
+                Require((SailingVisuals.SailPoint(strips[i + 1], 0, 0) - g.LeadingEdgeBodyM).Length < 1e-12 &&
+                    (SailingVisuals.SailPoint(strips[i + 1], 1, 0) - g.TrailingEdgeBodyM).Length < 1e-12, $"{sail.Id} strip {i} edges");
+                // Reversed local flow (a backwinded strip) bellies the cloth to the other side.
+                var strip = strips[i + 1];
+                var reversed = strip with { Section = strip.Section with { ApparentWindBodyMps = -strip.Section.ApparentWindBodyMps } };
+                var mid = SailingVisuals.SailPoint(strip, 0.5, 0) - (g.LeadingEdgeBodyM + g.TrailingEdgeBodyM) * 0.5;
+                var flipped = SailingVisuals.SailPoint(reversed, 0.5, 0) - (g.LeadingEdgeBodyM + g.TrailingEdgeBodyM) * 0.5;
+                Require(Vector3d.Dot(mid, strip.Normal) * Vector3d.Dot(flipped, strip.Normal) < 0 &&
+                    Math.Sign(Vector3d.Dot(mid, strip.Normal)) == Math.Sign(Vector3d.Dot(strip.Section.ApparentWindBodyMps, strip.Normal)),
+                    $"{sail.Id} strip {i} bellies to leeward of its local flow");
+            }
+        }
+    }),
     ("Telltales stream, reverse, droop and break up with local flow", () =>
     {
         var section = new SailSectionState(2, 1, 1.5, 0, 0.08, 0, 0,

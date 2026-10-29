@@ -145,6 +145,42 @@ new beam. It crosses the wind at 17.7 s and reaches the new beam at 30.8 s; at
 With the tiller released the boat then bears away to about 139° from the wind,
 consistent with the weak directional stability recorded in Phase 9.
 
+**10.3 boat presentation, sailing cues and cameras (implemented).**
+`HunterPresentation` replaces the block geometry with a lofted hull, deck,
+open cockpit with seats, low cabin top, mast, forestay, boom, centerboard,
+transom rudder with tiller and a seated skipper. Hull lines are presentation
+estimates around the published length, beam and column heights. Both sails
+are drawn through the shared `SailingVisuals` cloth and telltale functions
+from the published strips (`SailingVisuals.HunterStrips`), so belly side,
+luff flutter and ribbons come from each strip's local airflow and luffing,
+with no second trim model. The boom follows the published main foot, and both
+jib sheets are drawn lead to clew, yellow when loaded and grey with sag when
+slack. The board, rudder pivot and skipper come from `HunterGeometry`; the
+rudder angle uses the foil model's convention. The wake leaves the published
+stern at the transom half-beam. The third-person camera targets 3.4 m above
+the datum from 14 m (range now 4–40 m), and the onboard eye follows the
+skipper between seats. F1 adds a main + jib sail row (each sail counted once,
+alongside the core total), per-sail angle, top twist, camber, luffing and
+mean local wind, and each jib sheet's trim with its load or "slack".
+
+Verification: a new integration group checks that the cloth rows reproduce
+the published tack, clew, head and strip edges of both sails and belly to
+leeward of each strip's local flow. After each F1 restart to the Hunter the
+smoke compares sampled cloth vertices of both sails with the strips, and
+checks the board, rudder pivot, boom, sheet endpoints, fitted camera
+distance, wake width, onboard eye position and the F1 per-sail rows. The
+visual review adds six Hunter views run from the real model.
+
+Findings, recorded rather than changed (Phase 9 is paused):
+- The estimated main tack is 0.65 m above the waterline, so the boom crosses
+  the cockpit at the seated skipper's torso height and the cabin top must stay
+  low. A real Hunter 23.5 boom is higher, which also lowers the model's sail
+  centre of effort and heeling moment.
+- A tack with the old jib sheet fully trimmed does not backwind the jib: the
+  estimated 1,000 N/m sheet stretches enough that the jib sits on the
+  centreline three seconds after crossing, bellied to leeward on every strip.
+  The renderer agrees with the physics; visible backwinding needs a model change.
+
 ## Deliverables and completion criteria
 
 - Both boats selectable through the initial picker and F1 with consistent restart.

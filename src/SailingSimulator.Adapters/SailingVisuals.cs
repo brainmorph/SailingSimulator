@@ -6,20 +6,52 @@ namespace SailingSimulator.Adapters;
 /// No control-to-shape calculation or force evaluation occurs here.</summary>
 public static class SailingVisuals
 {
-    public static Vector3d SailPoint(SailSectionState section, double chordFraction, double timeSeconds)
+    public static Vector3d SailPoint(SailSectionState section, double chordFraction, double timeSeconds) =>
+        SailPoint(Strip(section), chordFraction, timeSeconds);
+
+    /// <summary>
+    /// A cloth point on a published strip: the chord line, a leeward belly from the strip's camber and
+    /// luff flutter. The leeward side follows the strip's local airflow, so a backwinded strip bellies
+    /// the other way.
+    /// </summary>
+    public static Vector3d SailPoint(SailStrip strip, double chordFraction, double timeSeconds)
     {
-        var chord = new Vector3d(-Math.Cos(section.AngleRad), Math.Sin(section.AngleRad), 0);
-        var normal = new Vector3d(Math.Sin(section.AngleRad), Math.Cos(section.AngleRad), 0);
-        var mast = section.CenterBodyM - chord * (0.4 * section.ChordM);
-        var windAcross = Vector3d.Dot(section.ApparentWindBodyMps, normal);
+        var section = strip.Section;
+        var windAcross = Vector3d.Dot(section.ApparentWindBodyMps, strip.Normal);
         var side = windAcross < 0 ? -1 : 1;
         var speed = section.ApparentWindBodyMps.Length;
         var envelope = Math.Sin(Math.PI * chordFraction);
-        var belly = side * section.CamberRatio * section.ChordM * 4 * chordFraction * (1 - chordFraction);
+        var belly = side * section.CamberRatio * strip.ChordM * 4 * chordFraction * (1 - chordFraction);
         // Luffing changes displacement, never the aerodynamic angle/force; no wind means no flutter.
-        var flutter = section.Luffing * Math.Min(1, speed / 2) * section.ChordM * 0.11 * envelope *
+        var flutter = section.Luffing * Math.Min(1, speed / 2) * strip.ChordM * 0.11 * envelope *
             Math.Sin(timeSeconds * 24 + section.HeightM * 5 + chordFraction * 13);
-        return mast + chord * (section.ChordM * chordFraction) + normal * (belly + flutter);
+        return strip.LeadingEdgeBodyM + strip.Chord * (strip.ChordM * chordFraction) + strip.Normal * (belly + flutter);
+    }
+
+    /// <summary>An ILCA strip: the luff is on the vertical mast and the chord is horizontal at the strip angle.</summary>
+    public static SailStrip Strip(SailSectionState section)
+    {
+        var chord = new Vector3d(-Math.Cos(section.AngleRad), Math.Sin(section.AngleRad), 0);
+        return new(section, section.CenterBodyM - chord * (0.4 * section.ChordM), chord, section.ChordM);
+    }
+
+    /// <summary>
+    /// The Hunter's published strips with foot and head rows: the foot from tack to clew and a
+    /// zero-length head, both using the nearest strip's airflow.
+    /// </summary>
+    public static SailStrip[] HunterStrips(HunterSailState sail)
+    {
+        var strips = new SailStrip[sail.Sections.Count + 2];
+        for (var i = 0; i < sail.Sections.Count; i++)
+        {
+            var g = sail.Geometry[i];
+            var span = g.TrailingEdgeBodyM - g.LeadingEdgeBodyM;
+            strips[i + 1] = new(sail.Sections[i], g.LeadingEdgeBodyM, span / span.Length, span.Length);
+        }
+        var foot = sail.ClewBodyM - sail.TackBodyM;
+        strips[0] = new(sail.Sections[0] with { HeightM = 0 }, sail.TackBodyM, foot / foot.Length, foot.Length);
+        strips[^1] = new(sail.Sections[^1], sail.HeadBodyM, strips[^2].Chord, 0);
+        return strips;
     }
 
     /// <summary>Extend the first/last strip to foot/head; retain every published strip at its exact height.</summary>
@@ -39,29 +71,35 @@ public static class SailingVisuals
         };
     }
 
-    public static double Separation(SailSectionState section)
+    public static double Separation(SailSectionState section) => Separation(Strip(section));
+
+    public static double Separation(SailStrip strip)
     {
-        var wind = section.ApparentWindBodyMps;
+        var wind = strip.Section.ApparentWindBodyMps;
         var speed = Math.Sqrt(wind.X * wind.X + wind.Y * wind.Y);
         if (speed < 0.1) return 0;
-        var across = wind.X * Math.Sin(section.AngleRad) + wind.Y * Math.Cos(section.AngleRad);
+        var across = Vector3d.Dot(wind, strip.Normal);
         // A visible high-incidence cue, not a measured boundary-layer model.
         return Math.Clamp((Math.Abs(across) / speed - 0.35) / 0.45, 0, 1);
     }
 
-    /// <summary>Paired ribbons: attached flow streams along the sail; luff/high incidence breaks it up.</summary>
-    public static Vector3d TelltalePoint(SailSectionState section, int side, double along, double timeSeconds)
+    public static Vector3d TelltalePoint(SailSectionState section, int side, double along, double timeSeconds) =>
+        TelltalePoint(Strip(section), side, along, timeSeconds);
+
+    /// <summary>A ribbon on one side of the cloth at the given chord fraction, streaming in the strip's local airflow.</summary>
+    public static Vector3d TelltalePoint(SailStrip strip, int side, double along, double timeSeconds, double chordFraction = 0.27)
     {
-        var chord = new Vector3d(-Math.Cos(section.AngleRad), Math.Sin(section.AngleRad), 0);
-        var normal = new Vector3d(Math.Sin(section.AngleRad), Math.Cos(section.AngleRad), 0);
+        var section = strip.Section;
+        var chord = strip.Chord;
+        var normal = strip.Normal;
         var wind = section.ApparentWindBodyMps;
         var speed = wind.Length;
-        var anchor = SailPoint(section, 0.27, timeSeconds) + normal * (side * 0.018);
+        var anchor = SailPoint(strip, chordFraction, timeSeconds) + normal * (side * 0.018);
         if (speed < 0.1) return anchor + Vector3d.UnitZ * (along * 0.27);
         var flowAlong = Vector3d.Dot(wind, chord);
         var flowAcross = Vector3d.Dot(wind, normal);
         var leeward = flowAcross * side > 0;
-        var disorder = Math.Max(section.Luffing, Separation(section) * (leeward ? 1 : 0.35));
+        var disorder = Math.Max(section.Luffing, Separation(strip) * (leeward ? 1 : 0.35));
         var phase = timeSeconds * 28 + section.HeightM * 7 + side * 2 + along * 10;
         var tangent = chord * (flowAlong < 0 ? -1 : 1);
         var stream = tangent * (along * 0.30 * (1 - 0.55 * disorder));
@@ -75,6 +113,20 @@ public static class SailingVisuals
         component.TravelDirectionWorld.Y, -component.TravelDirectionWorld.X,
         component.AmplitudeM, component.WavenumberRadPerM,
         component.AngularFrequencyRadPerSec, component.PhaseRad);
+}
+
+/// <summary>One sail strip in hull-datum NED: luff point, unit chord direction and chord length.</summary>
+public readonly record struct SailStrip(SailSectionState Section, Vector3d LeadingEdgeBodyM, Vector3d Chord, double ChordM)
+{
+    /// <summary>The horizontal normal used for the strip's angle of attack; starboard for a centred chord.</summary>
+    public Vector3d Normal
+    {
+        get
+        {
+            var length = Math.Sqrt(Chord.X * Chord.X + Chord.Y * Chord.Y);
+            return new(Chord.Y / length, -Chord.X / length, 0);
+        }
+    }
 }
 
 public readonly record struct WaterVisualMode(double DirectionX, double DirectionZ, double AmplitudeM,

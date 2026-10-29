@@ -16,6 +16,7 @@ internal partial class DebugOverlay : PanelContainer
     private readonly DebugGraph step = new("Step · ms (red = 16.67)", 20, 1000.0 / 60);
     private readonly DebugGraph late = new("Deadline lateness · ms", 1);
     internal TabContainer Tabs { get; private set; } = null!;
+    internal string ForcesText => forces.Text;
     internal HSlider WindSpeed { get; private set; } = null!;
     internal HSlider WindDirection { get; private set; } = null!;
     internal HSlider WaveDirection { get; private set; } = null!;
@@ -212,9 +213,10 @@ internal partial class DebugOverlay : PanelContainer
         {
             forces.Text = string.Join("\n", new[] { ForceRow("Gravity", h.Gravity), ForceRow("Buoyancy", h.Buoyancy),
                 ForceRow("Hull drag", h.HullDrag), ForceRow("Centerboard", h.Centerboard), ForceRow("Rudder", h.Rudder),
-                ForceRow("Main", h.Main), ForceRow("Jib", h.Jib), ForceRow("Rig reaction", h.RigReaction), ForceRow("Total", h.Total) }) + "\n" +
-                $"Jib {RadiansToDegrees(state.Rig.JibAngleRad):F1}° · sheets port {c.PortJibSheet:F2} · starboard {c.StarboardJibSheet:F2}\n" +
-                $"Average luff · main {rig.Main.Sections.Average(s => s.Luffing):F2} · jib {rig.Jib.Sections.Average(s => s.Luffing):F2}";
+                ForceRow("Main", h.Main), ForceRow("Jib", h.Jib), ForceRow("Sails (main + jib)", h.Main + h.Jib),
+                ForceRow("Rig reaction", h.RigReaction), ForceRow("Total", h.Total) }) + "\n" +
+                SailRow("Main", rig.Main, state.Rig.BoomAngleRad) + "\n" + SailRow("Jib", rig.Jib, state.Rig.JibAngleRad) + "\n" +
+                $"Jib sheets · port {SheetRow(c.PortJibSheet, rig.PortSheet)} · starboard {SheetRow(c.StarboardJibSheet, rig.StarboardSheet)}";
         }
         var e = state.Input.Environment;
         var windFrom = e.TrueWindVelocityWorldMps.Length > 0
@@ -233,6 +235,18 @@ internal partial class DebugOverlay : PanelContainer
                 $"Managed heap {p.ManagedHeapBytes / 1048576.0:F1} MiB\nRender {renderFps:F1} FPS · max frame {displayedMaxFrameMs:F1} ms (last ~1 s)";
         }
     }
+
+    // Shape and local airflow from the same completed strips that the physics and renderer use.
+    private static string SailRow(string name, HunterSailState sail, double angleRad)
+    {
+        var wind = sail.Sections.Aggregate(Vector3d.Zero, (sum, s) => sum + s.ApparentWindBodyMps) / sail.Sections.Count;
+        return $"{name} {RadiansToDegrees(angleRad):F1}° · twist {RadiansToDegrees(sail.Sections[^1].TwistRad):F1}° · " +
+            $"camber {sail.Sections.Average(s => s.CamberRatio):F3} · luff {sail.Sections.Average(s => s.Luffing):F2} · " +
+            $"local wind {MetersPerSecondToKnots(Horizontal(wind)):F1} kn from {RadiansToDegrees(Math.Atan2(-wind.Y, -wind.X)):F0}°";
+    }
+
+    private static string SheetRow(double trim, HunterSheetEvaluation? sheet) => sheet is { } s
+        ? $"{trim:F2} {(s.LengthM > s.SlackLengthM ? $"{s.ForceOnClewBodyN.Length:F0} N" : "slack")}" : $"{trim:F2}";
 
     private static double Horizontal(Vector3d v) => Math.Sqrt(v.X * v.X + v.Y * v.Y);
     private static string Vector(Vector3d v) => $"({v.X:F2}, {v.Y:F2}, {v.Z:F2})";

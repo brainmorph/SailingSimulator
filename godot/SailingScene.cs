@@ -91,11 +91,15 @@ public partial class SailingScene : Node3D
     {
         SailingKeyMap.ReleaseAll();
         orbiting = false;
+        var changed = session?.Boat != choice;
         session = session is null ? SailingSession.Create(choice, environment) : session.Restart(choice, environment);
         ilcaBoat.Visible = choice == BoatChoice.Ilca7;
         hunterBoat.Visible = choice == BoatChoice.Hunter235;
         activeBoat = choice == BoatChoice.Ilca7 ? ilcaBoat : hunterBoat;
         view = choice == BoatChoice.Ilca7 ? ilcaBoat : hunterBoat;
+        // Each boat starts with its own fitted third-person distance; a same-boat restart keeps the zoom.
+        if (changed) cameraDistance = view.CameraDistance;
+        water.WakeStartHalfWidthM = view.WakeStartHalfWidthM;
         visualStep = -1;
         previousRenderedStep = 0;
         water.Trail.Clear();
@@ -151,7 +155,7 @@ public partial class SailingScene : Node3D
         {
             camera.Fov = onboardFov;
             camera.Near = 0.04f;
-            camera.Position = activeBoat.ToGlobal(view.Sailor.Position + new Vector3(0, 0.72f, 0.35f));
+            camera.Position = activeBoat.ToGlobal(view.Sailor.Position + view.EyeOffset);
             var direction = new Vector3(Mathf.Sin(onboardYaw) * Mathf.Cos(onboardPitch),
                 Mathf.Sin(onboardPitch), -Mathf.Cos(onboardYaw) * Mathf.Cos(onboardPitch));
             camera.LookAt(camera.Position + activeBoat.Basis * direction, activeBoat.Basis * Vector3.Up);
@@ -160,7 +164,7 @@ public partial class SailingScene : Node3D
         {
             camera.Fov = 65;
             camera.Near = 0.1f;
-            var target = activeBoat.Position + Vector3.Up * 2.1f;
+            var target = activeBoat.Position + Vector3.Up * view.CameraTargetHeight;
             var forward = -activeBoat.Basis.Z;
             var heading = Mathf.Atan2(-forward.X, -forward.Z);
             var yaw = cameraYaw + heading;
@@ -202,7 +206,7 @@ public partial class SailingScene : Node3D
             {
                 var zoom = button.ButtonIndex == MouseButton.WheelUp ? -1 : button.ButtonIndex == MouseButton.WheelDown ? 1 : 0;
                 if (onboard) onboardFov = Mathf.Clamp(onboardFov + zoom * 3, 55, 95);
-                else cameraDistance = Mathf.Clamp(cameraDistance + zoom, 4, 30);
+                else cameraDistance = Mathf.Clamp(cameraDistance + zoom, 4, 40);
             }
         }
         if (@event is InputEventMouseMotion motion && orbiting)
@@ -425,14 +429,50 @@ public partial class SailingScene : Node3D
             var datum = latest.State.Boat.PositionWorldM - latest.State.Boat.OrientationBodyToWorld.Rotate(latest.State.Mass!.CenterOfMassBodyM);
             Require(activeBoat.Position.DistanceTo(SceneFrames.ToGodot(datum)) < 0.0001, "the selected boat renders the new session");
             if (latest.State.HunterGeometry is { } geometry)
-                Require(view.Sailor.Position.DistanceTo(SceneFrames.ToGodot(geometry.SkipperBodyM)) < 1e-5, "Hunter skipper position");
+                VerifyHunterPresentation(latest.State, geometry);
             debug.Visible = true;
             debug.Observe(latest, 0.2);
             Require(debug.DisplayedStep == latest.State.StepIndex, "F1 displays the new session");
+            Require(debug.ForcesText.Contains("Sails (main + jib)") == (choice == BoatChoice.Hunter235) &&
+                debug.ForcesText.Contains("Jib sheets") == (choice == BoatChoice.Hunter235), "F1 shows per-sail Hunter data");
             debug.Visible = false;
             SendKey(Key.D, false);
             VerifyBoatControls(choice);
         }
+    }
+
+    /// <summary>The Hunter view is drawn from the same completed strips, sheets, foils and skipper as the physics.</summary>
+    private void VerifyHunterPresentation(SimulationState state, HunterBoatGeometry geometry)
+    {
+        var rig = state.HunterRig!;
+        Require(view.Sailor.Position.DistanceTo(SceneFrames.ToGodot(geometry.SkipperBodyM)) < 1e-5, "Hunter skipper position");
+        Require(hunterBoat.Board.Position.DistanceTo(SceneFrames.ToGodot((geometry.CenterboardTopBodyM + geometry.CenterboardTipBodyM) * 0.5)) < 1e-5,
+            "Hunter board position");
+        Require(hunterBoat.Rudder.Position.DistanceTo(SceneFrames.ToGodot(geometry.RudderTopBodyM)) < 1e-5, "Hunter rudder pivot");
+        Require(hunterBoat.Boom.Position.DistanceTo(SceneFrames.ToGodot((rig.Main.TackBodyM + rig.Main.ClewBodyM) * 0.5)) < 1e-5, "Hunter boom follows the main foot");
+        foreach (var (mesh, sail) in new[] { (hunterBoat.MainMesh, rig.Main), (hunterBoat.JibMesh, rig.Jib) })
+        {
+            var vertices = mesh.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array();
+            var strips = SailingVisuals.HunterStrips(sail);
+            // Each cell starts at its lower-left point; row r, column c is cell (r * 10 + c), vertex 6 per cell.
+            for (var row = 0; row < strips.Length - 1; row++)
+            for (var column = 0; column < 10; column += 3)
+                Require(vertices[(row * 10 + column) * 6].DistanceTo(SceneFrames.ToGodot(
+                    SailingVisuals.SailPoint(strips[row], column / 10.0, state.TimeSeconds))) < 1e-5, $"{sail.Id} cloth follows the published strips");
+            Require(vertices[0].DistanceTo(SceneFrames.ToGodot(sail.TackBodyM)) < 1e-5, $"{sail.Id} tack");
+        }
+        Require(hunterBoat.TelltaleMesh.GetSurfaceCount() == 1 && hunterBoat.SheetMesh.GetSurfaceCount() == 1, "Hunter telltales and sheets drawn");
+        var sheetVertices = hunterBoat.SheetMesh.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array();
+        Require(sheetVertices[0].DistanceTo(SceneFrames.ToGodot(rig.PortSheet!.Value.LeadBodyM)) < 1e-5 &&
+            sheetVertices[15].DistanceTo(SceneFrames.ToGodot(rig.PortSheet.Value.ClewBodyM)) < 1e-5, "jib sheet runs from lead to clew");
+        Require(Math.Abs(cameraDistance - hunterBoat.CameraDistance) < 1e-6 && water.WakeStartHalfWidthM == hunterBoat.WakeStartHalfWidthM,
+            "Hunter camera distance and wake width fitted");
+        onboard = true;
+        UpdateCamera();
+        Require(camera.Position.DistanceTo(hunterBoat.ToGlobal(hunterBoat.Sailor.Position + hunterBoat.EyeOffset)) < 1e-4 && !hunterBoat.Sailor.Visible,
+            "onboard camera follows the Hunter skipper");
+        onboard = false;
+        UpdateCamera();
     }
 
     /// <summary>Jib-sheet keys reach only the Hunter, through the same gradual ramps, and F2 lists them only there.</summary>
@@ -543,7 +583,7 @@ public partial class SailingScene : Node3D
         _UnhandledInput(new InputEventKey { PhysicalKeycode = Key.C, Pressed = true });
         UpdateCamera();
         Require(onboard && camera.Position.DistanceTo(thirdPosition) > 1, "C switches camera");
-        Require(camera.Position.DistanceTo(ilcaBoat.ToGlobal(ilcaBoat.Sailor.Position + new Vector3(0, 0.72f, 0.35f))) < 1e-5, "onboard attachment");
+        Require(camera.Position.DistanceTo(ilcaBoat.ToGlobal(ilcaBoat.Sailor.Position + ilcaBoat.EyeOffset)) < 1e-5, "onboard attachment");
         var before = camera.Transform;
         _UnhandledInput(new InputEventMouseMotion { Relative = new(15, 10) });
         _UnhandledInput(new InputEventMouseButton { ButtonIndex = MouseButton.WheelUp, Pressed = true });
