@@ -9,6 +9,1052 @@ var calm = Input(controls, 0);
 var windy = Input(controls, 10);
 var tests = new (string Name, Action Run)[]
 {
+    ("Experimental Hunter sheet geometry pulls toward its lead and goes slack", () =>
+    {
+        var port = Hunter235SheetExperiment.Evaluate(true, 1, 0);
+        var starboard = Hunter235SheetExperiment.Evaluate(false, 1, 0);
+        Require(port.LengthM > port.SlackLengthM && port.ForceOnClewBodyN.Y < 0 &&
+            port.TorqueAboutForestayNm < 0, "A tight port sheet must pull the centered clew to port.");
+        Require(starboard.LengthM > starboard.SlackLengthM && starboard.ForceOnClewBodyN.Y > 0 &&
+            starboard.TorqueAboutForestayNm > 0, "A tight starboard sheet must pull the centered clew to starboard.");
+        Near(port.TorqueAboutForestayNm, -starboard.TorqueAboutForestayNm, 1e-10);
+        Near(port.ForceOnClewBodyN.X, starboard.ForceOnClewBodyN.X, 1e-10);
+        Near(port.ForceOnClewBodyN.Y, -starboard.ForceOnClewBodyN.Y, 1e-10);
+        foreach (var onPort in new[] { true, false })
+        {
+            var taut = Hunter235SheetExperiment.Evaluate(onPort, 1, onPort ? 0.5 : -0.5);
+            // The rope applies equal and opposite collinear forces at its two ends.
+            var totalMoment = Vector3d.Cross(taut.ClewBodyM, taut.ForceOnClewBodyN) +
+                Vector3d.Cross(taut.LeadBodyM, -taut.ForceOnClewBodyN);
+            Near(totalMoment, Vector3d.Zero, 1e-10);
+            Near((taut.ClewBodyM - taut.LeadBodyM).Length, taut.LengthM, 1e-12);
+            var eased = Hunter235SheetExperiment.Evaluate(onPort, 0, 0);
+            Near(eased.ForceOnClewBodyN, Vector3d.Zero, 0);
+            Near(eased.TorqueAboutForestayNm, 0, 0);
+            var onOwnSide = Hunter235SheetExperiment.Evaluate(onPort, 1, onPort ? -0.25 : 0.25);
+            Near(onOwnSide.ForceOnClewBodyN, Vector3d.Zero, 0);
+            Throws<ArgumentOutOfRangeException>(() => Hunter235SheetExperiment.Evaluate(onPort, -0.01, 0));
+            Throws<ArgumentOutOfRangeException>(() => Hunter235SheetExperiment.Evaluate(onPort, 0, double.NaN));
+            // Torque must be the negative derivative of spring energy with angle.
+            const double delta = 1e-6;
+            var angle = onPort ? 0.5 : -0.5;
+            double Energy(double a)
+            {
+                var sheet = Hunter235SheetExperiment.Evaluate(onPort, 1, a);
+                var extension = Math.Max(0, sheet.LengthM - sheet.SlackLengthM);
+                return 0.5 * 1000 * extension * extension;
+            }
+            var gradient = (Energy(angle + delta) - Energy(angle - delta)) / (2 * delta);
+            Near(Hunter235SheetExperiment.Evaluate(onPort, 1, angle).TorqueAboutForestayNm, -gradient, 1e-5);
+        }
+        // Equal tight sheets pull against each other without a net centerline torque.
+        Near(port.TorqueAboutForestayNm + starboard.TorqueAboutForestayNm, 0, 1e-10);
+    }),
+    ("Experimental sheet resists a jib crossing under reversed airflow", () =>
+    {
+        // Prescribed, stationary hull and wind isolate the jib rather than simulate a tack.
+        var rig = new Hunter235RigModel();
+        var c = new SailingControls();
+        var mass = new Hunter235MassModel().Evaluate(c);
+        (double Angle, double Rate) Advance((double Angle, double Rate) state, double oldTrim, double side)
+        {
+            var wind = new EnvironmentConfig(new(2, -2 * side, 0), WavePreset.Calm,
+                WaveDirectionMode.Independent, Vector3d.UnitX, 1);
+            var eval = new ForceEvaluation(0, RigidBodyState.AtRest, mass, new(c, wind));
+            (double Angle, double Rate) Derivative((double Angle, double Rate) s)
+            {
+                var sail = rig.Inspect(eval with { Rig = new(0, 0, s.Angle, s.Rate) }).Jib;
+                var oldSheet = Hunter235SheetExperiment.Evaluate(side < 0, oldTrim, s.Angle);
+                var otherSheet = Hunter235SheetExperiment.Evaluate(side > 0, 0, s.Angle);
+                return (s.Rate, (sail.TorqueNm + oldSheet.TorqueAboutForestayNm +
+                    otherSheet.TorqueAboutForestayNm - 80 * s.Rate) / 40);
+            }
+            const double dt = 1.0 / 60;
+            var k1 = Derivative(state);
+            var k2 = Derivative((state.Angle + dt * k1.Angle / 2, state.Rate + dt * k1.Rate / 2));
+            var k3 = Derivative((state.Angle + dt * k2.Angle / 2, state.Rate + dt * k2.Rate / 2));
+            var k4 = Derivative((state.Angle + dt * k3.Angle, state.Rate + dt * k3.Rate));
+            return (state.Angle + dt * (k1.Angle + 2 * k2.Angle + 2 * k3.Angle + k4.Angle) / 6,
+                state.Rate + dt * (k1.Rate + 2 * k2.Rate + 2 * k3.Rate + k4.Rate) / 6);
+        }
+        foreach (var side in new[] { -1.0, 1.0 })
+        {
+            var released = (Angle: 0.4 * side, Rate: 0.0);
+            var held = released;
+            var minimumHeldOpening = 0.4;
+            for (var i = 0; i < 600; i++)
+            {
+                released = Advance(released, 0, side);
+                held = Advance(held, 1, side);
+                Require(double.IsFinite(released.Angle) && double.IsFinite(released.Rate) &&
+                    double.IsFinite(held.Angle) && double.IsFinite(held.Rate), "Jib motion must remain finite.");
+                minimumHeldOpening = Math.Min(minimumHeldOpening, side * held.Angle);
+            }
+            Console.WriteLine($"  Fixed-hull side {side:+0;-0}, 10 s: released {released.Angle:F3} rad, held {held.Angle:F3} rad, minimum held opening {minimumHeldOpening:F3} rad");
+            Require(side * released.Angle < 0 && minimumHeldOpening > 0,
+                "The held old sheet must retain the jib on its side while easing permits crossing.");
+            for (var i = 0; i < 600; i++)
+            {
+                // Match the 0.25/s held-input easing rate over four seconds.
+                var oldTrim = Math.Max(0, 1 - (i + 1) / 240.0);
+                held = Advance(held, oldTrim, side);
+                Require(double.IsFinite(held.Angle) && double.IsFinite(held.Rate),
+                    "Jib motion must remain finite after releasing the sheet.");
+            }
+            Console.WriteLine($"  After gradually releasing the held sheet: jib {held.Angle:F3} rad");
+            Require(side * held.Angle < -0.1,
+                "Releasing the old sheet must allow the previously held jib to cross.");
+        }
+    }),
+    ("Hunter steady reach settles and replays exactly", () =>
+    {
+        var env = HunterDevelopmentScenario.Environment();
+        // Fixed helm represents a held rudder, not the host's spring-return input. Heading
+        // converges with a time constant of about 50 s, so settling is judged after 100 s.
+        var c = new SailingControls(tiller: -0.07, mainsheet: 0.6, traveler: 0.8, vang: 0.6,
+            outhaul: 0.5, cunningham: 0.3, starboardJibSheet: 0.65);
+        var input = new SimulationInput(c, env);
+        var first = new Hunter235BoatDefinition().CreateSimulation(input, Math.PI / 2);
+        var second = new Hunter235BoatDefinition().CreateSimulation(input, Math.PI / 2);
+        var minSpeed = double.PositiveInfinity; var maxSpeed = 0.0;
+        var minHeading = double.PositiveInfinity; var maxHeading = double.NegativeInfinity;
+        var maxHeel = 0.0; var maxLuff = 0.0;
+        for (var i = 0; i < 7200; i++)
+        {
+            var a = first.Step(input);
+            var b = second.Step(input);
+            Require(a.Boat == b.Boat && a.Rig == b.Rig && a.HunterRig!.Total == b.HunterRig!.Total,
+                $"Steady reach replay differs at step {i + 1}.");
+            if (i < 6000) continue;
+            var attitude = PresentationConversions.GetAttitude(a.Boat.OrientationBodyToWorld);
+            var speed = a.Boat.LinearVelocityWorldMps.Length;
+            minSpeed = Math.Min(minSpeed, speed); maxSpeed = Math.Max(maxSpeed, speed);
+            minHeading = Math.Min(minHeading, attitude.Heading); maxHeading = Math.Max(maxHeading, attitude.Heading);
+            maxHeel = Math.Max(maxHeel, Math.Abs(attitude.Heel));
+            maxLuff = Math.Max(maxLuff, Math.Max(a.HunterRig!.Main.Sections.Average(s => s.Luffing),
+                a.HunterRig.Jib.Sections.Average(s => s.Luffing)));
+        }
+        Console.WriteLine($"  100–120 s: speed {minSpeed:F3}–{maxSpeed:F3} m/s, heading {minHeading * 180 / Math.PI:F2}–{maxHeading * 180 / Math.PI:F2} deg, max heel {maxHeel * 180 / Math.PI:F2} deg, max sail luff {maxLuff:F3}");
+        Require(minSpeed > 1 && maxSpeed - minSpeed < 0.02 &&
+            maxHeading - minHeading < Math.PI / 180 && maxHeel < Math.PI / 4 && maxLuff < 0.1,
+            "Reach failed the scenario's settling, upright or sail-filling criteria.");
+    }),
+    ("Hunter scripted tack and control movements replay exactly", () =>
+    {
+        var env = HunterDevelopmentScenario.Environment();
+        var controls = HunterDevelopmentScenario.InitialControls;
+        var first = new Hunter235BoatDefinition().CreateSimulation(new(controls, env), Math.PI / 2);
+        var second = new Hunter235BoatDefinition().CreateSimulation(new(controls, env), Math.PI / 2);
+        var crossedWind = false;
+        var crossedSails = false;
+        for (long step = 0; step < HunterDevelopmentScenario.EndStep; step++)
+        {
+            controls = HunterDevelopmentScenario.Input(step).Advance(controls);
+            var input = new SimulationInput(controls, env);
+            var a = first.Step(input);
+            var b = second.Step(input);
+            Require(a.Boat == b.Boat && a.Rig == b.Rig && a.Mass == b.Mass &&
+                a.HunterRig!.Total == b.HunterRig!.Total, $"Replay differs at step {step + 1}.");
+            var attitude = PresentationConversions.GetAttitude(a.Boat.OrientationBodyToWorld);
+            if (HunterDevelopmentScenario.Stage(step) == 3 && attitude.Heading > Math.PI &&
+                Math.Abs(attitude.Heel) < Math.PI / 2)
+                crossedWind = true;
+            if (crossedWind && a.Rig.BoomAngleRad < -0.1 && a.Rig.JibAngleRad < -0.1)
+                crossedSails = true;
+            if (step == 3239)
+            {
+                var rig = a.HunterRig!;
+                Require(rig.Main.Sections.Average(s => s.Luffing) < 0.1 &&
+                    rig.Jib.Sections.Average(s => s.Luffing) < 0.1 &&
+                    a.Boat.LinearVelocityWorldMps.Length > 1.0,
+                    "Both sails must fill and the boat regain speed after the turn.");
+            }
+        }
+        Require(crossedWind, "Hunter did not cross the upwind heading while upright.");
+        Require(crossedSails, "Both sails did not cross after the boat crossed the wind.");
+        Require(controls.StarboardJibSheet < 0.01 && controls.PortJibSheet > 0.7 &&
+            controls.Centerboard > 0.99 && controls.Hiking < -0.99, "Scripted controls did not reach expected positions.");
+    }),
+    ("Experimental tight old sheet encounters opposing airflow in a full-boat turn", () =>
+    {
+        var env = HunterDevelopmentScenario.Environment();
+        var released = new SailingControls(mainsheet: 0.6, traveler: 0.8, vang: 0.6,
+            outhaul: 0.5, cunningham: 0.3, starboardJibSheet: 1);
+        var held = released;
+        Simulation Create()
+        {
+            var model = new Hunter235BoatModel(new Hunter235RigModel(experimentalSheetGeometry: true));
+            var input = new SimulationInput(released, env);
+            return new Simulation(model.Hull.CreateInitialState(input, Math.PI / 2), new Hunter235MassModel(), model, input);
+        }
+        var releasedBoat = Create();
+        var heldBoat = Create();
+        var opposingSteps = 0;
+        var currentRun = 0;
+        var longestRun = 0;
+        var jibAtChange = 0.0;
+        for (long step = 0; step < 3240; step++)
+        {
+            if (step == 1200) jibAtChange = heldBoat.Latest.Rig.JibAngleRad;
+            var steering = step >= 240 && step < 2640 ? -0.6 : 0;
+            var easing = step >= 1200 && step < 1440 ? -1 : 0;
+            released = new HeldSailingInput(tiller: steering, starboardJibSheet: easing).Advance(released);
+            held = new HeldSailingInput(tiller: steering).Advance(held);
+            releasedBoat.Step(new(released, env));
+            var snapshot = heldBoat.Step(new(held, env));
+            var attitude = PresentationConversions.GetAttitude(snapshot.Boat.OrientationBodyToWorld);
+            if (attitude.Heading > Math.PI && Math.Abs(attitude.Heel) < Math.PI / 2 &&
+                snapshot.Rig.JibAngleRad > 0 && snapshot.HunterRig!.Jib.TorqueNm < -1)
+            {
+                opposingSteps++;
+                currentRun++;
+                longestRun = Math.Max(longestRun, currentRun);
+            }
+            else currentRun = 0;
+        }
+        var a = releasedBoat.Latest;
+        var b = heldBoat.Latest;
+        Console.WriteLine($"  Tight-sheet turn: jib at change {jibAtChange:F3} rad; released {a.Rig.JibAngleRad:F3}, held {b.Rig.JibAngleRad:F3} rad; held opposing-load steps {opposingSteps}, longest run {longestRun}; headings {PresentationConversions.GetAttitude(a.Boat.OrientationBodyToWorld).Heading * 180 / Math.PI:F1}/{PresentationConversions.GetAttitude(b.Boat.OrientationBodyToWorld).Heading * 180 / Math.PI:F1} deg");
+        Require(jibAtChange > 0.1 && released.StarboardJibSheet < 0.01 && held.StarboardJibSheet == 1 &&
+            held.PortJibSheet == 0 && released.PortJibSheet == 0,
+            "The old sheet must start tight on the jib side and be released only in the comparison run.");
+        Require(longestRun >= 60, "The held jib must encounter opposing aerodynamic torque for at least one second after the boat crosses the wind.");
+        Require(b.Rig.JibAngleRad - a.Rig.JibAngleRad > 0.2,
+            "The held sheet must reduce crossing compared with the released sheet in this scenario.");
+    }),
+    ("Experimental held-sheet turn mirrors across port and starboard", () =>
+    {
+        var env = HunterDevelopmentScenario.Environment();
+        var starboard = new SailingControls(mainsheet: 0.6, traveler: 0.8, vang: 0.6,
+            outhaul: 0.5, cunningham: 0.3, starboardJibSheet: 1);
+        var port = new SailingControls(mainsheet: 0.6, traveler: 0.8, vang: 0.6,
+            outhaul: 0.5, cunningham: 0.3, portJibSheet: 1);
+        Simulation Create(SailingControls controls, double side)
+        {
+            var model = new Hunter235BoatModel(new Hunter235RigModel(experimentalSheetGeometry: true), experimentalRigMomentum: true);
+            var input = new SimulationInput(controls, env);
+            return new Simulation(model.Hull.CreateInitialState(input, side * Math.PI / 2),
+                new Hunter235MassModel(), new HunterInitialRig(model, side), input);
+        }
+        var a = Create(starboard, 1);
+        var b = Create(port, -1);
+        var opposingPortSteps = 0;
+        var currentOpposing = 0;
+        var longestOpposing = 0;
+        for (long step = 0; step < 3240; step++)
+        {
+            var steer = step >= 240 && step < 2640 ? -0.6 : 0;
+            starboard = new HeldSailingInput(tiller: steer).Advance(starboard);
+            port = new HeldSailingInput(tiller: -steer).Advance(port);
+            var x = a.Step(new(starboard, env));
+            var y = b.Step(new(port, env));
+            Near(x.Rig.JibAngleRad, -y.Rig.JibAngleRad, 1e-7);
+            Near(x.Rig.BoomAngleRad, -y.Rig.BoomAngleRad, 1e-7);
+            Near(x.Boat.PositionWorldM.X, y.Boat.PositionWorldM.X, 1e-7);
+            Near(x.Boat.PositionWorldM.Y, -y.Boat.PositionWorldM.Y, 1e-7);
+            Near(x.Boat.PositionWorldM.Z, y.Boat.PositionWorldM.Z, 1e-7);
+            Near(x.Boat.LinearVelocityWorldMps.X, y.Boat.LinearVelocityWorldMps.X, 1e-7);
+            Near(x.Boat.LinearVelocityWorldMps.Y, -y.Boat.LinearVelocityWorldMps.Y, 1e-7);
+            Near(x.Boat.LinearVelocityWorldMps.Z, y.Boat.LinearVelocityWorldMps.Z, 1e-7);
+            Near(x.HunterRig!.Jib.TorqueNm, -y.HunterRig!.Jib.TorqueNm, 1e-6);
+            var attitude = PresentationConversions.GetAttitude(y.Boat.OrientationBodyToWorld);
+            if (attitude.Heading < Math.PI && Math.Abs(attitude.Heel) < Math.PI / 2 &&
+                y.Rig.JibAngleRad < 0 && y.HunterRig!.Jib.TorqueNm > 1)
+            {
+                opposingPortSteps++;
+                longestOpposing = Math.Max(longestOpposing, ++currentOpposing);
+            }
+            else currentOpposing = 0;
+        }
+        Console.WriteLine($"  Mirrored held-sheet turn: port opposing-load steps {opposingPortSteps}, longest run {longestOpposing}; final jib angles {a.Latest.Rig.JibAngleRad:F3}/{b.Latest.Rig.JibAngleRad:F3} rad");
+        Require(longestOpposing >= 60, "The mirrored port-side jib must encounter opposing load for at least one second after crossing the wind.");
+    }),
+    ("Experimental rig momentum reaction conserves a closed-system test", () =>
+    {
+        // Isolate the internal spring and a single relative rig degree of freedom.
+        var input = Input(new SailingControls(starboardJibSheet: 1), 0);
+        var mass = new Hunter235MassModel().Evaluate(input.Controls);
+        var uncoupled = new Simulation(RigidBodyState.AtRest, mass, new SheetMomentumExperiment(0), input);
+        var reactionOnly = new Simulation(RigidBodyState.AtRest, mass, new SheetMomentumExperiment(1), input);
+        var coupled = new Simulation(RigidBodyState.AtRest, mass, new SheetMomentumExperiment(2), input);
+        var axis = SheetMomentumExperiment.Axis;
+        Vector3d Momentum(SimulationState s) => s.Boat.OrientationBodyToWorld.Rotate(
+            mass.InertiaBodyKgM2.Multiply(s.Boat.AngularVelocityBodyRadPerSec) + axis * (40 * s.Rig.JibRateRadPerSec));
+        double Energy(SimulationState s)
+        {
+            var omega = s.Boat.AngularVelocityBodyRadPerSec;
+            var rate = s.Rig.JibRateRadPerSec;
+            var sheet = Hunter235SheetExperiment.Evaluate(false, 1, s.Rig.JibAngleRad);
+            var extension = Math.Max(0, sheet.LengthM - sheet.SlackLengthM);
+            return 0.5 * Vector3d.Dot(omega, mass.InertiaBodyKgM2.Multiply(omega)) +
+                Vector3d.Dot(omega, axis) * (40 * rate) + 0.5 * 40 * rate * rate + 0.5 * 1000 * extension * extension;
+        }
+        var initialEnergy = Energy(coupled.Latest);
+        var maxUncoupledMomentum = 0.0;
+        var maxCoupledMomentum = 0.0;
+        var maxEnergyChange = 0.0;
+        var reactionEnergyChange = 0.0;
+        for (var i = 0; i < 600; i++)
+        {
+            var a = uncoupled.Step(input);
+            var r = reactionOnly.Step(input);
+            var b = coupled.Step(input);
+            maxUncoupledMomentum = Math.Max(maxUncoupledMomentum, Momentum(a).Length);
+            maxCoupledMomentum = Math.Max(maxCoupledMomentum, Momentum(b).Length);
+            maxEnergyChange = Math.Max(maxEnergyChange, Math.Abs(Energy(b) - initialEnergy));
+            reactionEnergyChange = Math.Max(reactionEnergyChange, Math.Abs(Energy(r) - initialEnergy));
+        }
+        Console.WriteLine($"  Closed sheet test: max angular momentum without/with coupling {maxUncoupledMomentum:F6}/{maxCoupledMomentum:F6} kg m²/s; max energy change reaction-only/coupled {reactionEnergyChange:F6}/{maxEnergyChange:F6} J (initial {initialEnergy:F6} J)");
+        Require(maxUncoupledMomentum > 1 && maxCoupledMomentum < 1e-5 &&
+            reactionEnergyChange > 0.01 && maxEnergyChange < 0.001,
+            "The coupled trial must preserve momentum and keep energy drift below 0.001 J in the isolated example.");
+    }),
+    ("Experimental two-sail momentum coupling conserves a closed-system test", () =>
+    {
+        var input = Input(new SailingControls(starboardJibSheet: 1), 0);
+        var mass = new Hunter235MassModel().Evaluate(input.Controls);
+        var simulation = new Simulation(RigidBodyState.AtRest, mass, new DualRigMomentumExperiment(), input);
+        var boomAxis = -Vector3d.UnitZ;
+        var jibAxis = SheetMomentumExperiment.Axis;
+        Vector3d Momentum(SimulationState s) => s.Boat.OrientationBodyToWorld.Rotate(
+            mass.InertiaBodyKgM2.Multiply(s.Boat.AngularVelocityBodyRadPerSec) +
+            boomAxis * (120 * s.Rig.BoomRateRadPerSec) + jibAxis * (40 * s.Rig.JibRateRadPerSec));
+        double Energy(SimulationState s)
+        {
+            var omega = s.Boat.AngularVelocityBodyRadPerSec;
+            var boomRate = s.Rig.BoomRateRadPerSec;
+            var jibRate = s.Rig.JibRateRadPerSec;
+            var sheet = Hunter235SheetExperiment.Evaluate(false, 1, s.Rig.JibAngleRad);
+            var extension = Math.Max(0, sheet.LengthM - sheet.SlackLengthM);
+            return 0.5 * Vector3d.Dot(omega, mass.InertiaBodyKgM2.Multiply(omega)) +
+                Vector3d.Dot(omega, boomAxis) * (120 * boomRate) +
+                Vector3d.Dot(omega, jibAxis) * (40 * jibRate) +
+                0.5 * 120 * boomRate * boomRate + 0.5 * 40 * jibRate * jibRate +
+                0.5 * 500 * s.Rig.BoomAngleRad * s.Rig.BoomAngleRad + 0.5 * 1000 * extension * extension;
+        }
+        var startEnergy = Energy(simulation.Latest);
+        var maxMomentum = 0.0;
+        var maxEnergyChange = 0.0;
+        for (var step = 0; step < 600; step++)
+        {
+            var snapshot = simulation.Step(input);
+            maxMomentum = Math.Max(maxMomentum, Momentum(snapshot).Length);
+            maxEnergyChange = Math.Max(maxEnergyChange, Math.Abs(Energy(snapshot) - startEnergy));
+        }
+        Console.WriteLine($"  Two-sail closed test: max angular momentum {maxMomentum:F8} kg m²/s; max energy change {maxEnergyChange:F6} J (initial {startEnergy:F6} J)");
+        Require(maxMomentum < 1e-5 && maxEnergyChange < 0.001,
+            "The two-sail trial must preserve momentum and energy within the scenario tolerances.");
+    }),
+    ("Experimental coupled Hunter sails replay a full-boat turn", () =>
+    {
+        var env = HunterDevelopmentScenario.Environment();
+        var controls = new SailingControls(mainsheet: 0.6, traveler: 0.8, vang: 0.6,
+            outhaul: 0.5, cunningham: 0.3, starboardJibSheet: 1);
+        var model = new Hunter235BoatModel(new Hunter235RigModel(experimentalSheetGeometry: true), experimentalRigMomentum: true);
+        var input = new SimulationInput(controls, env);
+        Simulation Create() => new(model.Hull.CreateInitialState(input, Math.PI / 2), new Hunter235MassModel(), model, input);
+        var first = Create();
+        var second = Create();
+        var releasedBoat = Create();
+        var releasedControls = controls;
+        var opposingRun = 0;
+        var longestOpposing = 0;
+        for (long step = 0; step < 3240; step++)
+        {
+            controls = new HeldSailingInput(tiller: step >= 240 && step < 2640 ? -0.6 : 0).Advance(controls);
+            input = new(controls, env);
+            var a = first.Step(input);
+            var b = second.Step(input);
+            releasedControls = new HeldSailingInput(tiller: step >= 240 && step < 2640 ? -0.6 : 0,
+                starboardJibSheet: step >= 1200 && step < 1440 ? -1 : 0).Advance(releasedControls);
+            releasedBoat.Step(new(releasedControls, env));
+            Require(a.Boat == b.Boat && a.Rig == b.Rig && a.HunterRig!.Total == b.HunterRig!.Total,
+                $"Experimental coupled replay differs at step {step + 1}.");
+            var attitude = PresentationConversions.GetAttitude(a.Boat.OrientationBodyToWorld);
+            if (attitude.Heading > Math.PI && Math.Abs(attitude.Heel) < Math.PI / 2 &&
+                a.Rig.JibAngleRad > 0 && a.HunterRig!.Jib.TorqueNm < -1)
+                longestOpposing = Math.Max(longestOpposing, ++opposingRun);
+            else opposingRun = 0;
+        }
+        var completed = first.Latest;
+        var published = completed.HunterRig!;
+        var evaluated = model.EvaluateDynamics(new(completed.TimeSeconds, completed.Boat, completed.Mass!, input, completed.Rig));
+        Require(published.ExperimentalRigMomentum && published.ExperimentalSheetGeometry && published.Derivative == evaluated.Rig,
+            "Published rig derivative must include the selected experimental coupling.");
+        var evaluation = new ForceEvaluation(completed.TimeSeconds, completed.Boat, completed.Mass!, input, completed.Rig);
+        var external = model.Gravity.Evaluate(evaluation) + model.Hull.Evaluate(evaluation) +
+            model.Foils.Centerboard.Evaluate(evaluation) + model.Foils.Rudder.Evaluate(evaluation) + published.Total;
+        var inertia = completed.Mass!.InertiaBodyKgM2;
+        var omega = completed.Boat.AngularVelocityBodyRadPerSec;
+        var boomAxis = -Vector3d.UnitZ;
+        var jibAxis = SheetMomentumExperiment.Axis;
+        var relativeMomentum = boomAxis * (120 * completed.Rig.BoomRateRadPerSec) +
+            jibAxis * (40 * completed.Rig.JibRateRadPerSec);
+        var bodyAcceleration = inertia.Solve(evaluated.Forces.MomentBodyNm - Vector3d.Cross(omega, inertia.Multiply(omega)));
+        var momentumRate = inertia.Multiply(bodyAcceleration) +
+            boomAxis * (120 * evaluated.Rig.AngularAcceleration) + jibAxis * (40 * evaluated.Rig.JibAngularAcceleration) +
+            Vector3d.Cross(omega, inertia.Multiply(omega) + relativeMomentum);
+        Near(momentumRate, external.MomentBodyNm, 1e-8);
+        Throws<ArithmeticException>(() => Hunter235BoatModel.CoupleRig(
+            evaluation with { Mass = new MassProperties(1, new(1, 1, 1)) }, default, default));
+        Console.WriteLine($"  Coupled held-sheet turn: heading {PresentationConversions.GetAttitude(completed.Boat.OrientationBodyToWorld).Heading * 180 / Math.PI:F1} deg, held/released jib {completed.Rig.JibAngleRad:F3}/{releasedBoat.Latest.Rig.JibAngleRad:F3} rad, longest opposing-load run {longestOpposing} steps");
+        Require(longestOpposing >= 60 && releasedControls.StarboardJibSheet < 0.01 &&
+            completed.Rig.JibAngleRad - releasedBoat.Latest.Rig.JibAngleRad > 0.2,
+            "The coupled turn must retain the jib under opposing load and respond to easing the old sheet.");
+    }),
+    ("Hunter sail interaction changes a full-boat reach and keeps a held-sheet turn", () =>
+    {
+        var env = HunterDevelopmentScenario.Environment();
+        Simulation Create(SailingControls c, bool interaction)
+        {
+            var model = new Hunter235BoatModel(new Hunter235RigModel(experimentalSheetGeometry: true, sailInteraction: interaction),
+                experimentalRigMomentum: true);
+            var input = new SimulationInput(c, env);
+            return new Simulation(model.Hull.CreateInitialState(input, Math.PI / 2), new Hunter235MassModel(), model, input);
+        }
+        var reach = new SailingControls(tiller: -0.1, mainsheet: 0.6, traveler: 0.8, vang: 0.6,
+            outhaul: 0.5, cunningham: 0.3, starboardJibSheet: 0.65);
+        var separate = Create(reach, false);
+        var combined = Create(reach, true);
+        var definition = new Hunter235BoatDefinition().CreateSimulation(new(reach, env), Math.PI / 2);
+        for (var step = 0; step < 3600; step++)
+        {
+            separate.Step(new(reach, env));
+            var a = combined.Step(new(reach, env));
+            var b = definition.Step(new(reach, env));
+            Require(a.Boat == b.Boat && a.Rig == b.Rig, "The Hunter definition must use the interacting rig.");
+        }
+        var s = separate.Latest;
+        var c = combined.Latest;
+        var sHeading = PresentationConversions.GetAttitude(s.Boat.OrientationBodyToWorld).Heading;
+        var cHeading = PresentationConversions.GetAttitude(c.Boat.OrientationBodyToWorld).Heading;
+        Console.WriteLine($"  Reach at 60 s: independent {s.Boat.LinearVelocityWorldMps.Length:F3} m/s {sHeading * 180 / Math.PI:F2} deg, interacting {c.Boat.LinearVelocityWorldMps.Length:F3} m/s {cHeading * 180 / Math.PI:F2} deg; max induced main/jib {c.HunterRig!.Main.InducedAirflowBodyMps.Max(v => v.Length):F3}/{c.HunterRig.Jib.InducedAirflowBodyMps.Max(v => v.Length):F3} m/s");
+        Require(c.HunterRig.Main.InducedAirflowBodyMps.Any(v => v.Length > 0.01) &&
+            c.HunterRig.Jib.InducedAirflowBodyMps.Any(v => v.Length > 0.01),
+            "Both sails must receive induced airflow on the reach.");
+
+        var held = new SailingControls(mainsheet: 0.6, traveler: 0.8, vang: 0.6,
+            outhaul: 0.5, cunningham: 0.3, starboardJibSheet: 1);
+        var released = held;
+        var heldBoat = new Hunter235BoatDefinition().CreateSimulation(new(held, env), Math.PI / 2);
+        var releasedBoat = new Hunter235BoatDefinition().CreateSimulation(new(released, env), Math.PI / 2);
+        var run = 0; var longest = 0;
+        for (long step = 0; step < 3240; step++)
+        {
+            var steer = step >= 240 && step < 2640 ? -0.6 : 0;
+            held = new HeldSailingInput(tiller: steer).Advance(held);
+            released = new HeldSailingInput(tiller: steer, starboardJibSheet: step >= 1200 && step < 1440 ? -1 : 0).Advance(released);
+            var x = heldBoat.Step(new(held, env));
+            releasedBoat.Step(new(released, env));
+            var attitude = PresentationConversions.GetAttitude(x.Boat.OrientationBodyToWorld);
+            if (attitude.Heading > Math.PI && Math.Abs(attitude.Heel) < Math.PI / 2 &&
+                x.Rig.JibAngleRad > 0 && x.HunterRig!.Jib.TorqueNm < -1)
+                longest = Math.Max(longest, ++run);
+            else run = 0;
+        }
+        Console.WriteLine($"  Interacting held-sheet turn: longest opposing-load run {longest} steps; held/released jib {heldBoat.Latest.Rig.JibAngleRad:F3}/{releasedBoat.Latest.Rig.JibAngleRad:F3} rad; heading {PresentationConversions.GetAttitude(heldBoat.Latest.Boat.OrientationBodyToWorld).Heading * 180 / Math.PI:F1} deg");
+        Require(longest >= 60 && heldBoat.Latest.Rig.JibAngleRad - releasedBoat.Latest.Rig.JibAngleRad > 0.2,
+            "With interaction, the held old sheet must still retain the jib under opposing load and respond to easing.");
+    }),
+    ("Hunter tacks and jibes in both directions with manual sheet handling", () =>
+    {
+        var env = HunterDevelopmentScenario.Environment();
+        foreach (var jibe in new[] { false, true })
+        {
+            // Mirrored starts: side +1 heads east with both sails to starboard.
+            var sides = new[] { 1.0, -1.0 };
+            var controls = sides.Select(side => new SailingControls(mainsheet: 0.6, traveler: 0.8, vang: 0.6, outhaul: 0.5,
+                cunningham: 0.3, portJibSheet: side < 0 ? 0.65 : 0, starboardJibSheet: side > 0 ? 0.65 : 0)).ToArray();
+            var boats = sides.Select((side, k) =>
+            {
+                var model = new Hunter235BoatModel(new Hunter235RigModel(experimentalSheetGeometry: true, sailInteraction: true),
+                    experimentalRigMomentum: true);
+                var input = new SimulationInput(controls[k], env);
+                return new Simulation(model.Hull.CreateInitialState(input, side * Math.PI / 2), new Hunter235MassModel(),
+                    new HunterInitialRig(model, side), input);
+            }).ToArray();
+            var crossed = new long[] { -1, -1 };
+            var completed = new long[] { -1, -1 };
+            var boomCrossed = new long[] { -1, -1 };
+            var maxHeel = 0.0;
+            for (long step = 0; step < 4200; step++)
+            {
+                for (var k = 0; k < 2; k++)
+                {
+                    var side = sides[k];
+                    var before = boats[k].Latest;
+                    var relative = WindRelativeHeading(before);
+                    // The helmsman releases the tiller once the boat reaches the new side's beam.
+                    if (completed[k] < 0 && crossed[k] >= 0 &&
+                        (jibe ? Math.Abs(relative) <= Math.PI / 2 : Math.Abs(relative) >= Math.PI / 2))
+                        completed[k] = step;
+                    if (boomCrossed[k] < 0 && crossed[k] >= 0 && side * before.Rig.BoomAngleRad < -0.1) boomCrossed[k] = step;
+                    var steer = step >= 240 && completed[k] < 0 ? (jibe ? 0.6 : -0.6) * side : 0;
+                    // Before a jibe, trim the main near dead downwind; ease it back after the boom crosses.
+                    var main = !jibe ? 0 : boomCrossed[k] < 0 && Math.Abs(relative) > 150 * Math.PI / 180 ? 1
+                        : boomCrossed[k] >= 0 && controls[k].Mainsheet > 0.6 ? -1 : 0;
+                    // On crossing the wind, ease the old jib sheet and trim the new one for three seconds.
+                    var change = crossed[k] >= 0 && step < crossed[k] + 180 ? 1 : 0;
+                    controls[k] = (side > 0
+                        ? new HeldSailingInput(tiller: steer, mainsheet: main, starboardJibSheet: -change, portJibSheet: change)
+                        : new HeldSailingInput(tiller: steer, mainsheet: main, portJibSheet: -change, starboardJibSheet: change))
+                        .Advance(controls[k]);
+                    var after = boats[k].Step(new(controls[k], env));
+                    var attitude = PresentationConversions.GetAttitude(after.Boat.OrientationBodyToWorld);
+                    maxHeel = Math.Max(maxHeel, Math.Abs(attitude.Heel));
+                    relative = WindRelativeHeading(after);
+                    if (crossed[k] < 0 && side * relative < 0 && Math.Abs(attitude.Heel) < Math.PI / 2 &&
+                        (jibe ? Math.Abs(relative) > Math.PI / 2 : Math.Abs(relative) < Math.PI / 2))
+                        crossed[k] = step;
+                }
+                var a = boats[0].Latest;
+                var b = boats[1].Latest;
+                Near(a.Boat.PositionWorldM.X, b.Boat.PositionWorldM.X, 1e-7);
+                Near(a.Boat.PositionWorldM.Y, -b.Boat.PositionWorldM.Y, 1e-7);
+                Near(a.Boat.LinearVelocityWorldMps.Y, -b.Boat.LinearVelocityWorldMps.Y, 1e-7);
+                Near(a.Rig.BoomAngleRad, -b.Rig.BoomAngleRad, 1e-7);
+                Near(a.Rig.JibAngleRad, -b.Rig.JibAngleRad, 1e-7);
+            }
+            var name = jibe ? "Jibe" : "Tack";
+            for (var k = 0; k < 2; k++)
+            {
+                var end = boats[k].Latest;
+                var rig = end.HunterRig!;
+                Console.WriteLine($"  {name} {sides[k]:+0;-0}: crossed wind {crossed[k] / 60.0:F2} s, boom crossed {boomCrossed[k] / 60.0:F2} s, turn complete {completed[k] / 60.0:F2} s; at 70 s {end.Boat.LinearVelocityWorldMps.Length:F3} m/s, heading {WindRelativeHeading(end) * 180 / Math.PI:F1} deg from wind, luff {rig.Main.Sections.Average(s => s.Luffing):F3}/{rig.Jib.Sections.Average(s => s.Luffing):F3}, max heel {maxHeel * 180 / Math.PI:F2} deg");
+                Require(crossed[k] >= 0 && boomCrossed[k] >= 0 && completed[k] >= 0 && completed[k] < 3600,
+                    $"{name} must cross the wind, cross the boom and reach the new beam within 60 s.");
+                Require(sides[k] * end.Rig.BoomAngleRad < -0.1 && sides[k] * end.Rig.JibAngleRad < -0.1,
+                    $"{name} must finish with both sails on the new side.");
+                Require(end.Boat.LinearVelocityWorldMps.Length > 1 && rig.Main.Sections.Average(s => s.Luffing) < 0.1 &&
+                    rig.Jib.Sections.Average(s => s.Luffing) < 0.1 && maxHeel < Math.PI / 4,
+                    $"{name} must recover speed with both sails filled while remaining upright.");
+            }
+        }
+    }),
+    ("Hunter session tacks with keyboard-equivalent input only", () =>
+    {
+        // The player's session start, driven only by full key directions through the held-input ramps:
+        // hold A until the wind crosses, then hold ; and O (ease starboard, trim port jib) and X (skipper
+        // to the new windward seat) for three seconds, and release the tiller at the new beam.
+        // The game's default 10-knot northerly with seeded gentle waves.
+        var env = PresentationConversions.EnvironmentFromSettings(waveSeed: 123);
+        var controls = BoatCatalog.InitialControls(BoatChoice.Hunter235);
+        var simulation = BoatCatalog.Definition(BoatChoice.Hunter235).CreateSimulation(new(controls, env), SailingSession.StartHeadingRad);
+        long crossed = -1, completed = -1;
+        var maxHeel = 0.0;
+        for (long step = 0; step < 4200; step++)
+        {
+            var relative = WindRelativeHeading(simulation.Latest);
+            if (completed < 0 && crossed >= 0 && Math.Abs(relative) >= Math.PI / 2) completed = step;
+            var steer = step >= 240 && completed < 0 ? -1 : 0;
+            var change = crossed >= 0 && step < crossed + 180 ? 1 : 0;
+            var held = new HeldSailingInput(tiller: steer, hiking: change, portJibSheet: change, starboardJibSheet: -change);
+            var before = controls;
+            controls = held.Advance(controls);
+            if (change == 0)
+                Require(controls.PortJibSheet == before.PortJibSheet && controls.StarboardJibSheet == before.StarboardJibSheet,
+                    "Jib sheets move only while their keys are held.");
+            var after = simulation.Step(new(controls, env));
+            maxHeel = Math.Max(maxHeel, Math.Abs(PresentationConversions.GetAttitude(after.Boat.OrientationBodyToWorld).Heel));
+            if (crossed < 0 && WindRelativeHeading(after) < 0) crossed = step;
+        }
+        var end = simulation.Latest;
+        var rig = end.HunterRig!;
+        Console.WriteLine($"  Keyboard tack: crossed wind {crossed / 60.0:F2} s, new beam {completed / 60.0:F2} s; at 70 s {end.Boat.LinearVelocityWorldMps.Length:F3} m/s, heading {WindRelativeHeading(end) * 180 / Math.PI:F1} deg from wind, luff {rig.Main.Sections.Average(s => s.Luffing):F3}/{rig.Jib.Sections.Average(s => s.Luffing):F3}, max heel {maxHeel * 180 / Math.PI:F2} deg");
+        Require(crossed >= 0 && completed >= 0 && completed < 3600, "The keyed tack must cross the wind and reach the new beam within 60 s.");
+        Require(end.Rig.BoomAngleRad < -0.1 && end.Rig.JibAngleRad < -0.1, "Both sails must finish on the new side.");
+        Require(end.Boat.LinearVelocityWorldMps.Length > 1 && rig.Main.Sections.Average(s => s.Luffing) < 0.1 &&
+            rig.Jib.Sections.Average(s => s.Luffing) < 0.1 && maxHeel < Math.PI / 4,
+            "The keyed tack must recover speed with both sails filled while remaining upright.");
+    }),
+    ("Hunter helm balance diagnostics on held courses", () =>
+    {
+        var env = HunterDevelopmentScenario.Environment();
+        var trim = new SailingControls(mainsheet: 0.7, traveler: 0.8, vang: 0.6, outhaul: 0.5, cunningham: 0.3, starboardJibSheet: 0.7);
+        foreach (var courseDegrees in new[] { 60.0, 90.0, 120.0 })
+        {
+            var course = courseDegrees * Math.PI / 180;
+            var simulation = new Hunter235BoatDefinition().CreateSimulation(new(trim, env), course);
+            var integral = 0.0;
+            double tiller = 0, sailsY = 0, sailsN = 0, waterY = 0, waterN = 0, rudderN = 0, jibShare = 0, residualN = 0;
+            for (var step = 0; step < 3600; step++)
+            {
+                var state = simulation.Latest;
+                var error = Math.IEEERemainder(PresentationConversions.GetAttitude(state.Boat.OrientationBodyToWorld).Heading - course, 2 * Math.PI);
+                integral = Math.Clamp(integral + error * Simulation.StepSeconds, -1, 1);
+                var helm = Math.Clamp(-4 * error - integral - 3 * state.Boat.AngularVelocityBodyRadPerSec.Z, -1, 1);
+                var s = simulation.Step(new(new SailingControls(helm, trim.Mainsheet, trim.Traveler, trim.Vang, trim.Outhaul,
+                    trim.Cunningham, trim.Centerboard, trim.Hiking, trim.PortJibSheet, trim.StarboardJibSheet), env));
+                if (step < 2400) continue;
+                var d = s.HunterDiagnostics!;
+                var toBody = s.Boat.OrientationBodyToWorld.Conjugate();
+                double Y(ForceMoment f) => toBody.Rotate(f.ForceWorldN).Y;
+                var sails = d.Main + d.Jib;
+                var water = d.HullDrag + d.Centerboard;
+                tiller += helm / 1200;
+                sailsY += Y(sails) / 1200; sailsN += sails.MomentBodyNm.Z / 1200;
+                waterY += Y(water) / 1200; waterN += water.MomentBodyNm.Z / 1200;
+                rudderN += d.Rudder.MomentBodyNm.Z / 1200;
+                residualN += d.Total.MomentBodyNm.Z / 1200;
+                jibShare += d.Jib.ForceWorldN.Length / (d.Main.ForceWorldN.Length + d.Jib.ForceWorldN.Length) / 1200;
+            }
+            // Longitudinal centers relative to the center of mass: x = N / Fy for each lateral force group.
+            var effort = sailsN / sailsY;
+            var resistance = waterN / waterY;
+            Console.WriteLine($"  {courseDegrees:F0} deg: mean tiller {tiller:+0.000;-0.000}, sail side force {sailsY:F1} N at x {effort:+0.00;-0.00} m, hull+board {waterY:F1} N at x {resistance:+0.00;-0.00} m (CE lead {effort - resistance:F2} m), yaw sails/hull+board/rudder {sailsN:F1}/{waterN:F1}/{rudderN:F1} N m, jib load share {jibShare:F2}");
+            Require(Math.Abs(residualN) < 5, "Held-course yaw moments must balance on average.");
+            Require(Math.Abs(tiller) < 0.25, "The reference trim must be holdable with moderate helm.");
+        }
+    }),
+    ("Hunter poor trim trends on a held course", () =>
+    {
+        var env = HunterDevelopmentScenario.Environment();
+        // The reference is the fastest trim in a coarse 120-degree sweep (mainsheet 0.4–1.0, jib 0.4–1.0).
+        var cases = new (string Name, SailingControls Trim)[]
+        {
+            ("reference", new(mainsheet: 0.7, traveler: 0.8, vang: 0.6, outhaul: 0.5, cunningham: 0.3, starboardJibSheet: 0.7)),
+            ("jib eased", new(mainsheet: 0.7, traveler: 0.8, vang: 0.6, outhaul: 0.5, cunningham: 0.3)),
+            ("jib fully trimmed", new(mainsheet: 0.7, traveler: 0.8, vang: 0.6, outhaul: 0.5, cunningham: 0.3, starboardJibSheet: 1)),
+            ("both jib sheets tight", new(mainsheet: 0.7, traveler: 0.8, vang: 0.6, outhaul: 0.5, cunningham: 0.3, portJibSheet: 1, starboardJibSheet: 1)),
+            ("main eased", new(mainsheet: 0, traveler: 0.8, vang: 0.6, outhaul: 0.5, cunningham: 0.3, starboardJibSheet: 0.7)),
+            ("main fully trimmed", new(mainsheet: 1, traveler: 1, vang: 0.6, outhaul: 0.5, cunningham: 0.3, starboardJibSheet: 0.7)),
+        };
+        foreach (var courseDegrees in new[] { 120.0, 60.0 })
+        {
+            var results = new Dictionary<string, (double Speed, double MainLuff, double JibLuff, double Heel, double HeadingError, double Jib)>();
+            foreach (var (name, trim) in cases)
+            {
+                var course = courseDegrees * Math.PI / 180;
+                var simulation = new Hunter235BoatDefinition().CreateSimulation(new(trim, env), course);
+                var integral = 0.0;
+                double speed = 0, mainLuff = 0, jibLuff = 0, heel = 0, headingError = 0;
+                for (var step = 0; step < 3600; step++)
+                {
+                    // Deterministic PID helm, so trims are compared on the same course.
+                    var state = simulation.Latest;
+                    var error = Math.IEEERemainder(PresentationConversions.GetAttitude(state.Boat.OrientationBodyToWorld).Heading - course, 2 * Math.PI);
+                    integral = Math.Clamp(integral + error * Simulation.StepSeconds, -1, 1);
+                    var tiller = Math.Clamp(-4 * error - integral - 3 * state.Boat.AngularVelocityBodyRadPerSec.Z, -1, 1);
+                    var s = simulation.Step(new(new SailingControls(tiller, trim.Mainsheet, trim.Traveler, trim.Vang, trim.Outhaul,
+                        trim.Cunningham, trim.Centerboard, trim.Hiking, trim.PortJibSheet, trim.StarboardJibSheet), env));
+                    Require(s.Boat.LinearVelocityWorldMps.Length < 10 && s.Boat.AngularVelocityBodyRadPerSec.Length < 5,
+                        $"{name} at {courseDegrees} deg became unbounded.");
+                    if (step < 2400) continue;
+                    speed += s.Boat.LinearVelocityWorldMps.Length / 1200;
+                    mainLuff += s.HunterRig!.Main.Sections.Average(x => x.Luffing) / 1200;
+                    jibLuff += s.HunterRig.Jib.Sections.Average(x => x.Luffing) / 1200;
+                    heel = Math.Max(heel, Math.Abs(PresentationConversions.GetAttitude(s.Boat.OrientationBodyToWorld).Heel));
+                    headingError = Math.Max(headingError, Math.Abs(error));
+                }
+                results[name] = (speed, mainLuff, jibLuff, heel, headingError, simulation.Latest.Rig.JibAngleRad);
+                Console.WriteLine($"  {courseDegrees:F0} deg {name}: {speed:F3} m/s, luff {mainLuff:F3}/{jibLuff:F3}, max heel {heel * 180 / Math.PI:F2} deg, max heading error {headingError * 180 / Math.PI:F2} deg, jib {simulation.Latest.Rig.JibAngleRad:F2} rad");
+            }
+            if (courseDegrees != 120)
+            {
+                // Off the wind a fully eased jib can stay filled; closer to the wind it must luff.
+                Require(results["jib eased"].JibLuff > 0.5 && results["main eased"].MainLuff > 0.5,
+                    "Fully easing a sail must make it luff on the close reach.");
+                continue;
+            }
+            Require(results["main eased"].MainLuff > 0.5, "Fully easing the main must make it luff.");
+            var reference = results["reference"];
+            Require(results.All(r => r.Value.HeadingError < Math.PI / 180), "The helm must hold the broad-reach course for every trim.");
+            Require(results.Where(r => r.Key != "reference").All(r => r.Value.Speed < reference.Speed),
+                "Each poor trim must be slower than the reference on the broad reach.");
+            Require(results["main fully trimmed"].Heel > reference.Heel && Math.Abs(results["both jib sheets tight"].Jib) < 0.15,
+                "An over-trimmed main must heel more, and two tight jib sheets must center the jib.");
+        }
+    }),
+    ("Hunter definition stays bounded with waves and moving controls", () =>
+    {
+        foreach (var preset in new[] { WavePreset.Calm, WavePreset.Gentle, WavePreset.Moderate })
+        {
+            var env = PresentationConversions.EnvironmentFromSettings(windSpeedKnots: 10, wavePreset: preset, waveSeed: 123);
+            var controls = new SailingControls(mainsheet: 0.6, traveler: 0.8, vang: 0.6,
+                outhaul: 0.5, cunningham: 0.3, starboardJibSheet: 0.65);
+            var input = new SimulationInput(controls, env);
+            var sim = new Hunter235BoatDefinition().CreateSimulation(input, Math.PI / 2);
+            var maxSpeed = 0.0; var maxAngularSpeed = 0.0;
+            for (var step = 0; step < 1800; step++)
+            {
+                var held = step < 600 ? new HeldSailingInput(tiller: -0.1)
+                    : step < 1200 ? new HeldSailingInput(centerboard: -1, hiking: 1, starboardJibSheet: -1)
+                    : new HeldSailingInput(centerboard: 1, hiking: -1, portJibSheet: 1);
+                controls = held.Advance(controls);
+                var state = sim.Step(new(controls, env));
+                maxSpeed = Math.Max(maxSpeed, state.Boat.LinearVelocityWorldMps.Length);
+                maxAngularSpeed = Math.Max(maxAngularSpeed, state.Boat.AngularVelocityBodyRadPerSec.Length);
+                Require(maxSpeed < 30 && maxAngularSpeed < 20 && Math.Abs(state.Boat.PositionWorldM.Z) < 3,
+                    $"Hunter motion became unbounded in {preset} at step {step + 1}.");
+            }
+            Require(controls.Centerboard > 0.99 && controls.Hiking < -0.99 && controls.PortJibSheet > 0.99 && controls.StarboardJibSheet < 0.01,
+                "The wave scenario must complete its board, crew and sheet movements.");
+            Console.WriteLine($"  {preset}: max speed {maxSpeed:F3} m/s, max angular speed {maxAngularSpeed:F3} rad/s");
+        }
+    }),
+    ("Hunter snapshots publish completed sail evaluations", () =>
+    {
+        var model = new Hunter235BoatModel(new Hunter235RigModel(experimentalSheetGeometry: true, sailInteraction: true),
+            experimentalRigMomentum: true);
+        var simulation = new Hunter235BoatDefinition().CreateSimulation(windy);
+        var initial = simulation.Latest;
+        var initialRig = initial.HunterRig ?? throw new Exception("Initial Hunter sail state missing.");
+        Require(initialRig.ExperimentalSheetGeometry && initialRig.ExperimentalRigMomentum,
+            "The Hunter definition must use sheet geometry and rig momentum coupling.");
+        Require(initialRig.PortSheet is not null && initialRig.StarboardSheet is not null,
+            "The Hunter definition must publish both sheet evaluations.");
+        var initialSection = initialRig.Jib.Sections[0];
+        var changed = Input(new SailingControls(mainsheet: 0.8, portJibSheet: 0.9, starboardJibSheet: 0.2), 10);
+        var completed = simulation.Step(changed);
+        var published = completed.HunterRig ?? throw new Exception("Completed Hunter sail state missing.");
+        var expected = model.InspectHunterRig(new(completed.TimeSeconds, completed.Boat, completed.Mass!, changed, completed.Rig));
+        Require(published.Main.Id == "main" && published.Jib.Id == "jib", "Sail identities are missing.");
+        Require(published.Main.Sections.SequenceEqual(expected.Main.Sections) &&
+            published.Jib.Sections.SequenceEqual(expected.Jib.Sections), "Sail sections must match the completed state.");
+        Require(published.Total == expected.Total && published.Derivative == expected.Derivative,
+            "Sail forces must match the completed state.");
+        Require(published.Jib.StarboardLimitRad != initialRig.Jib.StarboardLimitRad,
+            "Published sheet limit must use the sampled input.");
+        Require(initialRig.Jib.Sections[0] == initialSection && initialRig.Jib.Sections is not SailSectionState[],
+            "Earlier snapshots must retain their own immutable sections.");
+        Require(new IlcaBoatDefinition().CreateSimulation(windy).Latest.HunterRig is null,
+            "Other boats must not publish Hunter state.");
+    }),
+    ("Experimental Hunter snapshots publish completed sheet forces", () =>
+    {
+        var model = new Hunter235BoatModel(new Hunter235RigModel(experimentalSheetGeometry: true));
+        var initialInput = Input(new SailingControls(starboardJibSheet: 1), 10);
+        var simulation = new Simulation(model.Hull.CreateInitialState(initialInput), new Hunter235MassModel(), model, initialInput);
+        var initial = simulation.Latest.HunterRig!;
+        var savedPort = initial.PortSheet!.Value;
+        var changedInput = Input(new SailingControls(portJibSheet: 0.8, starboardJibSheet: 0.2), 10);
+        var completed = simulation.Step(changedInput);
+        var published = completed.HunterRig!;
+        Require(published.ExperimentalSheetGeometry && published.PortSheet.HasValue && published.StarboardSheet.HasValue,
+            "The experimental rig must publish both sheet evaluations.");
+        var port = published.PortSheet!.Value;
+        var starboard = published.StarboardSheet!.Value;
+        Require(port == Hunter235SheetExperiment.Evaluate(true, changedInput.Controls.PortJibSheet, completed.Rig.JibAngleRad) &&
+            starboard == Hunter235SheetExperiment.Evaluate(false, changedInput.Controls.StarboardJibSheet, completed.Rig.JibAngleRad),
+            "Published sheets must match the completed rig state and sampled controls.");
+        Near(port.ClewBodyM, published.Jib.ClewBodyM, 1e-12);
+        Near(starboard.ClewBodyM, published.Jib.ClewBodyM, 1e-12);
+        Near(published.Derivative.JibAngularAcceleration,
+            (published.Jib.TorqueNm + port.TorqueAboutForestayNm + starboard.TorqueAboutForestayNm -
+             80 * completed.Rig.JibRateRadPerSec) / 40, 1e-12);
+        Require(initial.PortSheet!.Value == savedPort, "Earlier sheet snapshots must remain unchanged.");
+    }),
+    ("Hunter presentation geometry matches physics and sampled controls", () =>
+    {
+        var simulation = new Hunter235BoatDefinition().CreateSimulation(windy);
+        var initial = simulation.Latest;
+        var initialGeometry = initial.HunterGeometry ?? throw new Exception("Hunter geometry missing.");
+        var controls = new SailingControls(centerboard: 0.25, hiking: -0.8, portJibSheet: 0.7);
+        var snapshot = simulation.Step(Input(controls, 10));
+        var boat = snapshot.HunterGeometry ?? throw new Exception("Completed geometry missing.");
+        var sails = snapshot.HunterRig ?? throw new Exception("Completed sail geometry missing.");
+        var skipper = new Hunter235MassModel().Contributors(controls).Single(c => c.Name == "Skipper");
+        Near(boat.SkipperBodyM, skipper.CenterBodyM, 0);
+        Near((boat.CenterboardTipBodyM - boat.CenterboardTopBodyM).Length, 1.25 * controls.Centerboard, 1e-12);
+        Near((initialGeometry.CenterboardTipBodyM - initialGeometry.CenterboardTopBodyM).Length, 1.25, 1e-12);
+        foreach (var sail in new[] { sails.Main, sails.Jib })
+        {
+            Require(sail.Geometry.Count == sail.Sections.Count && sail.Geometry is not HunterSailSectionGeometry[],
+                "Sail section geometry must be immutable and match the force sections.");
+            for (var i = 0; i < sail.Sections.Count; i++)
+            {
+                var chord = sail.Geometry[i].TrailingEdgeBodyM - sail.Geometry[i].LeadingEdgeBodyM;
+                Near(chord.Length, sail.Sections[i].ChordM, 1e-12);
+                Near(sail.Geometry[i].LeadingEdgeBodyM + chord * 0.4, sail.Sections[i].CenterBodyM, 1e-12);
+            }
+        }
+        Require(initial.HunterGeometry == initialGeometry && initialGeometry.SkipperBodyM != boat.SkipperBodyM,
+            "Earlier geometry must remain unchanged after controls move.");
+        Require(new IlcaBoatDefinition().CreateSimulation(windy).Latest.HunterGeometry is null,
+            "Other boats must not publish Hunter geometry.");
+    }),
+    ("Hunter completed boat diagnostics match dynamics", () =>
+    {
+        foreach (var coupled in new[] { false, true })
+        {
+            var model = new Hunter235BoatModel(new Hunter235RigModel(coupled), experimentalRigMomentum: coupled);
+            var simulation = new Simulation(model.Hull.CreateInitialState(windy), new Hunter235MassModel(), model, windy);
+            for (var i = 0; i < 30; i++) simulation.Step(windy);
+            var state = simulation.Latest;
+            var evaluation = new ForceEvaluation(state.TimeSeconds, state.Boat, state.Mass!, state.Input, state.Rig);
+            var diagnostics = state.HunterDiagnostics!;
+            var forces = model.EvaluateDynamics(evaluation).Forces;
+            Near(diagnostics.Total.ForceWorldN, forces.ForceWorldN, 1e-9);
+            Near(diagnostics.Total.MomentBodyNm, forces.MomentBodyNm, 1e-9);
+            Require(diagnostics.Main == state.HunterRig!.Main.Force && diagnostics.Jib == state.HunterRig.Jib.Force,
+                "Boat and sail diagnostics must use the same completed state.");
+            Require(coupled || diagnostics.RigReaction == default, "Uncoupled model must have no rig reaction.");
+        }
+        Require(new IlcaBoatDefinition().CreateSimulation(windy).Latest.HunterDiagnostics is null,
+            "Other boats must not publish Hunter boat diagnostics.");
+    }),
+    ("Experimental Hunter composes forces and replays deterministically", () =>
+    {
+        var model = new Hunter235BoatModel();
+        var state = model.Hull.CreateInitialState(windy);
+        var mass = new Hunter235MassModel().Evaluate(windy.Controls);
+        var e = new ForceEvaluation(0, state, mass, windy, model.InitialRig);
+        var expected = model.Gravity.Evaluate(e) + model.Hull.Evaluate(e) + model.Foils.Centerboard.Evaluate(e)
+            + model.Foils.Rudder.Evaluate(e) + model.Rig.Evaluate(e);
+        var actual = model.EvaluateDynamics(e);
+        Near(actual.Forces.ForceWorldN, expected.ForceWorldN, 1e-10);
+        Near(actual.Forces.MomentBodyNm, expected.MomentBodyNm, 1e-10);
+        IBoatDefinition definition = new Hunter235BoatDefinition();
+        Require(definition.Id == "hunter-235", "Unexpected Hunter identity.");
+        var first = definition.CreateSimulation(windy);
+        var second = definition.CreateSimulation(windy);
+        for (var i = 0; i < 120; i++)
+        {
+            var a = first.Step(windy);
+            var b = second.Step(windy);
+            Require(a.Boat == b.Boat && a.Rig == b.Rig && a.Mass == b.Mass, "Hunter replay differs.");
+        }
+    }),
+    ("Hunter main/jib interaction produces jib upwash and main downwash", () =>
+    {
+        var independent = new Hunter235RigModel();
+        var coupled = new Hunter235RigModel(sailInteraction: true);
+        var mass = new Hunter235MassModel().Evaluate(calm.Controls);
+        var rest = new ForceEvaluation(0, RigidBodyState.AtRest, mass, calm);
+        static double Attack(SailSectionState s, HunterSailSectionGeometry g)
+        {
+            var chord = g.TrailingEdgeBodyM - g.LeadingEdgeBodyM;
+            var along = new Vector3d(chord.X, chord.Y, 0);
+            along /= along.Length;
+            var normal = new Vector3d(along.Y, -along.X, 0);
+            return Math.Atan2(Vector3d.Dot(s.ApparentWindBodyMps, normal), Vector3d.Dot(s.ApparentWindBodyMps, along));
+        }
+        EnvironmentConfig Air(Vector3d velocity) => new(velocity, WavePreset.Calm, WaveDirectionMode.Independent, Vector3d.UnitX, 1);
+        // Air moving aft and to port: close-hauled on starboard tack with both sails to port.
+        const double windSpeed = 6;
+        var wind = new Vector3d(-windSpeed * Math.Cos(0.7), -windSpeed * Math.Sin(0.7), 0);
+        var mainDownwash = new List<double>();
+        var mainLuff = new List<double>();
+        foreach (var jibAngle in new[] { -0.15, -0.3, -0.45 })
+        {
+            var e = rest with { Input = new(calm.Controls, Air(wind)), Rig = new(-0.25, 0, jibAngle, 0) };
+            var a = independent.Inspect(e);
+            var b = coupled.Inspect(e);
+            for (var i = 0; i < 6; i++)
+            {
+                Near(a.Main.InducedAirflowBodyMps[i], Vector3d.Zero, 0);
+                Near(a.Jib.InducedAirflowBodyMps[i], Vector3d.Zero, 0);
+                // At rest, the other sail's induced flow is the only apparent-wind difference.
+                Near(b.Main.Sections[i].ApparentWindBodyMps - a.Main.Sections[i].ApparentWindBodyMps,
+                    b.Main.InducedAirflowBodyMps[i], 1e-12);
+                Near(b.Jib.Sections[i].ApparentWindBodyMps - a.Jib.Sections[i].ApparentWindBodyMps,
+                    b.Jib.InducedAirflowBodyMps[i], 1e-12);
+                Require(Math.Abs(Attack(b.Jib.Sections[i], b.Jib.Geometry[i])) > Math.Abs(Attack(a.Jib.Sections[i], a.Jib.Geometry[i])),
+                    "The main must induce upwash at every jib section.");
+                Require(Math.Abs(Attack(b.Main.Sections[i], b.Main.Geometry[i])) < Math.Abs(Attack(a.Main.Sections[i], a.Main.Geometry[i])),
+                    "The jib must induce downwash at every main section.");
+                Require(b.Main.InducedAirflowBodyMps[i].Length < 0.15 * windSpeed &&
+                    b.Jib.InducedAirflowBodyMps[i].Length < 0.15 * windSpeed, "Induced airflow must remain a bounded correction.");
+            }
+            Require(b.Jib.Force.ForceWorldN.Length > a.Jib.Force.ForceWorldN.Length &&
+                b.Main.Force.ForceWorldN.Length < a.Main.Force.ForceWorldN.Length,
+                "Interaction must load the jib and unload the main in this close-hauled case.");
+            mainDownwash.Add(b.Main.InducedAirflowBodyMps.Average(v => v.Length));
+            mainLuff.Add(b.Main.Sections.Average(s => s.Luffing));
+            Console.WriteLine($"  Jib {jibAngle:F2} rad: jib force {a.Jib.Force.ForceWorldN.Length:F1}->{b.Jib.Force.ForceWorldN.Length:F1} N, main {a.Main.Force.ForceWorldN.Length:F1}->{b.Main.Force.ForceWorldN.Length:F1} N, drive {a.Total.ForceWorldN.X:F1}->{b.Total.ForceWorldN.X:F1} N, main luff {a.Main.Sections.Average(s => s.Luffing):F3}->{mainLuff[^1]:F3}");
+
+            var mirrored = coupled.Inspect(rest with { Input = new(calm.Controls, Air(wind with { Y = -wind.Y })),
+                Rig = new(0.25, 0, -jibAngle, 0) });
+            for (var i = 0; i < 6; i++)
+            {
+                var v = b.Main.InducedAirflowBodyMps[i];
+                var w = b.Jib.InducedAirflowBodyMps[i];
+                Near(mirrored.Main.InducedAirflowBodyMps[i], v with { Y = -v.Y }, 1e-12);
+                Near(mirrored.Jib.InducedAirflowBodyMps[i], w with { Y = -w.Y }, 1e-12);
+            }
+        }
+        Require(mainDownwash[0] > mainDownwash[1] && mainDownwash[1] > mainDownwash[2] &&
+            mainLuff[0] > mainLuff[1] && mainLuff[1] > mainLuff[2],
+            "Trimming the jib harder must increase downwash and luffing on the main.");
+
+        foreach (var (air, rig) in new[] { (Vector3d.Zero, new RigState(-0.25, 0, -0.3, 0)),
+            (new Vector3d(-5, 0, 0), new RigState(0, 0, 0, 0)) })
+        {
+            // Without circulation on either sail, neither induces flow at the other.
+            var still = coupled.Inspect(rest with { Input = new(calm.Controls, Air(air)), Rig = rig });
+            Require(still.Main.InducedAirflowBodyMps.All(v => v == Vector3d.Zero) &&
+                still.Jib.InducedAirflowBodyMps.All(v => v == Vector3d.Zero),
+                "Unloaded sails must not induce airflow.");
+        }
+    }),
+    ("Hunter independent sail forces and manual sheet limits", () =>
+    {
+        var rig = new Hunter235RigModel();
+        var mass = new Hunter235MassModel().Evaluate(calm.Controls);
+        var rest = new ForceEvaluation(0, RigidBodyState.AtRest, mass, calm);
+        var still = rig.Inspect(rest);
+        Near(still.Total.ForceWorldN, Vector3d.Zero, 0);
+        Require(still.Main.Id == "main" && still.Jib.Id == "jib", "Sail identities must be stable.");
+        Near(still.Main.Sections.Sum(s => s.AreaM2), 13.5, 0.06);
+        Near(still.Jib.Sections.Sum(s => s.AreaM2), 8.425, 0.002);
+        var wind = new EnvironmentConfig(new(3, 4, 0), WavePreset.Calm, WaveDirectionMode.Independent, Vector3d.UnitX, 1);
+        var mirrorWind = new EnvironmentConfig(new(3, -4, 0), WavePreset.Calm, WaveDirectionMode.Independent, Vector3d.UnitX, 1);
+        var a = rig.Inspect(rest with { Input = new(calm.Controls, wind), Rig = new(0.5, 0, 0.5, 0) });
+        var b = rig.Inspect(rest with { Input = new(calm.Controls, mirrorWind), Rig = new(-0.5, 0, -0.5, 0) });
+        Require(a.Main.Force.ForceWorldN.Length > 0 && a.Jib.Force.ForceWorldN.Length > 0, "Both sails must carry wind load.");
+        Near(a.Total.ForceWorldN.X, b.Total.ForceWorldN.X, 1e-10);
+        Near(a.Total.ForceWorldN.Y, -b.Total.ForceWorldN.Y, 1e-10);
+        foreach (var sail in new[] { a.Main, a.Jib })
+        {
+            var sum = sail.Sections.Aggregate(default(ForceMoment), (acc, s) => acc + s.Force);
+            Near(sum.ForceWorldN, sail.Force.ForceWorldN, 1e-10);
+            Near(sum.MomentBodyNm, sail.Force.MomentBodyNm, 1e-10);
+        }
+        var tightPort = Input(new(portJibSheet: 1), 0);
+        var tightStarboard = Input(new(starboardJibSheet: 1), 0);
+        var angle = new RigState(0, 0, 0.5, 0);
+        var port = rig.Inspect(rest with { Input = tightPort, Rig = angle });
+        var starboard = rig.Inspect(rest with { Input = tightStarboard, Rig = angle });
+        Require(port.Derivative.JibAngularAcceleration < 0 && starboard.Derivative.JibAngularAcceleration == 0,
+            "Port sheet must restrain starboard opening independently.");
+        var reverse = rig.Inspect(rest with { Input = tightStarboard, Rig = angle with { JibAngleRad = -0.5 } });
+        Require(reverse.Derivative.JibAngularAcceleration > 0, "Starboard sheet must restrain port opening.");
+        Require(a.Jib.Sections is not SailSectionState[], "Published sections must not expose a mutable array.");
+    }),
+    ("Hunter jib sheets retain limits in both wind directions", () =>
+    {
+        var rig = new Hunter235RigModel();
+        var bothTight = new SailingControls(portJibSheet: 1, starboardJibSheet: 1);
+        var bothEased = new SailingControls(portJibSheet: 0, starboardJibSheet: 0);
+        var mass = new Hunter235MassModel().Evaluate(bothTight);
+        var still = new ForceEvaluation(0, RigidBodyState.AtRest, mass, Input(bothTight, 0));
+        foreach (var sign in new[] { -1.0, 1.0 })
+        {
+            var state = new RigState(0, 0, sign * 0.5, 0);
+            var tight = rig.Inspect(still with { Rig = state });
+            var eased = rig.Inspect(still with { Input = Input(bothEased, 0), Rig = state });
+            Require(sign * tight.Derivative.JibAngularAcceleration < 0,
+                "Both tight sheets must pull the jib back from either side.");
+            Near(eased.Derivative.JibAngularAcceleration, 0, 0);
+            Near(tight.Jib.PortLimitRad, 0.15, 1e-12);
+            Near(tight.Jib.StarboardLimitRad, 0.15, 1e-12);
+            Near(eased.Jib.PortLimitRad, 1.45, 1e-12);
+            Near(eased.Jib.StarboardLimitRad, 1.45, 1e-12);
+        }
+
+        var portHeld = new SailingControls(portJibSheet: 1, starboardJibSheet: 0);
+        var positiveWind = new EnvironmentConfig(new(3, 4, 0), WavePreset.Calm, WaveDirectionMode.Independent, Vector3d.UnitX, 1);
+        var negativeWind = new EnvironmentConfig(new(3, -4, 0), WavePreset.Calm, WaveDirectionMode.Independent, Vector3d.UnitX, 1);
+        var centered = new RigState(0, 0, 0, 0);
+        var first = rig.Inspect(still with { Input = new(portHeld, positiveWind), Rig = centered });
+        var reversed = rig.Inspect(still with { Input = new(portHeld, negativeWind), Rig = centered });
+        Require(first.Jib.TorqueNm * reversed.Jib.TorqueNm < 0,
+            "Reversing lateral airflow must reverse the load on the centered jib.");
+        Near(first.Jib.StarboardLimitRad, reversed.Jib.StarboardLimitRad, 0);
+        Near(first.Jib.StarboardLimitRad, 0.15, 1e-12);
+        Near(first.Jib.PortLimitRad, 1.45, 1e-12);
+
+        var alignedWind = new EnvironmentConfig(new(-5, 0, 0), WavePreset.Calm, WaveDirectionMode.Independent, Vector3d.UnitX, 1);
+        var luffing = rig.Inspect(still with { Input = new(bothEased, alignedWind), Rig = centered });
+        Require(luffing.Main.Sections.All(s => s.Luffing > 0.99) &&
+            luffing.Jib.Sections.All(s => s.Luffing > 0.99),
+            "Airflow aligned with centered sail chords must luff both sails.");
+        Near(luffing.Total.ForceWorldN, Vector3d.Zero, 1e-10);
+    }),
+    ("Hunter foils respond to deployment and steering", () =>
+    {
+        var foils = new Hunter235Foils();
+        var hull = new Hunter235HullModel();
+        var mass = new Hunter235MassModel();
+        var boat = hull.CreateInitialState(calm) with { LinearVelocityWorldMps = new(2, 0.3, 0) };
+        var lowered = new ForceEvaluation(0, boat, mass.Evaluate(calm.Controls), calm);
+        var raisedInput = Input(new(centerboard: 0), 0);
+        var raised = new ForceEvaluation(0, boat, mass.Evaluate(raisedInput.Controls), raisedInput);
+        Require(foils.Centerboard.Evaluate(lowered).ForceWorldN.Length > 1, "Lowered board must resist leeway.");
+        Near(foils.Centerboard.Evaluate(raised).ForceWorldN, Vector3d.Zero, 0);
+        var leftInput = Input(new(tiller: -0.2), 0);
+        var rightInput = Input(new(tiller: 0.2), 0);
+        var straight = boat with { LinearVelocityWorldMps = new(2, 0, 0) };
+        var left = foils.Rudder.Evaluate(new(0, straight, mass.Evaluate(leftInput.Controls), leftInput));
+        var right = foils.Rudder.Evaluate(new(0, straight, mass.Evaluate(rightInput.Controls), rightInput));
+        Require(left.MomentBodyNm.Z < 0 && right.MomentBodyNm.Z > 0, "Tiller must steer in both directions.");
+    }),
+    ("Hunter surge resistance follows friction and wave estimates", () =>
+    {
+        var hull = new Hunter235HullModel();
+        var mass = new Hunter235MassModel().Evaluate(calm.Controls);
+        var rest = hull.CreateInitialState(calm);
+        var previous = 0.0;
+        foreach (var u in new[] { 0.5, 1.0, 2.0, 3.0, 3.5 })
+        {
+            var e = new ForceEvaluation(0, rest with { LinearVelocityWorldMps = new(u, 0, 0) }, mass, calm);
+            var drag = -hull.EvaluateHull(e).Drag.ForceWorldN.X;
+            var reynolds = u * Hunter235HullModel.WaterlineLengthM / Hunter235HullModel.KinematicViscosityM2PerSec;
+            var friction = 0.5 * 1000 * u * u * Hunter235HullModel.WettedSurfaceM2 * Hunter235HullModel.FormFactor *
+                0.075 / Math.Pow(Math.Log10(reynolds) - 2, 2);
+            var fn = u / Math.Sqrt(9.80665 * Hunter235HullModel.WaterlineLengthM);
+            var wave = Hunter235HullModel.WaveResistanceAtFn04 * mass.MassKg * 9.80665 * Math.Pow(fn / 0.4, 6);
+            Near(Hunter235HullModel.UprightResistanceN(u), friction + wave, 1e-9 * (friction + wave));
+            // Sampled wet columns redistribute R(u) at the calm waterline, plus the linear low-speed term.
+            Near(drag, friction + wave + 0.6 * Hunter235HullModel.ReferenceWetWaterplaneM2 * u, 0.001 * drag);
+            Require(drag > previous, "Surge resistance must increase with speed.");
+            previous = drag;
+        }
+        var still = new ForceEvaluation(0, rest, mass, calm);
+        Near(hull.EvaluateHull(still).Drag.ForceWorldN, Vector3d.Zero, 1e-12);
+    }),
+    ("Hunter hull balances and restores in calm water", () =>
+    {
+        var hull = new Hunter235HullModel();
+        var hunterMass = new Hunter235MassModel().Evaluate(calm.Controls);
+        var boat = hull.CreateInitialState(calm);
+        var evaluation = new ForceEvaluation(0, boat, hunterMass, calm);
+        var buoyancy = hull.EvaluateHull(evaluation).Buoyancy;
+        Near(buoyancy.ForceWorldN.Z + hunterMass.MassKg * 9.80665, 0, 1e-8);
+        var deeper = evaluation with { Boat = boat with { PositionWorldM = boat.PositionWorldM + new Vector3d(0, 0, 0.03) } };
+        Require(hull.EvaluateHull(deeper).Buoyancy.ForceWorldN.Z < buoyancy.ForceWorldN.Z, "Heave must restore upward.");
+        foreach (var axis in new[] { Vector3d.UnitX, Vector3d.UnitY })
+        {
+            var tilted = evaluation with { Boat = boat with { OrientationBodyToWorld = Quaterniond.FromAxisAngle(axis, 0.03) } };
+            var change = hull.EvaluateHull(tilted).Buoyancy.MomentBodyNm - buoyancy.MomentBodyNm;
+            Require(Vector3d.Dot(change, axis) < 0, "Hull must restore a small tilt.");
+        }
+        var moving = evaluation with { Boat = boat with { LinearVelocityWorldMps = new(1, -0.5, 0.2), AngularVelocityBodyRadPerSec = new(0.1, -0.2, 0.3) } };
+        var drag = hull.EvaluateHull(moving).Drag;
+        Require(Vector3d.Dot(drag.ForceWorldN, moving.Boat.LinearVelocityWorldMps) + Vector3d.Dot(drag.MomentBodyNm, moving.Boat.AngularVelocityBodyRadPerSec) <= 0, "Hull drag must dissipate energy.");
+        Require(hull.Samples.Count == 96, "Unexpected Hunter hull quadrature.");
+    }),
+    ("Hunter full ballast and cockpit mass budget", () =>
+    {
+        var hunter = new Hunter235MassModel();
+        var lowered = new SailingControls(centerboard: 1, hiking: 1);
+        var raised = new SailingControls(centerboard: 0, hiking: -1);
+        var parts = hunter.Contributors(lowered);
+        Near(parts.Where(c => c.Name != "Skipper").Sum(c => c.MassKg), 1360.77711, 1e-10);
+        Near(hunter.Evaluate(lowered).MassKg, 1440.77711, 1e-10);
+        Require(parts.Single(c => c.Name == "Water ballast") == hunter.Contributors(raised).Single(c => c.Name == "Water ballast"), "Board and seat movement must not change ballast.");
+        Near(parts.Single(c => c.Name == "Skipper").CenterBodyM.Y, 0.55, 0);
+        Near(hunter.Contributors(raised).Single(c => c.Name == "Skipper").CenterBodyM.Y, -0.55, 0);
+        Require(hunter.Contributors(raised).Single(c => c.Name == "Centerboard").CenterBodyM.Z < parts.Single(c => c.Name == "Centerboard").CenterBodyM.Z, "Raised board must move upward.");
+        var tensor = hunter.Evaluate(lowered).InertiaBodyKgM2;
+        var vector = new Vector3d(1, -2, 3);
+        Near(tensor.Solve(tensor.Multiply(vector)), vector, 1e-12);
+    }),
+    ("Boat definition preserves ILCA simulation and creates independent instances", () =>
+    {
+        IBoatDefinition definition = new IlcaBoatDefinition();
+        Require(definition.Id == "ilca-7", "Unexpected boat identity.");
+        var first = definition.CreateSimulation(windy, Math.PI / 2);
+        var second = definition.CreateSimulation(windy, Math.PI / 2);
+        var direct = new Simulation(boatModel.CreateInitialState(windy, Math.PI / 2), masses, boatModel, windy);
+        for (var i = 0; i < 120; i++)
+        {
+            var a = first.Step(windy);
+            var b = direct.Step(windy);
+            Require(a.Boat == b.Boat && a.Rig == b.Rig && a.Mass == b.Mass, "Factory changed ILCA behavior.");
+        }
+        Require(second.Latest.StepIndex == 0, "Simulations must have independent state.");
+    }),
     ("Equipped budget, moving sailor/board and full inertia", () =>
     {
         var mass = masses.Evaluate(controls);
@@ -24,6 +1070,17 @@ var tests = new (string Name, Action Run)[]
         Require(masses.Evaluate(new(centerboard: 0)).CenterOfMassBodyM.Z < mass.CenterOfMassBodyM.Z, "Raised board must move its mass up.");
         Throws<ArgumentException>(() => MassProperties.FromTensor(1, default, new(1, 1, 1, 2, 0, 0)));
         Throws<ArgumentException>(() => MassProperties.FromTensor(1, default, default));
+        Throws<ArgumentException>(() => MassAggregation.Combine(Array.Empty<MassContributor>()));
+        Throws<ArgumentException>(() => MassAggregation.Combine(new[] { new MassContributor("invalid", -1, default, default) }));
+        var pair = MassAggregation.Combine(new[] {
+            new MassContributor("port", 2, new(0, -1, 0), default),
+            new MassContributor("starboard", 2, new(0, 1, 0), default),
+            new MassContributor("center", 1, default, new(1, 1, 1, 0, 0, 0)) });
+        Near(pair.MassKg, 5, 0);
+        Near(pair.CenterOfMassBodyM, Vector3d.Zero, 0);
+        Near(pair.InertiaBodyKgM2.XX, 5, 0);
+        Near(pair.InertiaBodyKgM2.YY, 1, 0);
+        Near(pair.InertiaBodyKgM2.ZZ, 5, 0);
     }),
     ("Tensor RK4 conserves torque-free angular momentum and energy", () =>
     {
@@ -68,6 +1125,23 @@ var tests = new (string Name, Action Run)[]
         try { brokenDiagnostics.Step(calm); throw new InvalidOperationException("Expected diagnostic failure."); }
         catch (SimulationStepException exception) { Require(exception.Stage == "completion", "Diagnostic error must identify completion."); }
         Require(ReferenceEquals(before, brokenDiagnostics.Latest), "Diagnostic failure published partial state.");
+    }),
+    ("Jib state participates in coupled RK4 and rejects non-finite stages", () =>
+    {
+        var tensor = new MassProperties(138, new(100, 200, 200));
+        // Boom acceleration is time; jib acceleration follows the evolving boom rate.
+        var sim = new Simulation(RigidBodyState.AtRest, tensor,
+            new FunctionRig(e => new(e.Rig.BoomRateRadPerSec, e.TimeSeconds,
+                e.Rig.JibRateRadPerSec, e.Rig.BoomRateRadPerSec)), calm);
+        for (var i = 0; i < 60; i++) sim.Step(calm);
+        Near(sim.Latest.Rig.JibRateRadPerSec, 1.0 / 6, 1e-14);
+        Near(sim.Latest.Rig.JibAngleRad, 1.0 / 24, 1e-14);
+        var broken = new Simulation(RigidBodyState.AtRest, tensor,
+            new FunctionRig(e => new(0, 0, 0, e.TimeSeconds > 0 ? double.NaN : 0)), calm);
+        var before = broken.Latest;
+        try { broken.Step(calm); throw new InvalidOperationException("Expected jib failure."); }
+        catch (SimulationStepException exception) { Require(exception.Stage == "k2", "Jib error must identify its stage."); }
+        Require(ReferenceEquals(before, broken.Latest), "Jib failure published partial state.");
     }),
     ("Hydrostatic balance, heave/roll/pitch restoring and hiking sign", () =>
     {
@@ -275,6 +1349,9 @@ Require(selected.Length > 0, "No matching regression group.");
 foreach (var (name, run) in selected) { run(); Console.WriteLine($"PASS {name}"); }
 Console.WriteLine($"Phase 3 boat physics: {selected.Length} regression groups passed.");
 
+// Signed heading relative to the scenario's north wind, in (-pi, pi]; positive with wind over port.
+static double WindRelativeHeading(SimulationState s) =>
+    Math.IEEERemainder(PresentationConversions.GetAttitude(s.Boat.OrientationBodyToWorld).Heading, 2 * Math.PI);
 SimulationInput Input(SailingControls c, double knots, double from = 270) => new(c,
     PresentationConversions.EnvironmentFromSettings(windSpeedKnots: knots, windFromDegrees: from, wavePreset: WavePreset.Calm, waveSeed: 1));
 ForceEvaluation Evaluation(RigidBodyState state, SimulationInput input) => new(0, state, masses.Evaluate(input.Controls), input);
@@ -295,6 +1372,54 @@ sealed class FrozenHullRig(IlcaBoatModel model) : IRigDynamicsModel
     public RigState InitialRig => model.InitialRig;
     public ForceMoment Evaluate(in ForceEvaluation e) => default;
     public (ForceMoment Forces, RigDerivative Rig) EvaluateDynamics(in ForceEvaluation e) => (default, model.EvaluateDynamics(e).Rig);
+}
+
+// Test-only wrapper supplies an exactly mirrored initial rig to the normal solver.
+sealed class HunterInitialRig(Hunter235BoatModel model, double side) : IRigDynamicsModel, IHunterRigInspectionModel
+{
+    public RigState InitialRig => new(0.1 * side, 0, 0.1 * side, 0);
+    public ForceMoment Evaluate(in ForceEvaluation e) => model.Evaluate(in e);
+    public (ForceMoment Forces, RigDerivative Rig) EvaluateDynamics(in ForceEvaluation e) => model.EvaluateDynamics(in e);
+    public HunterRigEvaluation InspectHunterRig(in ForceEvaluation e) => model.InspectHunterRig(in e);
+    public HunterBoatGeometry InspectHunterGeometry(SailingControls controls) => model.InspectHunterGeometry(controls);
+}
+
+// Isolated angular-momentum accounting experiment, not a full Hunter force model.
+sealed class SheetMomentumExperiment(int mode) : IRigDynamicsModel
+{
+    public static readonly Vector3d Axis = new Vector3d(-2.5908, 0, -7.7724) / new Vector3d(-2.5908, 0, -7.7724).Length;
+    public RigState InitialRig => new(0, 0, 0, 0);
+    public ForceMoment Evaluate(in ForceEvaluation e) => EvaluateDynamics(in e).Forces;
+    public (ForceMoment Forces, RigDerivative Rig) EvaluateDynamics(in ForceEvaluation e)
+    {
+        var torque = Hunter235SheetExperiment.Evaluate(false, e.Input.Controls.StarboardJibSheet, e.Rig.JibAngleRad).TorqueAboutForestayNm;
+        var relativeMomentum = Axis * (40 * e.Rig.JibRateRadPerSec);
+        var omega = e.Boat.AngularVelocityBodyRadPerSec;
+        var relativeAcceleration = torque / 40;
+        if (mode == 2)
+        {
+            var inertia = e.Mass.InertiaBodyKgM2;
+            var baseAcceleration = inertia.Solve(-Vector3d.Cross(omega, inertia.Multiply(omega) + relativeMomentum));
+            var coupling = Vector3d.Dot(Axis, inertia.Solve(Axis));
+            relativeAcceleration = (torque / 40 - Vector3d.Dot(Axis, baseAcceleration)) / (1 - 40 * coupling);
+        }
+        var moment = mode > 0 ? -Axis * (40 * relativeAcceleration) - Vector3d.Cross(omega, relativeMomentum) : Vector3d.Zero;
+        return (new(Vector3d.Zero, moment), new(0, 0, e.Rig.JibRateRadPerSec, relativeAcceleration));
+    }
+}
+
+// Two body-fixed axes and constant scalar inertias; deliberately excludes external loads.
+sealed class DualRigMomentumExperiment : IRigDynamicsModel
+{
+    public RigState InitialRig => new(0.25, 0, 0, 0);
+    public ForceMoment Evaluate(in ForceEvaluation e) => EvaluateDynamics(in e).Forces;
+    public (ForceMoment Forces, RigDerivative Rig) EvaluateDynamics(in ForceEvaluation e)
+    {
+        var boomTorque = -500 * e.Rig.BoomAngleRad;
+        var jibTorque = Hunter235SheetExperiment.Evaluate(false, e.Input.Controls.StarboardJibSheet, e.Rig.JibAngleRad).TorqueAboutForestayNm;
+        return Hunter235BoatModel.CoupleRig(in e, default,
+            new(e.Rig.BoomRateRadPerSec, boomTorque / 120, e.Rig.JibRateRadPerSec, jibTorque / 40));
+    }
 }
 
 sealed class FunctionRig(Func<ForceEvaluation, RigDerivative> evaluate) : IRigDynamicsModel

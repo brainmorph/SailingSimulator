@@ -5,6 +5,17 @@ This pass establishes reproducible baselines, reduces debug graph allocations
 and improves performance attribution. It does not calibrate physics parameters
 or establish empirical ILCA realism.
 
+## Scope revision — 2026-10-27
+
+Phase 8 is now [ILCA engineering readiness](08-calibration-and-first-playable.md).
+The first-playable milestone is a prototype with provisional physics.
+Objective-data comparisons and measurement-based tuning have moved to
+[Phase 11](11-calibration-and-realism-validation.md) for both boats; missing
+compatible measurements no longer block Phases 8–10. Existing results below
+are retained. No physics or performance work was performed by this roadmap
+revision, and it does not complete Phase 8: review tooling, dynamic
+handling/visual checks and the desktop timing defect remain engineering work.
+
 ## Delivered and observed
 
 - `SimulationHarness --calibration-review` runs seven explicit 30-second
@@ -130,21 +141,156 @@ The generated report was also checked for seven exact replays, 1,800 steps,
 | Repeatable conditions | Seed/environment tests and seven exact trajectory baselines pass. Saved F1 conditions alone do not replay a whole session. |
 | Visual trim/luff/telltale/heel/wake cues and two camera views | Shared-state consistency and scene checks pass; previous Phase 6 fixture review remains applicable. Wider dynamic visual scenario review is still pending. |
 | F1 numeric telemetry, live graphs and diagnostics; F2 controls | Scene checks pass, graph storage/drawing verified, desktop capture reviewed. |
-| Steering, righting, trim, luffing, stopping and tack/jibe behavior | Existing physical-contract checks and new coasting baseline provide internal consistency evidence. Further calibration scenarios remain. |
-| Compatible published speed, pointing and sail-force calibration | Open: no verified numeric polar target/complete compatible conditions entered. See reference boundary in the protocol. |
+| Steering, righting, trim, luffing, stopping and tack/jibe behavior | Existing physical-contract checks and new coasting baseline provide internal consistency evidence. Further reproducible engineering scenarios remain in Phase 8. |
+| Compatible published speed, pointing and sail-force calibration | Deferred to Phase 11; not a first-playable prototype completion criterion. No verified numeric polar target/complete compatible conditions entered. See reference boundary in the protocol. |
 | Stable desktop 60 FPS and 60 Hz simulation | Open: stalls and deadline misses remain, documented above. |
 | Numerical claims distinguished from empirical validation | Recorded in protocol/results; parameters remain explicit estimates. Subjective sailing feel is unassessed and not a milestone requirement. |
 
 ## Next work
 
-1. Extend review tooling with a documented deterministic course/balance
-   controller, ordinary gradual inputs and a retained control history. Check
-   longer-window speed, force and attitude convergence before comparing polars.
-2. Verify compatible numeric targets and rig/crew/mass assumptions using the
-   sources in the plan. Large thesis/dataset retrieval still needs user
-   direction under the plan; none was undertaken in this pass.
-3. Profile native drawing/layout, rendering and worker scheduling to explain
+1. Investigate the gentle-wave speed range and the limits of the convergence
+   screen below before using controlled runs for comparison.
+2. Profile native drawing/layout, rendering and worker scheduling to explain
    the remaining first-open frames and sustained deadline misses. Preserve
    scheduling policy and repeat desktop measurements before closing the criterion.
-4. Extend reproducible dynamic visual/handling reviews, then complete the
-   checklist only when the source and performance evidence supports it.
+3. Extend reproducible dynamic visual/handling reviews, then complete the
+   prototype checklist only when engineering and performance evidence supports it.
+4. Record a completion handoff with tested conditions, estimates and Phase 11
+   data gaps. Compatible numeric target extraction, rig/crew/mass compatibility
+   for comparisons, Chalmers sail-force comparisons and measurement-based tuning
+   are Phase 11 work. Large thesis/dataset retrieval still needs user direction
+   under the plan; none was undertaken in this pass. Do not wait for those
+   targets to close Phase 8 once its engineering criteria actually pass.
+
+## Controlled-course review — 2026-10-27
+
+The initial `--course-review` added an offline test sailor, separate from the force model.
+It starts from the existing north-wind, 10-knot conditions and fixed trim, runs
+120 seconds at 60 Hz, and evaluates every step of the final 30 seconds. Heading
+error wraps at 360 degrees. The controller requests tiller
+`clamp(1.2 * heading_error_rad - 0.8 * yaw_rate, -0.7, 0.7)` and hiking
+`clamp(-0.7 * heel_rad - 0.3 * roll_rate, -0.8, 0.8)`. It holds directional
+keys toward those requests using the actual host ramp and release rules. These
+are provisional feedback gains, not a sailor model or autopilot for the game.
+
+The [compressed results](08-course-results.json.gz) retain all per-step held
+keys and applied controls, one-second observations, conditions, runtime and
+assembly hashes. Each run independently replays the recorded inputs and compares
+complete states and diagnostics at every step. The command now uses the revised
+controller described below:
+
+```sh
+dotnet run -c Release --project tools/SimulationHarness -- --course-review > course-results.json
+```
+
+The screen requires final-window speed range at most 0.1 m/s, speed half-window
+mean change at most 0.05 m/s, heel and pitch mean changes at most 2 degrees,
+heading error at most 3 degrees, absolute heel below 45 degrees, and changes in
+mean net force and moment magnitudes at most 10 N and 10 Nm respectively. These
+are engineering screening estimates, not measured accuracy limits; force and
+moment mean changes alone cannot rule out oscillation or prove equilibrium.
+
+| Case | Max heading error | Max heel | Screen |
+| --- | ---: | ---: | --- |
+| 45° calm | 6.56° | 2.29° | Fail: heading |
+| 90° calm | 0.58° | 2.25° | Pass |
+| 135° calm | 6.59° | 0.39° | Fail: heading |
+| 90° gentle, seed 123 | 1.24° | 8.64° | Fail: speed range |
+
+All four replays matched. These observations are model and controller behavior,
+not real-boat calibration. Tests check repeatability, held-key control rates and
+the force-change screen. Desktop timing, dynamic visual reviews and the other
+engineering checks remain open; this work does not complete Phase 8.
+
+### Bounded integral steering follow-up — 2026-10-27
+
+The original controller settled with a heading error because a proportional
+request needs a nonzero error to maintain a steady tiller offset. The revised
+test sailor adds `0.08 * error_rad * dt` to an integral contribution clamped to
+±0.4, then adds it to the previous heading/yaw feedback before the ±0.7 tiller
+clamp. The sailor still issues ordinary held keys. An independent sailor is
+also replayed alongside the simulation at every step. These gains are review
+tool estimates; no boat physics changed.
+
+In the [new results](08-course-integral-results.json.gz), the three calm cases
+pass the unchanged screen. Maximum heading errors in their final windows are
+0.016°, 0.008° and 0.025° respectively. The seeded gentle reach has a 0.122 m/s
+speed range and still fails the unchanged 0.1 m/s threshold; wave-driven variation and the suitability
+of applying a flat-water threshold to waves require further investigation.
+The regression suite now includes the full 120-second upwind course and checks
+the controller and state replay. Neither passing the provisional screen nor
+adjusting the test sailor establishes empirical performance.
+
+### Scheduling observation
+
+The existing `FixedStepSchedule` anchors deadlines to the original epoch and
+requires at least one full period between actual starts. Consequently a delayed
+start shifts the earliest subsequent start by that delay; further delayed starts
+accumulate. Completion still has the remainder of each period before the
+deadline, so a start delay is not itself a missed deadline. Once accumulated
+start delay and compute time exceed a period, later steps can remain late even
+after the original stall ends. This is an implication of the currently specified
+no-catch-up policy, demonstrated by the existing schedule regression; it is not
+evidence identifying the source of the initial desktop stalls. The policy and
+warnings are unchanged. Desktop profiling and any decision to revisit the
+schedule remain open.
+
+## Gentle-wave variability investigation — 2026-10-27
+
+`--wave-review` repeats the controlled 90° reach at 10 knots with gentle
+waves and seeds 1, 123 and 456. Each 120-second run retains the complete
+held-key history and performs an independent exact replay. Four consecutive
+30-second windows use every physics step and the unchanged flat-water screen.
+The [results](08-wave-review-results.json.gz) include conditions, runtime and
+assembly hashes, controls, one-second traces and window summaries. Reproduce
+with `dotnet run -c Release --project tools/SimulationHarness -- --wave-review`.
+
+The first window contains acceleration and fails for multiple reasons. In
+each subsequent window all three seeds exceed the 0.1 m/s speed-range limit:
+ranges are 0.109–0.168 m/s, while the half-window mean changes are at most
+0.0076 m/s in magnitude. Estimated 30-second mean speeds from the retained
+one-second samples are 2.237–2.244 m/s across those later windows. The seed
+123 trace repeatedly rises and falls over a few seconds. This supports the
+interpretation that the threshold flags ongoing wave-driven variation in
+these runs, rather than a clear sustained speed drift. It does not prove
+statistical stationarity, exclude slower drift, or justify a new acceptance
+threshold for arbitrary wave conditions. Net-force and moment magnitude means
+also do not prove force balance. The existing screen is unchanged and these
+wave runs are not claimed converged or calibrated.
+
+The added regression checks verify the complete-window boundaries and their
+agreement with the final window for an exactly divisible run. The Release
+solution build and calibration-condition checks pass. Dynamic visual and
+handling evidence and the desktop performance defect remain open.
+
+## Desktop start-delay attribution — 2026-10-27
+
+The worker now records start lag relative to the original cadence, the sum
+of overruns relative to each requested start, and the largest individual
+overrun since startup. The performance review reports the change in that sum
+over each view. An overrun can include prior step work, OS scheduling, or
+waiting overhead; these measurements do not distinguish their causes. They
+do not change scheduling or deadline warnings. The overload regression checks
+that start-delay measurements remain visible.
+
+One desktop run used the same Godot 4.7 Mono Debug build, Intel HD 530/Mesa
+renderer, seed, warm-up and five-second windows described above. The solution
+and Godot project built without warnings; all 14 integration groups passed,
+including a 600-step isolated run with zero late steps. The desktop run had:
+
+| View | FPS | Frame p95 / max, ms | Late steps | Start lag at end, ms | Window start overruns, ms |
+| --- | ---: | --- | ---: | ---: | ---: |
+| Hidden | 58.70 | 18.56 / 98.16 | 9 | 6.11 | 5.09 |
+| Telemetry | 59.72 | 16.99 / 25.31 | 0 | 6.48 | 0.37 |
+| Environment | 58.75 | 17.06 / 63.53 | 200 | 12.51 | 6.03 |
+| Performance | 59.75 | 17.05 / 31.79 | 296 | 12.81 | 0.30 |
+
+The largest start overrun observed since startup was 4.91 ms. In the final
+view compute p95 was 5.145 ms, but the start lag had already reached 12.81 ms;
+252 consecutive steps were late at the end. This demonstrates how retained
+start delays can produce persistent deadline misses even when subsequent
+computation is ordinarily short. It does not identify the initial cause of
+the overruns or the long frame stalls, nor does it meet the performance gate.
+The desktop review completed and captured its views; its raw console output
+is recorded in [08-start-delay-results.log](08-start-delay-results.log).
+Further profiling and dynamic visual/handling review remain necessary.

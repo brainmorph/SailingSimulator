@@ -13,10 +13,13 @@ public sealed record HeldSailingInput
     public double Cunningham { get; }
     public double Centerboard { get; }
     public double Hiking { get; }
+    public double PortJibSheet { get; }
+    public double StarboardJibSheet { get; }
     public static HeldSailingInput Released { get; } = new();
 
     public HeldSailingInput(double tiller = 0, double mainsheet = 0, double traveler = 0,
-        double vang = 0, double outhaul = 0, double cunningham = 0, double centerboard = 0, double hiking = 0)
+        double vang = 0, double outhaul = 0, double cunningham = 0, double centerboard = 0, double hiking = 0,
+        double portJibSheet = 0, double starboardJibSheet = 0)
     {
         Tiller = Direction(tiller);
         Mainsheet = Direction(mainsheet);
@@ -26,6 +29,8 @@ public sealed record HeldSailingInput
         Cunningham = Direction(cunningham);
         Centerboard = Direction(centerboard);
         Hiking = Direction(hiking);
+        PortJibSheet = Direction(portJibSheet);
+        StarboardJibSheet = Direction(starboardJibSheet);
     }
 
     private static double Direction(double value) => double.IsFinite(value) && value is >= -1 and <= 1
@@ -41,7 +46,9 @@ public sealed record HeldSailingInput
         var after = new SailingControls(tiller, Move(before.Mainsheet, Mainsheet, 0.25, seconds),
             Move(before.Traveler, Traveler, 0.25, seconds), Move(before.Vang, Vang, 0.25, seconds),
             Move(before.Outhaul, Outhaul, 0.25, seconds), Move(before.Cunningham, Cunningham, 0.25, seconds),
-            Move(before.Centerboard, Centerboard, 0.25, seconds), Move(before.Hiking, Hiking, 0.5, seconds, -1));
+            Move(before.Centerboard, Centerboard, 0.25, seconds), Move(before.Hiking, Hiking, 0.5, seconds, -1),
+            Move(before.PortJibSheet, PortJibSheet, 0.25, seconds),
+            Move(before.StarboardJibSheet, StarboardJibSheet, 0.25, seconds));
         return after == before ? before : after;
     }
 

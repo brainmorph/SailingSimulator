@@ -101,4 +101,6 @@ see [launch and controls](../godot/README.md).
 Headless checks verify scene execution and transforms. Phase 6 also provides
 rendered fixtures and a visual review checklist; these do not establish
 desktop render FPS or sailor validation. The Phase 7 performance review
-measures desktop frames separately; Phase 8 owns physics calibration.
+measures desktop frames separately. Phase 8 owns ILCA engineering readiness
+and desktop timing fixes; Phase 11 owns objective-data calibration for both
+boats. Missing compatible measurements do not block Phases 8–10.

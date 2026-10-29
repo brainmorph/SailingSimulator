@@ -42,6 +42,30 @@ public readonly record struct InertiaTensor(double XX, double YY, double ZZ, dou
 
 public sealed record MassContributor(string Name, double MassKg, Vector3d CenterBodyM, InertiaTensor IntrinsicInertiaKgM2);
 
+/// <summary>Combines component masses about their shared centre of mass.</summary>
+public static class MassAggregation
+{
+    public static MassProperties Combine(IReadOnlyList<MassContributor> contributors)
+    {
+        ArgumentNullException.ThrowIfNull(contributors);
+        if (contributors.Count == 0) throw new ArgumentException("At least one mass contributor is required.", nameof(contributors));
+        var mass = 0.0;
+        var center = Vector3d.Zero;
+        foreach (var c in contributors)
+        {
+            if (c is null || !double.IsFinite(c.MassKg) || c.MassKg <= 0 || !c.CenterBodyM.IsFinite)
+                throw new ArgumentException("Mass contributors must have positive finite mass and finite centres.", nameof(contributors));
+            mass += c.MassKg;
+            center += c.MassKg * c.CenterBodyM;
+        }
+        center /= mass;
+        var inertia = default(InertiaTensor);
+        foreach (var c in contributors)
+            inertia += c.IntrinsicInertiaKgM2 + InertiaTensor.PointMass(c.MassKg, c.CenterBodyM - center);
+        return MassProperties.FromTensor(mass, center, inertia);
+    }
+}
+
 /// <summary>Pure mass geometry sampled once per step. Total mass must remain constant.</summary>
 public interface IMassModel
 {
@@ -62,16 +86,22 @@ public sealed class IlcaMassModel : IMassModel
         new MassContributor("Sailor", 80, new(0, 0.85 * controls.Hiking, -0.32 - 0.12 * Math.Abs(controls.Hiking)), default)
     });
 
-    public MassProperties Evaluate(SailingControls controls)
+    public MassProperties Evaluate(SailingControls controls) => MassAggregation.Combine(Contributors(controls));
+}
+
+/// <summary>Provisional full-ballast Hunter 23.5 budget plus an 80 kg skipper.</summary>
+public sealed class Hunter235MassModel : IMassModel
+{
+    public IReadOnlyList<MassContributor> Contributors(SailingControls controls) => Array.AsReadOnly(new[]
     {
-        var contributors = Contributors(controls);
-        var mass = contributors.Sum(c => c.MassKg);
-        var center = Vector3d.Zero;
-        foreach (var c in contributors) center += c.MassKg * c.CenterBodyM;
-        center /= mass;
-        var inertia = default(InertiaTensor);
-        foreach (var c in contributors)
-            inertia += c.IntrinsicInertiaKgM2 + InertiaTensor.PointMass(c.MassKg, c.CenterBodyM - center);
-        return MassProperties.FromTensor(mass, center, inertia);
-    }
+        new MassContributor("Hull", 700, new(0, 0, -0.05), new(400, 2600, 2800, 0, 0, 0)),
+        new MassContributor("Rig", 100, new(0.45, 0, -2.8), new(650, 680, 45, 0, 0, 0)),
+        new MassContributor("Fittings", 72.18474, new(-0.4, 0, -0.25), new(25, 100, 110, 0, 0, 0)),
+        new MassContributor("Centerboard", 25, new(0.15, 0, 0.55 - 0.45 * (1 - controls.Centerboard)), new(6, 7, 2, 0, 0, 0)),
+        new MassContributor("Rudder", 10, new(-3.35, 0, 0.25), new(2, 2.5, 0.8, 0, 0, 0)),
+        new MassContributor("Water ballast", 453.59237, new(0, 0, 0.35), new(110, 360, 430, 0, 0, 0)),
+        new MassContributor("Skipper", 80, Hunter235Geometry.SkipperPosition(controls), default)
+    });
+
+    public MassProperties Evaluate(SailingControls controls) => MassAggregation.Combine(Contributors(controls));
 }

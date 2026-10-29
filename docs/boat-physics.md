@@ -188,5 +188,7 @@ and foil samples with a seeded surface evaluated at each RK4 stage's time;
 the calm preset retains the still-water regression baseline. See
 [the environment model](wind-and-waves.md) for equations and limitations.
 Godot controls/threading remain
-Phase 5, rendering Phase 6, instrumentation Phase 7 and performance calibration
-Phase 8. The unresolved mass and source-compatibility questions still apply.
+Phase 5, rendering Phase 6 and instrumentation Phase 7. Phase 8 owns ILCA
+engineering readiness and desktop performance fixes; Phase 11 owns objective-data
+calibration for both boats. Missing measurements do not block engineering work.
+The unresolved mass and source-compatibility questions still apply.

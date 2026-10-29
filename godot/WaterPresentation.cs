@@ -6,6 +6,8 @@ public partial class WaterPresentation : Node3D
 {
     public ShaderMaterial Material { get; private set; } = null!;
     public WakeTrail Trail { get; } = new();
+    /// <summary>Half-width of the wake where it leaves the stern; the boat view supplies it.</summary>
+    public double WakeStartHalfWidthM { get; set; } = 0.32;
     private readonly ImmediateMesh wake = new();
     private EnvironmentConfig? previousEnvironment;
 
@@ -90,7 +92,7 @@ public partial class WaterPresentation : Node3D
             wake.SurfaceSetColor(new(0.8f, 0.94f, 0.95f, fade));
             foreach (var side in new[] { -1, 1 })
             {
-                var center = sample.PositionWorldM + sample.SideWorld * (side * (0.32 + age * 0.26));
+                var center = sample.PositionWorldM + sample.SideWorld * (side * (WakeStartHalfWidthM + age * 0.26));
                 var across = sample.SideWorld * (0.04 + age * 0.018);
                 var along = new Vector3d(sample.SideWorld.Y, -sample.SideWorld.X, 0) * 0.10;
                 Vector3 Surface(Vector3d p) => SceneFrames.ToGodot(p with

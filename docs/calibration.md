@@ -2,7 +2,14 @@
 
 Phase 8 begins with reproducible observations of the existing, uncalibrated
 model. No speed polar, sail coefficient, mass allocation or wave parameter
-has been tuned. [Results recorded on 2026-10-23](../phases/08-baseline-results.json)
+has been tuned. Following the 2026-10-27 roadmap revision, Phase 8 owns
+engineering readiness; these observations support repeatability and model
+consistency. Objective-data comparisons and measurement-based tuning for both
+boats belong to [Phase 11](../phases/11-calibration-and-realism-validation.md)
+and do not block Phases 8–10. Course/balance review tooling and longer-window
+engineering checks remain Phase 8 work.
+
+[Results recorded on 2026-10-23](../phases/08-baseline-results.json)
 include every setup, initial pose/velocity/rig, controls, wind/waves/seed,
 mass assumptions, fixed step, runtime, build configuration and SHA-256 hashes
 of the core, adapter and harness assemblies.

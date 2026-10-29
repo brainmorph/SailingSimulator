@@ -3,13 +3,17 @@ using SailingSimulator.Adapters;
 using SailingSimulator.Core;
 
 /// <summary>Lightweight meshes authored at the core hull datum. No sailing dynamics live here.</summary>
-public partial class BoatPresentation : Node3D
+public partial class BoatPresentation : Node3D, IBoatView
 {
     public Node3D Boom { get; private set; } = null!;
     public Node3D Rudder { get; private set; } = null!;
     public MeshInstance3D Board { get; private set; } = null!;
     public Node3D Sailor { get; private set; } = null!;
     public ImmediateMesh SailMesh { get; } = new();
+    public Vector3 EyeOffset => new(0, 0.72f, 0.35f);
+    public float CameraTargetHeight => 2.1f;
+    public float CameraDistance => 10.5f;
+    public double WakeStartHalfWidthM => 0.32;
     public ImmediateMesh TelltaleMesh => ribbons;
     private readonly ImmediateMesh seams = new();
     private readonly ImmediateMesh ribbons = new();

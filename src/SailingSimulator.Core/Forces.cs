@@ -15,7 +15,8 @@ public readonly record struct ForceMoment(Vector3d ForceWorldN, Vector3d MomentB
 public readonly record struct ForceEvaluation(double TimeSeconds, RigidBodyState Boat, MassProperties Mass, SimulationInput Input,
     RigState Rig = default, StepProfiler? Profiler = null);
 
-public readonly record struct RigDerivative(double AngleRate, double AngularAcceleration);
+public readonly record struct RigDerivative(double AngleRate, double AngularAcceleration,
+    double JibAngleRate = 0, double JibAngularAcceleration = 0);
 
 public interface IRigDynamicsModel : IForceModel
 {

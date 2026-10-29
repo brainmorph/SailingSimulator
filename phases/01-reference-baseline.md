@@ -44,6 +44,13 @@ do not change the source-backed baseline or resolve VPP compatibility.
 
 ## Remaining Phase 1 research
 
+Roadmap note (2026-10-27): research findings below are retained; work ownership
+is updated for the revised roadmap.
+Objective-data extraction, compatibility review and calibration gaps now hand
+off to [Phase 11](11-calibration-and-realism-validation.md), including rows
+originally assigned to Phase 8. Missing numeric targets do not block the
+engineering milestones in Phases 8–10; estimates remain documented.
+
 | Gap | Recommended next action | Owner |
 | --- | --- | --- |
 | Exact 2023 coefficient values and full test grid | The paper describes the data matrix as very large. If a particular implementation needs exact samples, warn the user before any bulk retrieval and first check whether a small subset suffices. | Phase 1 / Phase 3 |
@@ -52,8 +59,8 @@ do not change the source-backed baseline or resolve VPP compatibility.
 | 2016 crew-mass and rig compatibility | Verify the modeled Laser displacement, rig, and crew assumptions against the ILCA 7 baseline before transferring any result. | Phase 1 |
 | Equipped-boat mass interpretation | Check the handbook statement against current class measurement rules and the exact VPP model's included items. | Phase 1 |
 | Component masses and centers of mass | Find measured values in suitable sources or keep documented estimates; no large-scale data retrieval is justified yet. | Phase 1 / Phase 3 |
-| Wave height, wavelength, and physical ranges | Phase 4 selects documented design estimates below; validate practice conditions during calibration. | Phase 4 / Phase 8 |
-| Upwind/reaching speed and pointing targets | Locate a compatible measured or published source; avoid filling gaps from generic dinghy performance figures. | Phase 1 / Phase 8 |
+| Wave height, wavelength, and physical ranges | Phase 4 selects documented design estimates below; validate practice conditions during calibration. | Phase 11 |
+| Upwind/reaching speed and pointing targets | Locate a compatible measured or published source; avoid filling gaps from generic dinghy performance figures. | Phase 11 |
 
 ## Source review boundary
 

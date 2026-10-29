@@ -59,6 +59,32 @@ Require(gentle.FinalBoat == repeated.FinalBoat && gentle.FinalRig == repeated.Fi
     "Seeded baseline must reproduce the same trace including a partial final second.");
 Console.WriteLine("Phase 8 calibration screening, coasting and seeded replay checks passed.");
 
+var controlled = CourseReview.Run(gentleCondition, 120, 60);
+var controlledAgain = CourseReview.Run(gentleCondition, 120, 60);
+Require(controlled.ExactReplay && controlled.ControlHistory.SequenceEqual(controlledAgain.ControlHistory) &&
+    controlled.Trace.SequenceEqual(controlledAgain.Trace) && controlled.ControlHistory.Length == 120 &&
+    controlled.CompleteWindows.Length == 2 && controlled.CompleteWindows[0].StartSeconds == SailingSimulator.Core.Simulation.StepSeconds &&
+    controlled.CompleteWindows[0].EndSeconds == 1 && controlled.CompleteWindows[1].StartSeconds == 61 * SailingSimulator.Core.Simulation.StepSeconds &&
+    controlled.CompleteWindows[1] == controlled.FinalWindow,
+    "Controlled review must reproduce its complete input history and trajectory.");
+var previous = gentleCondition.Controls;
+foreach (var entry in controlled.ControlHistory)
+{
+    Require(entry.Held.Advance(previous) == entry.Applied, "Recorded controls must follow held-key rates.");
+    previous = entry.Applied;
+}
+var observations = new[] {
+    new CourseReview.Observation(1, 2, 0, 0, 0, 1, 1), new CourseReview.Observation(2, 2, 0, 0, 0, 1, 1),
+    new CourseReview.Observation(3, 2, 0, 0, 0, 1, 1), new CourseReview.Observation(4, 2, 0, 0, 0, 1, 1) };
+Require(CourseReview.Summarize(observations).Converged &&
+    !CourseReview.Summarize(observations.Select((s, i) => i >= 2 ? s with { NetForceN = 30 } : s).ToArray()).Converged,
+    "Convergence screen must detect changing force as well as steady motion.");
+Console.WriteLine("Phase 8 controlled review replay, input rates and convergence checks passed.");
+var course = CourseReview.Run(CalibrationReview.Conditions.Single(c => c.Id == "upwind-45-calm"), 7200, 1800);
+Require(course.ExactReplay && course.FinalWindow.Converged && course.FinalWindow.MaxHeadingError < 3,
+    "Test sailor must hold the upwind course after settling, including steady steering bias.");
+Console.WriteLine("Phase 8 steady course-control regression passed.");
+
 static void RequireRange(JsonElement controls, string field, double minimum, double maximum)
 {
     var value = controls.GetProperty(field).GetDouble();

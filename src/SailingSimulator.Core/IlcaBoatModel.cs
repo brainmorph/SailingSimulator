@@ -58,10 +58,14 @@ public sealed class GravityModel : IForceModel
         new(new(0, 0, e.Mass.MassKg * BoatGeometry.GravityMps2), Vector3d.Zero);
 }
 
-/// <summary>48 sealed buoyancy columns over a parametric waterplane, plus dissipative local drag.</summary>
+/// <summary>Sealed buoyancy columns over a parametric waterplane, plus dissipative local drag.</summary>
 public sealed class SampledHullModel : IForceModel
 {
     public IReadOnlyList<HullSample> Samples { get; }
+    private readonly Vector3d quadraticDrag;
+    private readonly Vector3d linearDrag;
+    private readonly Func<double, double>? surgeCoefficient;
+    private readonly Vector3d surgeReference;
 
     public SampledHullModel()
     {
@@ -81,6 +85,22 @@ public sealed class SampledHullModel : IForceModel
             }
         }
         Samples = samples.AsReadOnly();
+        quadraticDrag = new(0.012, 0.08, 0.80);
+        linearDrag = new(0.4, 5, 30);
+    }
+
+    /// <param name="surgeCoefficient">
+    /// Optional quadratic surge coefficient as a function of hull surge speed at <paramref name="surgeReference"/>;
+    /// replaces <paramref name="quadraticDrag"/>.X when supplied.
+    /// </param>
+    internal SampledHullModel(List<HullSample> samples, Vector3d quadraticDrag, Vector3d linearDrag,
+        Func<double, double>? surgeCoefficient = null, Vector3d surgeReference = default)
+    {
+        Samples = Array.AsReadOnly(samples.ToArray());
+        this.quadraticDrag = quadraticDrag;
+        this.linearDrag = linearDrag;
+        this.surgeCoefficient = surgeCoefficient;
+        this.surgeReference = surgeReference;
     }
 
     public ForceMoment Evaluate(in ForceEvaluation e)
@@ -94,6 +114,8 @@ public sealed class SampledHullModel : IForceModel
         using var measurement = e.Profiler?.Measure(SimulationSubsystem.Hull);
         var buoyancy = default(ForceMoment);
         var drag = default(ForceMoment);
+        var surge = surgeCoefficient is null ? quadraticDrag.X
+            : surgeCoefficient(Math.Abs(BoatGeometry.WaterRelativeVelocityBody(in e, surgeReference).X));
         foreach (var sample in Samples)
         {
             var top = sample.BottomBodyM - Vector3d.UnitZ * sample.HeightM;
@@ -104,10 +126,10 @@ public sealed class SampledHullModel : IForceModel
             var v = BoatGeometry.WaterRelativeVelocityBody(in e, center);
             var wetArea = sample.WaterplaneAreaM2 * Math.Min(1, fraction * sample.HeightM / 0.05);
             var force = new Vector3d(
-                -wetArea * (0.5 * BoatGeometry.WaterDensityKgM3 * 0.012 * v.X * Math.Abs(v.X) + 0.4 * v.X),
+                -wetArea * (0.5 * BoatGeometry.WaterDensityKgM3 * surge * v.X * Math.Abs(v.X) + linearDrag.X * v.X),
                 // Effective shallow-hull side projection is much smaller than waterplane area.
-                -wetArea * (0.5 * BoatGeometry.WaterDensityKgM3 * 0.08 * v.Y * Math.Abs(v.Y) + 5 * v.Y),
-                -wetArea * (0.5 * BoatGeometry.WaterDensityKgM3 * 0.80 * v.Z * Math.Abs(v.Z) + 30 * v.Z));
+                -wetArea * (0.5 * BoatGeometry.WaterDensityKgM3 * quadraticDrag.Y * v.Y * Math.Abs(v.Y) + linearDrag.Y * v.Y),
+                -wetArea * (0.5 * BoatGeometry.WaterDensityKgM3 * quadraticDrag.Z * v.Z * Math.Abs(v.Z) + linearDrag.Z * v.Z));
             drag += BoatGeometry.AtPoint(in e, force, center);
         }
         return new(buoyancy, drag);
@@ -117,18 +139,35 @@ public sealed class SampledHullModel : IForceModel
 public enum FoilKind { Centerboard, Rudder }
 
 /// <summary>Independent wet-area lift/drag sources, including local rotational flow and stall.</summary>
-public sealed class FoilModel(FoilKind kind) : IForceModel
+public sealed class FoilModel : IForceModel
 {
+    private readonly FoilKind kind;
+    private readonly double spanM;
+    private readonly double areaM2;
+    private readonly Vector3d top;
+
+    public FoilModel(FoilKind kind) : this(kind,
+        kind == FoilKind.Centerboard ? 0.75 : 0.48,
+        kind == FoilKind.Centerboard ? 0.24 : 0.10,
+        new(kind == FoilKind.Centerboard ? 0.05 : -2.05, 0, 0.08)) { }
+
+    internal FoilModel(FoilKind kind, double spanM, double areaM2, Vector3d top)
+    {
+        this.kind = kind;
+        this.spanM = spanM;
+        this.areaM2 = areaM2;
+        this.top = top;
+    }
+
     public ForceMoment Evaluate(in ForceEvaluation e)
     {
         using var measurement = e.Profiler?.Measure(kind == FoilKind.Centerboard
             ? SimulationSubsystem.Centerboard : SimulationSubsystem.Rudder);
         var lowering = kind == FoilKind.Centerboard ? e.Input.Controls.Centerboard : 1;
         if (lowering == 0) return default;
-        var span = (kind == FoilKind.Centerboard ? 0.75 : 0.48) * lowering;
-        var top = new Vector3d(kind == FoilKind.Centerboard ? 0.05 : -2.05, 0, 0.08);
+        var span = spanM * lowering;
         var (wet, center) = BoatGeometry.Submerged(in e, top, top + Vector3d.UnitZ * span);
-        var area = (kind == FoilKind.Centerboard ? 0.24 : 0.10) * lowering * wet;
+        var area = areaM2 * lowering * wet;
         // Positive tiller = rudder trailing edge to starboard, turning bow to starboard in forward flow.
         var delta = kind == FoilKind.Rudder ? -0.45 * e.Input.Controls.Tiller : 0;
         var chord = new Vector3d(Math.Cos(delta), Math.Sin(delta), 0);

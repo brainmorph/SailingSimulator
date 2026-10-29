@@ -5,6 +5,24 @@ using static Check;
 
 var tests = new (string Name, Action Run)[]
 {
+    ("Independent jib sheet snapshots and fixed-step ramps", () =>
+    {
+        var original = new SailingControls(portJibSheet: 0.5, starboardJibSheet: 0.5);
+        var controls = original;
+        var portTrim = new HeldSailingInput(portJibSheet: 1);
+        for (var i = 0; i < 60; i++) controls = portTrim.Advance(controls);
+        Near(controls.PortJibSheet, 0.75);
+        Near(controls.StarboardJibSheet, 0.5);
+        Near(original.PortJibSheet, 0.5);
+        var starboardEase = new HeldSailingInput(starboardJibSheet: -1);
+        for (var i = 0; i < 180; i++) controls = starboardEase.Advance(controls);
+        Near(controls.PortJibSheet, 0.75);
+        Near(controls.StarboardJibSheet, 0);
+        Require(ReferenceEquals(controls, HeldSailingInput.Released.Advance(controls)), "Released sheets retain trim");
+        Throws<ArgumentOutOfRangeException>(() => new SailingControls(portJibSheet: double.NaN));
+        Throws<ArgumentOutOfRangeException>(() => new SailingControls(starboardJibSheet: 1.1));
+        Throws<ArgumentOutOfRangeException>(() => new HeldSailingInput(portJibSheet: -1.1));
+    }),
     ("Fixed-step held inputs, rates, bounds and release", () =>
     {
         var all = new HeldSailingInput(1, 1, 1, 1, 1, 1, 1, 1);
@@ -128,6 +146,8 @@ var tests = new (string Name, Action Run)[]
         Require(snapshot.Timing.Warning == DeadlineWarning.Hard && snapshot.Timing.TotalLateSteps >= 8, "Overload concealed");
         Require(snapshot.Timing.ElapsedSeconds - snapshot.State.TimeSeconds > 0.06, "Clock dropped simulation time");
         Require(snapshot.Timing.DeadlineLatenessMilliseconds > 60, "Deadlines reset after overload");
+        Require(snapshot.Timing.StartLagMilliseconds > 60 && snapshot.Timing.TotalStartOverrunMilliseconds > 0 &&
+            snapshot.Timing.MaxStartOverrunMilliseconds > 0, "Start delay attribution missing under overload");
     }),
     ("Rolling performance percentiles, allocation rates and eviction", () =>
     {
@@ -252,6 +272,35 @@ var tests = new (string Name, Action Run)[]
         var noWind = luff.Sections[0] with { ApparentWindBodyMps = default };
         Require(SailingVisuals.SailPoint(noWind, 0.4, 0) == SailingVisuals.SailPoint(noWind, 0.4, 1), "No wind cannot animate sail");
     }),
+    ("Hunter cloth follows both published sails and their local airflow", () =>
+    {
+        var env = HunterDevelopmentScenario.Environment();
+        var simulation = BoatCatalog.Definition(BoatChoice.Hunter235).CreateSimulation(
+            new(BoatCatalog.InitialControls(BoatChoice.Hunter235), env), SailingSession.StartHeadingRad);
+        var rig = simulation.Latest.HunterRig!;
+        foreach (var sail in new[] { rig.Main, rig.Jib })
+        {
+            var strips = SailingVisuals.HunterStrips(sail);
+            Require(strips.Length == sail.Sections.Count + 2, "Foot and head rows bound the published strips");
+            Require((SailingVisuals.SailPoint(strips[0], 0, 0) - sail.TackBodyM).Length < 1e-12 &&
+                (SailingVisuals.SailPoint(strips[0], 1, 0) - sail.ClewBodyM).Length < 1e-12, $"{sail.Id} foot runs tack to clew");
+            Require((SailingVisuals.SailPoint(strips[^1], 0.5, 0) - sail.HeadBodyM).Length < 1e-12, $"{sail.Id} head is a point");
+            for (var i = 0; i < sail.Sections.Count; i++)
+            {
+                var g = sail.Geometry[i];
+                Require((SailingVisuals.SailPoint(strips[i + 1], 0, 0) - g.LeadingEdgeBodyM).Length < 1e-12 &&
+                    (SailingVisuals.SailPoint(strips[i + 1], 1, 0) - g.TrailingEdgeBodyM).Length < 1e-12, $"{sail.Id} strip {i} edges");
+                // Reversed local flow (a backwinded strip) bellies the cloth to the other side.
+                var strip = strips[i + 1];
+                var reversed = strip with { Section = strip.Section with { ApparentWindBodyMps = -strip.Section.ApparentWindBodyMps } };
+                var mid = SailingVisuals.SailPoint(strip, 0.5, 0) - (g.LeadingEdgeBodyM + g.TrailingEdgeBodyM) * 0.5;
+                var flipped = SailingVisuals.SailPoint(reversed, 0.5, 0) - (g.LeadingEdgeBodyM + g.TrailingEdgeBodyM) * 0.5;
+                Require(Vector3d.Dot(mid, strip.Normal) * Vector3d.Dot(flipped, strip.Normal) < 0 &&
+                    Math.Sign(Vector3d.Dot(mid, strip.Normal)) == Math.Sign(Vector3d.Dot(strip.Section.ApparentWindBodyMps, strip.Normal)),
+                    $"{sail.Id} strip {i} bellies to leeward of its local flow");
+            }
+        }
+    }),
     ("Telltales stream, reverse, droop and break up with local flow", () =>
     {
         var section = new SailSectionState(2, 1, 1.5, 0, 0.08, 0, 0,
@@ -341,6 +390,56 @@ var tests = new (string Name, Action Run)[]
             trail.Samples.All(x => 100 - x.TimeSeconds <= CenterOfMassTrail.LifetimeSeconds), "Trail lifetime bound");
         trail.Update(At(0));
         Require(trail.Samples.Count == 1 && trail.Samples.First().TimeSeconds == 0, "Restarted simulation clears trail");
+    }),
+    ("Boat sessions restart with a joined worker, retained environment and reset state", () =>
+    {
+        Require(BoatCatalog.TryParse("hunter-235", out var parsed) && parsed == BoatChoice.Hunter235 &&
+            BoatCatalog.TryParse("ILCA-7", out parsed) && parsed == BoatChoice.Ilca7 && !BoatCatalog.TryParse("laser", out _),
+            "Boat ids parse");
+        var environment = PresentationConversions.EnvironmentFromSettings(windSpeedKnots: 12, windFromDegrees: 20,
+            wavePreset: WavePreset.Moderate, waveSeed: -456);
+        var session = SailingSession.Create(BoatChoice.Ilca7, environment);
+        var runners = new List<SimulationRunner>();
+        session.Runner.Start();
+        try
+        {
+            foreach (var next in new[] { BoatChoice.Hunter235, BoatChoice.Ilca7, BoatChoice.Hunter235, BoatChoice.Hunter235 })
+            {
+                var previous = session.Runner;
+                runners.Add(previous);
+                // Held steering and trim change the old session's controls before the switch.
+                previous.PublishInput(new(new HeldSailingInput(tiller: 1, mainsheet: 1, starboardJibSheet: 1), environment));
+                WaitFor(() => previous.Latest.State.StepIndex >= 20 && previous.Latest.State.Input.Controls.Tiller > 0.5);
+                session = session.Restart(next, environment);
+                Require(!previous.Latest.Running, "Restart stops and joins the previous worker");
+                var stoppedStep = previous.Latest.State.StepIndex;
+                var initial = session.Runner.Latest;
+                Require(session.Boat == next && !initial.Running && initial.State.StepIndex == 0 && initial.State.TimeSeconds == 0,
+                    "The replacement session starts from step zero and has not started");
+                Require(ReferenceEquals(initial.State.Input.Environment, environment), "Wind, waves and seed are retained");
+                Require(initial.State.Input.Controls == BoatCatalog.InitialControls(next) && initial.State.Rig == BoatCatalog.Definition(next)
+                    .CreateSimulation(new(BoatCatalog.InitialControls(next), environment), SailingSession.StartHeadingRad).Latest.Rig,
+                    "Controls and rig reset to the boat's initial state");
+                Require((initial.State.HunterRig is not null) == (next == BoatChoice.Hunter235) &&
+                    (initial.State.Diagnostics is not null) == (next == BoatChoice.Ilca7), "Snapshots describe the selected boat");
+                Require(initial.State.Boat.LinearVelocityWorldMps == Vector3d.Zero &&
+                    PresentationConversions.GetAttitude(initial.State.Boat.OrientationBodyToWorld).Heading is var h &&
+                    Math.Abs(h - SailingSession.StartHeadingRad) < 1e-12, "Boat motion and pose reset");
+                // Input published to the old runner after the switch cannot reach the new session.
+                previous.PublishInput(new(new HeldSailingInput(tiller: -1), environment));
+                Thread.Sleep(30);
+                Require(previous.Latest.State.StepIndex == stoppedStep, "The previous worker stays stopped");
+                session.Runner.Start();
+                WaitFor(() => session.Runner.Latest.State.StepIndex >= 10);
+                Require(session.Runner.Latest.State.Input.Controls.Tiller == 0, "The new session starts with released input");
+            }
+        }
+        finally
+        {
+            session.Dispose();
+            foreach (var runner in runners) runner.Dispose();
+        }
+        Require(!session.Runner.Latest.Running, "Disposing a session joins its worker");
     }),
     ("Ten-second ILCA wall-clock cadence without render reads", () =>
     {
